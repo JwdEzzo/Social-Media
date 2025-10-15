@@ -2,7 +2,8 @@ import { useGetPostByIdQuery } from "@/api/posts/postApi";
 import {
   useCreateCommentMutation,
   useGetCommentsByPostIdQuery,
-} from "@/api/public/commentApi";
+  useGetPostCommentCountQuery,
+} from "@/api/comments/commentApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,13 +22,14 @@ import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
+import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
 
 interface ViewPostProps {
   isOpen: boolean;
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponseDto | undefined;
-  handleToggleLike: (postId: number) => void;
+  handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
 }
 
@@ -36,7 +38,7 @@ function ViewPost({
   handleCloseViewModal,
   selectedPostId,
   loggedInUser,
-  handleToggleLike,
+  handleTogglePostLike,
   isTogglingPostLike,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
@@ -60,8 +62,45 @@ function ViewPost({
     { isLoading: isCreateLoading, isError: isCreateError },
   ] = useCreateCommentMutation();
 
-  const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0);
-  const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0);
+  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
+    useToggleCommentLikeMutation();
+
+  const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+  const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: postCommentCount } = useGetPostCommentCountQuery(
+    post?.id ?? 0,
+    {
+      skip: !post?.id || post.id === 0,
+    }
+  );
+
+  async function handleToggleCommentLike(commentId: number) {
+    try {
+      await toggleCommentLike(commentId).unwrap();
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+  }
+
+  async function handleAddComment(e: FormEvent) {
+    e.preventDefault();
+    if (!newComment.trim() || !selectedPostId) return;
+
+    try {
+      await createComment({
+        content: newComment,
+        postId: selectedPostId,
+      }).unwrap();
+      setNewComment("");
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -79,21 +118,6 @@ function ViewPost({
         </div>
       </div>
     );
-  }
-
-  async function handleAddComment(e: FormEvent) {
-    e.preventDefault();
-    if (!newComment.trim() || !selectedPostId) return;
-
-    try {
-      await createComment({
-        content: newComment,
-        postId: selectedPostId,
-      }).unwrap();
-      setNewComment("");
-    } catch (error) {
-      console.error("Failed to add comment:", error);
-    }
   }
 
   if (isPostError || isCommentsError) {
@@ -191,7 +215,13 @@ function ViewPost({
             {/* Comments */}
             <div className="space-y-3">
               {comments?.map((comment) => (
-                <CommentCard key={comment.id} comment={comment} />
+                <CommentCard
+                  key={comment.id}
+                  comment={comment}
+                  handleToggleCommentLike={handleToggleCommentLike}
+                  isTogglingCommentLike={isTogglingCommentLike}
+                  //
+                />
               ))}
             </div>
           </div>
@@ -205,12 +235,15 @@ function ViewPost({
                     ? "fill-current text-red-500 dark:text-red-500"
                     : ""
                 } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={() => handleToggleLike(post?.id || 0)}
+                onClick={() => handleTogglePostLike(post?.id || 0)}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {postLikeCount}
               </span>
               <MessageCircle className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {postCommentCount}
+              </span>
               <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
             </div>
           </div>

@@ -19,15 +19,22 @@ import com.instragram.project.dto.request.WriteCommentRequestDto;
 import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.Comment;
+import com.instragram.project.repository.PostRepository;
 import com.instragram.project.service.CommentService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/comments")
+@Slf4j
 public class CommentController {
 
    @Autowired
    private CommentService commentService;
+
+   @Autowired
+   private PostRepository postRepository;
 
    @Autowired
    private MappingMethods mappingMethods;
@@ -53,8 +60,20 @@ public class CommentController {
       }
    }
 
+   // GET: Comment Count on a Post 
+   @GetMapping("/post/{postId}/comment-count")
+   public ResponseEntity<Long> getCommentCount(@PathVariable Long postId) {
+      if (!postRepository.existsById(postId)) {
+         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+      }
+
+      Long count = commentService.getCommentCount(postId);
+      log.debug("Comment count for post " + postId + " is " + count);
+      return ResponseEntity.ok(count);
+   }
+
    // Get Comments By PostId
-   @GetMapping("/{postId}")
+   @GetMapping("/{postId:\\d+}")
    public ResponseEntity<List<GetCommentResponseDto>> getCommentsByPostId(@PathVariable Long postId) {
       try {
          List<Comment> comments = commentService.findByPostId(postId);
@@ -65,8 +84,6 @@ public class CommentController {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }
    }
-
    // Delete Comment by Post Owner
    // @DeleteMapping("/{}")
-
 }

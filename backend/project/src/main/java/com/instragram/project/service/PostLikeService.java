@@ -31,12 +31,10 @@ public class PostLikeService {
    // Toggle PostLike
    @Transactional
    public void toggleLike(String username, Long postId) {
-      log.info("Toggle like for post with id: {}, and user: {}", postId, username);
       AppUser user = appUserRepository.findByUsername(username);
       Post post = postRepository.findById(postId).get();
 
       if (user == null) {
-         log.warn("User not found with username: {}", username);
          throw new RuntimeException("User not found with username: " + username);
       }
 

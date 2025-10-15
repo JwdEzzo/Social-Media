@@ -14,12 +14,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import PostCard from "../PostPages/HomePagePostCard";
-import {
-  useGetPostLikeCountQuery,
-  useIsPostLikedQuery,
-  useTogglePostLikeMutation,
-} from "@/api/posts/postLikesApi";
+import PostCard from "@/Pages/HomePage/HomePagePostCard";
+import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 
 function HomePage() {
   const dispatch = useDispatch();
@@ -46,7 +42,7 @@ function HomePage() {
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
 
-  async function handleToggleLike(postId: number) {
+  async function handleTogglePostLike(postId: number) {
     try {
       await togglePostLike(postId).unwrap();
     } catch (error) {
@@ -121,7 +117,7 @@ function HomePage() {
                 key={post.id}
                 post={post}
                 onViewComments={handleViewModal}
-                handleToggleLike={handleToggleLike}
+                handleTogglePostLike={handleTogglePostLike}
                 isTogglingPostLike={isTogglingPostLike}
               />
             ))}
@@ -136,7 +132,7 @@ function HomePage() {
             handleCloseViewModal={handleCloseViewModal}
             selectedPostId={selectedPostId}
             loggedInUser={loggedInUser}
-            handleToggleLike={handleToggleLike}
+            handleTogglePostLike={handleTogglePostLike}
             isTogglingPostLike={isTogglingPostLike}
           />
         </main>

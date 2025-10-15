@@ -31,8 +31,6 @@ public class PostController {
    @Autowired
    private PostService postService;
 
-   // Logger
-
    // POST: create post
    // Try getting the authentication using SecurityContextHolder
    // if authentication is null or not authenticated, return UNAUTHORIZED

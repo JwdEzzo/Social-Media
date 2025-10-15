@@ -52,4 +52,9 @@ public class CommentService {
       commentRepository.delete(comment);
    }
 
+   // Get number of comments on a post
+   public long getCommentCount(Long postId) {
+      return commentRepository.countByPostId(postId);
+   }
+
 }

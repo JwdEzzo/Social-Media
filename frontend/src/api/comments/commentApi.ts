@@ -1,5 +1,5 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "./baseApi";
+import { baseQueryWithReauth } from "@/api/public/baseApi";
 import { type WriteCommentRequestDto } from "@/types/requestTypes";
 import { type GetCommentResponseDto } from "@/types/responseTypes";
 
@@ -35,8 +35,18 @@ export const commentApi = createApi({
             ]
           : [{ type: "Comment", id: "LIST" }],
     }),
+    getPostCommentCount: builder.query<number, number>({
+      query: (postId) => ({
+        url: `/comments/post/${postId}/comment-count`,
+        method: "GET",
+      }),
+      providesTags: [{ type: "Comment", id: "LIST" }],
+    }),
   }),
 });
 
-export const { useCreateCommentMutation, useGetCommentsByPostIdQuery } =
-  commentApi;
+export const {
+  useCreateCommentMutation,
+  useGetCommentsByPostIdQuery,
+  useGetPostCommentCountQuery,
+} = commentApi;

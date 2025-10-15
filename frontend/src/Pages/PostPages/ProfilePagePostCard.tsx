@@ -1,3 +1,4 @@
+import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import { useGetPostLikeCountQuery } from "@/api/posts/postLikesApi";
 import { openPostModal } from "@/slices/viewPostSlice";
 import type { GetPostResponseDto } from "@/types/responseTypes";
@@ -9,7 +10,16 @@ interface ProfilePagePostCardProps {
 }
 
 function ProfilePagePostCard({ post }: ProfilePagePostCardProps) {
-  const { data: postLikeCount } = useGetPostLikeCountQuery(post.id);
+  const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: postCommentCount } = useGetPostCommentCountQuery(
+    post?.id ?? 0,
+    {
+      skip: !post?.id || post.id === 0,
+    }
+  );
 
   const dispatch = useDispatch();
 
@@ -38,7 +48,7 @@ function ProfilePagePostCard({ post }: ProfilePagePostCardProps) {
           </div>
           <div className="flex items-center gap-2">
             <MessageCircle className="h-6 w-6 text-blue-500 fill-blue-500 dark:text-blue-500 dark:fill-blue-500" />
-            <span className="text-lg">{post.comments_count || 0}</span>
+            <span className="text-lg">{postCommentCount || 0}</span>
           </div>
         </div>
       </div>

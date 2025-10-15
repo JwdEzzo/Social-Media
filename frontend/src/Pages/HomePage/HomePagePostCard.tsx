@@ -1,3 +1,4 @@
+import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
@@ -16,18 +17,30 @@ import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 interface HomePagePostCardProps {
   post: GetPostResponseDto;
   onViewComments: (postId: number) => void;
-  handleToggleLike: (postId: number) => void;
+  handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
 }
 
-function PostCard({
+function HomePagePostCard({
   post,
   onViewComments,
-  handleToggleLike,
+  handleTogglePostLike,
   isTogglingPostLike,
 }: HomePagePostCardProps) {
-  const { data: isPostLiked } = useIsPostLikedQuery(post.id);
-  const { data: postLikeCount } = useGetPostLikeCountQuery(post.id);
+  const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: postCommentCount } = useGetPostCommentCountQuery(
+    post?.id ?? 0,
+    {
+      skip: !post?.id || post.id === 0,
+    }
+  );
 
   return (
     <div className="w-full">
@@ -61,7 +74,7 @@ function PostCard({
               className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
                 isPostLiked ? "fill-current text-red-500 dark:text-red-500" : ""
               } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={() => handleToggleLike(post.id)}
+              onClick={() => handleTogglePostLike(post.id)}
             />
             <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
               {postLikeCount}
@@ -71,6 +84,9 @@ function PostCard({
               onClick={() => onViewComments(post.id)}
               //
             />
+            <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+              {postCommentCount}
+            </span>
             <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
           </div>
         </CardHeader>
@@ -94,4 +110,4 @@ function PostCard({
   );
 }
 
-export default PostCard;
+export default HomePagePostCard;
