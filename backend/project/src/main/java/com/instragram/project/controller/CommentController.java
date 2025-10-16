@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,23 +41,12 @@ public class CommentController {
 
    // Create Comment
    @PostMapping("/create-comment")
-   public ResponseEntity<Void> createComment(@RequestBody WriteCommentRequestDto requestDto) {
-      try {
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         if (authentication == null || !authentication.isAuthenticated()
-               || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-         }
-
-         String username = authentication.getName();
-         commentService.createComment(requestDto, username);
-
-         return ResponseEntity.status(HttpStatus.CREATED).build();
-      } catch (RuntimeException e) {
-         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> createComment(@RequestBody WriteCommentRequestDto requestDto,
+         Authentication authentication) {
+      String username = authentication.getName();
+      commentService.createComment(requestDto, username);
+      return ResponseEntity.status(HttpStatus.CREATED).build();
    }
 
    // GET: Comment Count on a Post 
@@ -75,14 +64,10 @@ public class CommentController {
    // Get Comments By PostId
    @GetMapping("/{postId:\\d+}")
    public ResponseEntity<List<GetCommentResponseDto>> getCommentsByPostId(@PathVariable Long postId) {
-      try {
-         List<Comment> comments = commentService.findByPostId(postId);
-         List<GetCommentResponseDto> commentResponseDtos = mappingMethods
-               .convertListCommentEntityToListGetCommentResponseDto(comments);
-         return ResponseEntity.status(HttpStatus.OK).body(commentResponseDtos);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
+      List<Comment> comments = commentService.findByPostId(postId);
+      List<GetCommentResponseDto> commentResponseDtos = mappingMethods
+            .convertListCommentEntityToListGetCommentResponseDto(comments);
+      return ResponseEntity.status(HttpStatus.OK).body(commentResponseDtos);
    }
    // Delete Comment by Post Owner
    // @DeleteMapping("/{}")

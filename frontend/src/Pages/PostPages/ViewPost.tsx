@@ -235,7 +235,7 @@ function ViewPost({
                     ? "fill-current text-red-500 dark:text-red-500"
                     : ""
                 } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={() => handleTogglePostLike(post?.id || 0)}
+                onClick={() => handleTogglePostLike(post?.id ?? 0)}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {postLikeCount}

@@ -23,6 +23,7 @@ import ViewPost from "../PostPages/ViewPost";
 import type { RootState } from "@/store/store";
 import { closePostModal } from "@/slices/viewPostSlice";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
+import { useGetFollowerCountQuery } from "@/api/followers/followerApi";
 
 function ProfilePage() {
   const { username: loggedInUsername } = useAuth();
@@ -55,7 +56,11 @@ function ProfilePage() {
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
 
-  async function handleToggleLike(postId: number) {
+  const { data: getFollowerCount } = useGetFollowerCountQuery(
+    loggedInUsername!
+  );
+
+  async function handleTogglePostLike(postId: number) {
     try {
       await togglePostLike(postId).unwrap();
     } catch (error) {
@@ -163,7 +168,7 @@ function ProfilePage() {
                       <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                       <DropdownMenuGroup>
                         <DropdownMenuItem
-                          className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
+                          className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
                           onClick={() =>
                             navigate(
                               `/userprofile/${loggedInUser.username}/edit-profile`
@@ -217,7 +222,7 @@ function ProfilePage() {
                 </div>
                 <div className="text-center pl-3">
                   <span className="font-bold text-lg">
-                    {loggedInUser.followers_count || 0}
+                    {getFollowerCount || 0}
                   </span>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
                     Followers
@@ -301,7 +306,7 @@ function ProfilePage() {
         handleCloseViewModal={handleCloseViewModal}
         selectedPostId={selectedPostId}
         loggedInUser={loggedInUser}
-        handleToggleLike={handleToggleLike}
+        handleTogglePostLike={handleTogglePostLike}
         isTogglingPostLike={isTogglingPostLike}
       />
     </div>

@@ -3,8 +3,8 @@ package com.instragram.project.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,20 +27,11 @@ public class PostLikeController {
 
    // POST : Toggle Like
    @PostMapping("/post/{postId}")
-   public ResponseEntity<Void> toggleLike(@PathVariable Long postId) {
-      try {
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         if (authentication == null || !authentication.isAuthenticated()
-               || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-         }
-         String username = authentication.getName();
-         postLikeService.toggleLike(username, postId);
-
-         return ResponseEntity.noContent().build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> toggleLike(@PathVariable Long postId, Authentication authentication) {
+      String username = authentication.getName();
+      postLikeService.toggleLike(username, postId);
+      return ResponseEntity.noContent().build();
    }
 
    // GET : Get a Post's like count
@@ -56,19 +47,11 @@ public class PostLikeController {
 
    // Check if a user liked a post
    @GetMapping("/post/{postId}/is-liked")
-   public ResponseEntity<Boolean> isLikedByCurrentUser(@PathVariable Long postId) {
-      try {
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         if (authentication == null || !authentication.isAuthenticated()
-               || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-         }
-         String username = authentication.getName();
-         boolean isLiked = postLikeService.isLikedByUser(username, postId);
-         return ResponseEntity.ok(isLiked);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Boolean> isLikedByCurrentUser(@PathVariable Long postId, Authentication authentication) {
+      String username = authentication.getName();
+      boolean isLiked = postLikeService.isLikedByUser(username, postId);
+      return ResponseEntity.ok(isLiked);
    }
 
 }
