@@ -14,34 +14,37 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "post_likes", //
-      uniqueConstraints = @UniqueConstraint( //
-            columnNames = { "app_user_id", "post_id" } //
-      )) // 
+            uniqueConstraints = @UniqueConstraint( //
+                        columnNames = { "app_user_id", "post_id" } //
+            )) // 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostLike {
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.AUTO)
-   private Long id;
+      @Id
+      @GeneratedValue(strategy = GenerationType.AUTO)
+      private Long id;
 
-   @ManyToOne
-   @JoinColumn(name = "app_user_id", nullable = false)
-   private AppUser appUser;
+      @ManyToOne
+      @JoinColumn(name = "app_user_id", nullable = false)
+      @ToString.Exclude
+      private AppUser appUser;
 
-   @ManyToOne
-   @JoinColumn(name = "post_id", nullable = false)
-   private Post post;
+      @ManyToOne
+      @JoinColumn(name = "post_id", nullable = false)
+      @ToString.Exclude
+      private Post post;
 
-   private LocalDateTime createdAt;
+      private LocalDateTime createdAt;
 
-   @PrePersist
-   public void onCreate() {
-      createdAt = LocalDateTime.now();
-   }
+      @PrePersist
+      public void onCreate() {
+            createdAt = LocalDateTime.now();
+      }
 
 }

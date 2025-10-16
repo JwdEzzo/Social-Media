@@ -1,8 +1,13 @@
 import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import {
+  useIsFollowedQuery,
+  useToggleFollowMutation,
+} from "@/api/followers/followerApi";
+import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { GetPostResponseDto } from "@/types/responseTypes";
-import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Plus, Send } from "lucide-react";
 
 interface HomePagePostCardProps {
   post: GetPostResponseDto;
@@ -27,6 +32,7 @@ function HomePagePostCard({
   handleTogglePostLike,
   isTogglingPostLike,
 }: HomePagePostCardProps) {
+  //
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -42,6 +48,11 @@ function HomePagePostCard({
     }
   );
 
+  const [toggleFollow, { isLoading: isTogglingFollow }] =
+    useToggleFollowMutation();
+
+  const { data: isFollowed } = useIsFollowedQuery(post.username);
+
   return (
     <div className="w-full">
       <Card className="w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -49,12 +60,24 @@ function HomePagePostCard({
           <CardTitle>
             <div className="flex items-center gap-3 justify-between">
               <div className="flex items-center gap-2">
+                {/* Profile Picture */}
                 <img
                   src={post.profilePictureUrl}
                   alt={post.description}
                   className="w-10 h-10 rounded-full"
                 />
                 <h1>{post.username}</h1>
+                <Button
+                  className={`ml-3 cursor-pointer ${
+                    isFollowed
+                      ? "fill-current text-white-500 dark:text-white-500 bg-black dark:bg-gray-950"
+                      : ""
+                  }`}
+                  onClick={() => toggleFollow(post.username)}
+                  disabled={isTogglingPostLike || isTogglingFollow}
+                >
+                  {isFollowed ? "Following" : "Follow"}
+                </Button>
               </div>
               <MoreHorizontal className="h-6 w-6 cursor-pointer" />
             </div>

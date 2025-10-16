@@ -85,29 +85,3 @@ public class PostController {
    }
 
 }
-
-// @GetMapping("/excluded/")
-// public ResponseEntity<List<GetPostResponseDto>> getAllPostsExcludingTheCurrentUser() {
-//    try {
-//       // Get the authenticated username from SecurityHolder
-//       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//       if (authentication == null || !authentication.isAuthenticated()
-//             || "anonymousUser".equals(authentication.getName())) {
-//          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-//       }
-//       List<GetPostResponseDto> includedPosts = new ArrayList<>();
-//       List<GetPostResponseDto> allPosts = postService.getAllPosts();
-//       String username = authentication.getName();
-//       for (GetPostResponseDto post : allPosts) {
-//          if (!post.getUsername().equals(username)) {
-//             includedPosts.add(post);
-//          } else {
-//             includedPosts.add(null);
-//          }
-//       }
-//       return ResponseEntity.status(HttpStatus.OK).body(includedPosts);
-
-//    } catch (Exception e) {
-//       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//    }
-// }

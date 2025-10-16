@@ -7,6 +7,8 @@ export const postApi = createApi({
   reducerPath: "postApi",
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Post"],
+  refetchOnReconnect: true,
+  refetchOnFocus: true,
   endpoints: (builder) => ({
     createPost: builder.mutation<string, CreatePostRequestDto>({
       query: (newPost) => ({
@@ -75,3 +77,5 @@ export const {
   useGetPostsExcludingCurrentUserQuery,
   useGetPostByIdQuery,
 } = postApi;
+
+export const { util: postApiUtil } = postApi;

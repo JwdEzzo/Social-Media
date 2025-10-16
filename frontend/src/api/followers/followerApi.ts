@@ -15,14 +15,14 @@ export const followerApi = createApi({
     }),
     getFollowerCount: builder.query<number, string>({
       query: (followingUsername) => ({
-        url: `/follows/following/${followingUsername}/follower-count`,
+        url: `/follows/${followingUsername}/follower-count`,
         method: "GET",
       }),
       providesTags: ["Follower"],
     }),
-    isFollowing: builder.query<boolean, string>({
+    isFollowed: builder.query<boolean, string>({
       query: (followingUsername) => ({
-        url: `/follows/following/${followingUsername}/is-following`,
+        url: `/follows/already-follows/${followingUsername}`,
         method: "GET",
       }),
       providesTags: ["Follower"],
@@ -33,5 +33,5 @@ export const followerApi = createApi({
 export const {
   useToggleFollowMutation,
   useGetFollowerCountQuery,
-  useIsFollowingQuery,
+  useIsFollowedQuery,
 } = followerApi;

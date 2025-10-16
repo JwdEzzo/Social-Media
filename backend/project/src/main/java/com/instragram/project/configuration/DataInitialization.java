@@ -41,9 +41,8 @@ public class DataInitialization implements CommandLineRunner {
          appUserRepository.save(user3);
 
          System.out.println("=== DEFAULT ADMIN USER CREATED ===");
-         System.out.println("Username: admin123 , admin456");
-         System.out.println("Password: admin123 , admin456");
-         System.out.println("Password: admin789 , admin789");
+         System.out.println("Username: admin123 , admin456 , admin789");
+         System.out.println("Password: admin123 , admin456 , admin789");
          System.out.println("Please change this password after first login!");
          System.out.println("==================================");
       } else {

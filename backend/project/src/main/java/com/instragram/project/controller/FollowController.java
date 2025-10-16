@@ -46,4 +46,12 @@ public class FollowController {
       long count = followService.getFollowingCount(username);
       return ResponseEntity.ok(count);
    }
+
+   // GET : If a user already follows another
+   @GetMapping("/already-follows/{followingUsername}")
+   public ResponseEntity<Boolean> isFollowed(@PathVariable String followingUsername, Authentication authentication) {
+      String followerUsername = authentication.getName();
+      boolean status = followService.isFollowed(followerUsername, followingUsername);
+      return ResponseEntity.ok(status);
+   }
 }

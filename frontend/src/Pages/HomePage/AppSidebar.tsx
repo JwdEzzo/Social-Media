@@ -1,9 +1,10 @@
 // AppSidebar.tsx
-import { LogOutIcon, User } from "lucide-react";
+import { ChevronUp, LogOutIcon, User, User2 } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
@@ -14,6 +15,12 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "@/auth/authSlice";
 import { useAuth } from "@/auth/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function AppSidebar() {
   const dispatch = useDispatch();
@@ -59,6 +66,40 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="dark:bg-gray-800 bg-white dark:hover:bg-gray-900 transition-colors">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="dark:hover:bg-gray-900 transition-colors ">
+                  <User2 /> <span className="font-bold">{username}</span>
+                  <ChevronUp className="ml-auto" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width] dark:bg-gray-800 bg-white transition-colors"
+              >
+                <DropdownMenuItem
+                  className=" dark:hover:bg-gray-700 transition-colors"
+                  onClick={navigateBackToProfile}
+                  //
+                >
+                  <span>Profile</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  className=" dark:hover:bg-gray-700 transition-colors"
+                  onClick={handleLogout}
+                  //
+                >
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

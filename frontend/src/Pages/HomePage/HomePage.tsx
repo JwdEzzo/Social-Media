@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import PostCard from "@/Pages/HomePage/HomePagePostCard";
+import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 
 function HomePage() {
@@ -113,7 +113,8 @@ function HomePage() {
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
             {/* Map over posts - now using PostCard component */}
             {apiPosts?.map((post) => (
-              <PostCard
+              <HomePagePostCard
+                // refetchPosts={refetchPosts}
                 key={post.id}
                 post={post}
                 onViewComments={handleViewModal}

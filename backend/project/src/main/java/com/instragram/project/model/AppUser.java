@@ -24,7 +24,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Entity
 @Table(name = "app_users")
-@ToString(exclude = { "posts", "comments" }) // Exclude collections to prevent circular reference
+@ToString(exclude = { "posts", "comments", "likes" }) // Exclude collections to prevent circular reference
 public class AppUser {
 
    @Id
