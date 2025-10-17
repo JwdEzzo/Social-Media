@@ -46,7 +46,7 @@ public class PostController {
       return ResponseEntity.noContent().build();
    }
 
-   // POST: create post with image upload (multipart)
+   // POST: create post with image upload
    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> uploadPost(

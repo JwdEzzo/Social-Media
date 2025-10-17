@@ -3,6 +3,8 @@ package com.instragram.project.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,25 +32,34 @@ public class Post {
 
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @Column(name = "id")
    private Long id;
 
+   @Column(name = "description")
    private String description;
 
+   @Column(name = "image_url")
    private String imageUrl;
 
    // New fields for file upload
    @Lob
-   @Column(name = "image_data", columnDefinition = "BYTEA")
+   @Column(name = "image_data")
+   @JsonIgnore
    private byte[] imageData;
 
+   @Column(name = "image_name")
    private String imageName;
 
+   @Column(name = "image_type")
    private String imageType; // MIME type (e.g., "image/jpeg", "image/png")
 
+   @Column(name = "image_size")
    private Long imageSize; // File size in bytes
 
+   @Column(name = "created_at")
    private LocalDateTime createdAt;
 
+   @Column(name = "updated_at")
    private LocalDateTime updatedAt;
 
    @ManyToOne

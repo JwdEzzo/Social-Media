@@ -1,5 +1,6 @@
 package com.instragram.project.service;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +69,7 @@ public class PostService {
          post.setImageUrl(null); // Set to null for uploaded images
 
          postRepository.save(post);
-      } catch (Exception ex) {
+      } catch (IOException ex) {
          throw new RuntimeException("Failed to save uploaded image", ex);
       }
    }
