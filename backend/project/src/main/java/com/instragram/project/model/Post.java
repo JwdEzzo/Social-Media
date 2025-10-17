@@ -4,17 +4,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,18 +25,27 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "posts")
-@ToString(exclude = { "appUser", "comments" }) // Exclude relationships to prevent circular reference
+@ToString(exclude = { "appUser", "comments", "imageData" }) // Exclude relationships to prevent circular reference
 public class Post {
 
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    private Long id;
 
-   @NotNull(message = "Description is required")
    private String description;
 
-   @NotBlank(message = "Image URL is required")
    private String imageUrl;
+
+   // New fields for file upload
+   @Lob
+   @Column(name = "image_data", columnDefinition = "BYTEA")
+   private byte[] imageData;
+
+   private String imageName;
+
+   private String imageType; // MIME type (e.g., "image/jpeg", "image/png")
+
+   private Long imageSize; // File size in bytes
 
    private LocalDateTime createdAt;
 

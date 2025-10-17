@@ -46,7 +46,14 @@ public class MappingMethods {
       responseDto.setId(post.getId());
       responseDto.setUsername(post.getAppUser().getUsername());
       responseDto.setProfilePictureUrl(post.getAppUser().getProfilePictureUrl());
-      responseDto.setImageUrl(post.getImageUrl());
+
+      // If imageUrl is null (uploaded image), use the serving endpoint
+      if (post.getImageUrl() == null && post.getImageData() != null) {
+         responseDto.setImageUrl("/api/instagram/posts/" + post.getId() + "/image");
+      } else {
+         responseDto.setImageUrl(post.getImageUrl());
+      }
+
       responseDto.setDescription(post.getDescription());
       responseDto.setCreatedAt(post.getCreatedAt());
       responseDto.setUpdatedAt(post.getUpdatedAt());

@@ -57,7 +57,6 @@ public class CommentController {
       }
 
       Long count = commentService.getCommentCount(postId);
-      log.debug("Comment count for post " + postId + " is " + count);
       return ResponseEntity.ok(count);
    }
 

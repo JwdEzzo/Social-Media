@@ -3,7 +3,11 @@ package com.instragram.project.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,7 +18,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
@@ -37,6 +43,18 @@ public class PostController {
    public ResponseEntity<Void> createPost(@RequestBody CreatePostRequestDto requestDto, Authentication authentication) {
       String username = authentication.getName();
       postService.createPost(requestDto, username);
+      return ResponseEntity.noContent().build();
+   }
+
+   // POST: create post with image upload (multipart)
+   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> uploadPost(
+         @RequestParam("description") String description,
+         @RequestParam("image") MultipartFile image,
+         Authentication authentication) {
+      String username = authentication.getName();
+      postService.createPostWithUpload(description, image, username);
       return ResponseEntity.noContent().build();
    }
 
@@ -67,6 +85,19 @@ public class PostController {
       String username = authentication.getName();
       List<GetPostResponseDto> posts = postService.getAllPostsExcludingUser(username);
       return ResponseEntity.ok(posts);
+   }
+
+   // GET: serve image bytes for a post
+   @GetMapping(value = "/{postId}/image")
+   public ResponseEntity<Resource> getPostImage(@PathVariable Long postId) {
+      byte[] bytes = postService.getPostImageBytes(postId);
+      String contentType = postService.getPostImageContentType(postId);
+      ByteArrayResource resource = new ByteArrayResource(bytes);
+      return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
+            .contentType(MediaType
+                  .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+            .body(resource);
    }
 
    @DeleteMapping("/{postId}")

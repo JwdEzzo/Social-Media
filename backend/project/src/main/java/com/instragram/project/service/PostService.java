@@ -3,7 +3,9 @@ package com.instragram.project.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
@@ -43,6 +45,32 @@ public class PostService {
 
       // Save entity
       postRepository.save(post);
+   }
+
+   // Create Post with uploaded image
+   public void createPostWithUpload(String description, MultipartFile image, String username) {
+      AppUser appUser = appUserRepository.findByUsername(username);
+      if (appUser == null) {
+         throw new RuntimeException("User not found with username: " + username);
+      }
+      if (image == null || image.isEmpty()) {
+         throw new RuntimeException("Image file is required");
+      }
+
+      try {
+         Post post = new Post();
+         post.setDescription(description);
+         post.setAppUser(appUser);
+         post.setImageName(image.getOriginalFilename());
+         post.setImageType(image.getContentType());
+         post.setImageSize(image.getSize());
+         post.setImageData(image.getBytes());
+         post.setImageUrl(null); // Set to null for uploaded images
+
+         postRepository.save(post);
+      } catch (Exception ex) {
+         throw new RuntimeException("Failed to save uploaded image", ex);
+      }
    }
 
    // Get All Posts
@@ -104,6 +132,21 @@ public class PostService {
    // Delete all posts
    public void deleteAllPosts() {
       postRepository.deleteAll();
+   }
+
+   public byte[] getPostImageBytes(Long postId) {
+      Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+      if (post.getImageData() == null) {
+         throw new RuntimeException("No image data stored for post: " + postId);
+      }
+      return post.getImageData();
+   }
+
+   public String getPostImageContentType(Long postId) {
+      Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+      return post.getImageType() != null ? post.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
    }
 
 }
