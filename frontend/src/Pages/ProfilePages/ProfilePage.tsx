@@ -5,7 +5,10 @@ import { Camera, Edit3, Grid3X3, Heart, LogOut, MoveLeft } from "lucide-react";
 import CreatePostModal from "@/Pages/ProfilePages/CreatePostModal";
 import { useState } from "react";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import { useGetPostsByUsernameQuery } from "@/api/posts/postApi";
+import {
+  useGetPostsByUsernameQuery,
+  useGetPostsCountQuery,
+} from "@/api/posts/postApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +26,10 @@ import ViewPost from "../PostPages/ViewPost";
 import type { RootState } from "@/store/store";
 import { closePostModal } from "@/slices/viewPostSlice";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import { useGetFollowerCountQuery } from "@/api/followers/followerApi";
+import {
+  useGetFollowerCountQuery,
+  useGetFollowingCountQuery,
+} from "@/api/followers/followerApi";
 
 function ProfilePage() {
   const { username: loggedInUsername } = useAuth();
@@ -59,6 +65,12 @@ function ProfilePage() {
   const { data: getFollowerCount } = useGetFollowerCountQuery(
     loggedInUsername!
   );
+
+  const { data: getFollowingCount } = useGetFollowingCountQuery(
+    loggedInUsername!
+  );
+
+  const { data: postCount } = useGetPostsCountQuery(loggedInUsername!);
 
   async function handleTogglePostLike(postId: number) {
     try {
@@ -213,9 +225,7 @@ function ProfilePage() {
               {/* User Stats - Following, Followers */}
               <div className="flex gap-8 mb-4 items-center justify-center md:justify-start">
                 <div className="text-center">
-                  <span className="font-bold text-lg">
-                    {loggedInUser.posts_count || 0}
-                  </span>
+                  <span className="font-bold text-lg">{postCount || 0}</span>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
                     Posts
                   </p>
@@ -230,7 +240,7 @@ function ProfilePage() {
                 </div>
                 <div className="text-center">
                   <span className="font-bold text-lg">
-                    {loggedInUser.following_count || 0}
+                    {getFollowingCount || 0}
                   </span>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
                     Following

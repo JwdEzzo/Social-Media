@@ -15,6 +15,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
    @Query("SELECT p FROM Post p WHERE p.appUser.username != :username")
    List<Post> findAllPostsExceptByCurrentUser(@Param("username") String username);
 
-   // List<Post> findByAppUserUsernameNot(String username);
+   long countByAppUserUsername(String username);
 
 }

@@ -75,7 +75,6 @@ public class PostService {
          post.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
          postRepository.save(post); // Save again to persist the URL
 
-         postRepository.save(post);
       } catch (IOException ex) {
          throw new RuntimeException("Failed to save uploaded image", ex);
       }
@@ -104,6 +103,18 @@ public class PostService {
    public List<GetPostResponseDto> getAllPostsExcludingUser(String username) {
       List<Post> posts = postRepository.findAllPostsExceptByCurrentUser(username);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
+   }
+
+   // Get posts count
+   public long getPostCount(String username) {
+
+      AppUser user = appUserRepository.findByUsername(username);
+
+      if (user == null) {
+         throw new RuntimeException("User not found: " + username);
+      }
+
+      return postRepository.countByAppUserUsername(username);
    }
 
    public void deletePost(Long postId) {

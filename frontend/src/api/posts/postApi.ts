@@ -47,6 +47,12 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+    getPostsCount: builder.query<number, string>({
+      query: (username) => ({
+        url: `/posts/${username}/count`,
+        method: "GET",
+      }),
+    }),
     getPostById: builder.query<GetPostResponseDto, number>({
       query: (id) => ({
         url: `/posts/get-by-id/${id}`,
@@ -90,6 +96,7 @@ export const {
   useGetPostsByUsernameQuery,
   useGetPostsExcludingCurrentUserQuery,
   useGetPostByIdQuery,
+  useGetPostsCountQuery,
 } = postApi;
 
 export const { util: postApiUtil } = postApi;

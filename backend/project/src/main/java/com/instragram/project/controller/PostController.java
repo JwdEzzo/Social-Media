@@ -90,6 +90,12 @@ public class PostController {
       return ResponseEntity.ok(posts);
    }
 
+   @GetMapping("{username}/count")
+   public ResponseEntity<Long> getPostCount(@PathVariable String username) {
+      long count = postService.getPostCount(username);
+      return ResponseEntity.ok(count);
+   }
+
    // GET: serve image bytes for a post
    @GetMapping(value = "/{postId}/image")
    public ResponseEntity<Resource> getPostImage(@PathVariable Long postId) {
