@@ -51,22 +51,17 @@ public class PostService {
    // Create Post with uploaded image
    @Transactional
    public void createPostWithUpload(String description, MultipartFile image, String username) {
-      log.info("Create post with upload: description={}, image={}, username={}", description,
-            image == null ? "null" : image.getOriginalFilename(), username);
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
-         log.error("User not found with username: {}", username);
          throw new RuntimeException("User not found with username: " + username);
       }
 
       if (image == null || image.isEmpty()) {
-         log.error("Image file is required");
          throw new RuntimeException("Image file is required");
       }
 
       try {
-         log.info("Creating post with upload: description={}, image={}, username={}", description,
-               image == null ? "null" : image.getOriginalFilename(), username);
+
          Post post = new Post();
          post.setDescription(description);
          post.setAppUser(appUser);
@@ -74,12 +69,14 @@ public class PostService {
          post.setImageType(image.getContentType());
          post.setImageSize(image.getSize());
          post.setImageData(image.getBytes());
-         post.setImageUrl(null); // Set to null for uploaded images
 
-         log.info("Saving post with upload: post={}", post);
+         postRepository.save(post); // Save first to get the ID
+
+         post.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
+         postRepository.save(post); // Save again to persist the URL
+
          postRepository.save(post);
       } catch (IOException ex) {
-         log.error("Failed to save uploaded image: {}", ex);
          throw new RuntimeException("Failed to save uploaded image", ex);
       }
    }

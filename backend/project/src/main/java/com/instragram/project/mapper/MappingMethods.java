@@ -49,7 +49,7 @@ public class MappingMethods {
 
       // If imageUrl is null (uploaded image), use the serving endpoint
       if (post.getImageUrl() == null && post.getImageData() != null) {
-         responseDto.setImageUrl("/api/instagram/posts/" + post.getId() + "/image");
+         responseDto.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
       } else {
          responseDto.setImageUrl(post.getImageUrl());
       }
