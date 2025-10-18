@@ -62,7 +62,6 @@ public class FollowService {
    public long getFollowersCount(String username) {
       AppUser user = appUserRepository.findByUsername(username);
       if (user == null) {
-         log.error("User not found: " + username);
          throw new RuntimeException("User not found: " + username);
       }
       long count = followRepository.countByFollowing(user);

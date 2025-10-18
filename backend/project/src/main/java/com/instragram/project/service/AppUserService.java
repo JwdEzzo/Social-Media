@@ -23,6 +23,7 @@ import com.instragram.project.dto.response.LoginResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
+import com.instragram.project.repository.FollowRepository;
 import com.instragram.project.security.jwt.JwtService;
 
 @Service
@@ -40,6 +41,9 @@ public class AppUserService {
    private AuthenticationManager authenticationManager;
 
    private final Logger log = LoggerFactory.getLogger(AppUserService.class);
+
+   @Autowired
+   private FollowRepository followRepository;
 
    @Autowired
    private final MappingMethods mappingMethods = new MappingMethods();
@@ -88,6 +92,36 @@ public class AppUserService {
       return users
             .stream()
             .map(user -> mappingMethods.convertAppUserEntityToGetUserResponse(user))
+            .collect(Collectors.toList());
+   }
+
+   // Find all followers of a certain user
+   public List<GetUserResponseDto> getAllFollowers(Long userId) {
+      AppUser user = appUserRepository.findById(userId).get();
+
+      if (user == null) {
+         throw new RuntimeException("User not found: " + user);
+      }
+      List<AppUser> followersOfUser = followRepository.findFollowersByUserId(userId);
+      return followersOfUser
+            .stream()
+            .map(follower -> mappingMethods
+                  .convertAppUserEntityToGetUserResponse(follower))
+            .collect(Collectors.toList());
+   }
+
+   // Find the users that are followed by a certain user
+   public List<GetUserResponseDto> getAllFollowings(Long userId) {
+      AppUser user = appUserRepository.findById(userId).get();
+
+      if (user == null) {
+         throw new RuntimeException("User not found: " + user);
+      }
+      List<AppUser> followingsOfUser = followRepository.findFollowingsByUserId(userId);
+      return followingsOfUser
+            .stream()
+            .map(follower -> mappingMethods
+                  .convertAppUserEntityToGetUserResponse(follower))
             .collect(Collectors.toList());
    }
 

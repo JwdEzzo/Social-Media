@@ -54,4 +54,5 @@ public class FollowController {
       boolean status = followService.isFollowed(followerUsername, followingUsername);
       return ResponseEntity.ok(status);
    }
+
 }

@@ -1,8 +1,11 @@
 package com.instragram.project.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.instragram.project.model.AppUser;
@@ -25,5 +28,14 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
 
    // Delete a follow by follower and following
    void deleteByFollowerAndFollowing(AppUser follower, AppUser following);
+
+   // Get all follows for a user
+   List<Follow> findByFollower(AppUser follower);
+
+   @Query("SELECT f.follower FROM Follow f WHERE f.following.id = :userId")
+   List<AppUser> findFollowersByUserId(@Param("userId") Long userId);
+
+   @Query("SELECT f.following FROM Follow f WHERE f.follower.id = :userId")
+   List<AppUser> findFollowingsByUserId(@Param("userId") Long userId);
 
 }
