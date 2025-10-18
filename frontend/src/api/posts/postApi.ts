@@ -18,6 +18,19 @@ export const postApi = createApi({
       }),
       invalidatesTags: [{ type: "Post", id: "LIST" }, "Post"],
     }),
+    uploadPost: builder.mutation<string, { description: string; image: File }>({
+      query: ({ description, image }) => {
+        const formData = new FormData(); // Creates an empty FormData object
+        formData.append("description", description); // append for description
+        formData.append("image", image); // append for image
+        return {
+          url: "/posts/upload",
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: [{ type: "Post", id: "LIST" }, "Post"],
+    }),
     getPosts: builder.query<GetPostResponseDto[], void>({
       query: () => ({
         url: "/posts",
@@ -72,6 +85,7 @@ export const postApi = createApi({
 
 export const {
   useCreatePostMutation,
+  useUploadPostMutation,
   useGetPostsQuery,
   useGetPostsByUsernameQuery,
   useGetPostsExcludingCurrentUserQuery,

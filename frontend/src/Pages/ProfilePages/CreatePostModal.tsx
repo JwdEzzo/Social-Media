@@ -12,12 +12,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
-import { useCreatePostMutation } from "@/api/posts/postApi";
+import {
+  useCreatePostMutation,
+  useUploadPostMutation,
+} from "@/api/posts/postApi";
 import type { CreatePostRequestDto } from "@/types/requestTypes";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -26,13 +29,22 @@ interface CreatePostModalProps {
 
 const postSchema = z.object({
   description: z.string().min(0, "Description is required"),
-  imageUrl: z.string().min(5, "Image URL is required"),
+  imageUrl: z.string().optional(),
 });
 
 type PostSchema = z.infer<typeof postSchema>;
 
+type UploadMode = "url" | "file";
+
 function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
-  const [createPost, { isLoading: isSubmitting }] = useCreatePostMutation();
+  const [createPost, { isLoading: isCreatingPost }] = useCreatePostMutation();
+  const [uploadPost, { isLoading: isUploadingPost }] = useUploadPostMutation();
+  const [uploadMode, setUploadMode] = useState<UploadMode>("url");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isSubmitting = isCreatingPost || isUploadingPost;
 
   const form = useForm<PostSchema>({
     resolver: zodResolver(postSchema),
@@ -44,16 +56,77 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
   async function handleFormSubmit(data: PostSchema) {
     try {
-      const postRequest: CreatePostRequestDto = {
-        description: data.description,
-        imageUrl: data.imageUrl,
-      };
+      if (uploadMode === "url") {
+        if (!data.imageUrl) {
+          form.setError("imageUrl", { message: "Image URL is required" });
+          return;
+        }
+        const postRequest: CreatePostRequestDto = {
+          description: data.description,
+          imageUrl: data.imageUrl,
+        };
+        await createPost(postRequest).unwrap();
+      } else {
+        if (!selectedFile) {
+          return;
+        }
+        await uploadPost({
+          description: data.description,
+          image: selectedFile,
+        }).unwrap();
+      }
 
-      await createPost(postRequest).unwrap();
-      form.reset();
-      onClose();
+      handleClose();
     } catch (error: any) {
       console.error("Failed to create post:", error);
+    }
+  }
+
+  function handleClose() {
+    form.reset();
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadMode("url");
+    onClose();
+  }
+
+  function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        setSelectedFile(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      } else {
+        alert("Please select an image file");
+      }
+    }
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      alert("Please drop an image file");
+    }
+  }
+
+  function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+  }
+
+  function removeSelectedFile() {
+    setSelectedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
 
@@ -87,6 +160,11 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         `https://picsum.photos/1080/1920?random=${randomNumber}`
       );
       form.setValue("description", getRandomSentence());
+    } else {
+      // Clean up preview URL when modal closes
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
     }
   }, [isOpen, form]);
 
@@ -104,34 +182,115 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               onSubmit={form.handleSubmit(handleFormSubmit)}
               className="space-y-4"
             >
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com/image.jpg"
-                        {...field}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Upload Mode Toggle */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={uploadMode === "url" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUploadMode("url")}
+                  disabled={isSubmitting}
+                >
+                  Image URL
+                </Button>
+                <Button
+                  type="button"
+                  variant={uploadMode === "file" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUploadMode("file")}
+                  disabled={isSubmitting}
+                >
+                  Upload File
+                </Button>
+              </div>
+
+              {/* URL Mode */}
+              {uploadMode === "url" && (
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* File Upload Mode */}
+              {uploadMode === "file" && (
+                <div className="space-y-2">
+                  <FormLabel>Upload Image</FormLabel>
+                  <div
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {selectedFile.name}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSelectedFile();
+                          }}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Drag and drop an image here, or click to select
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                          PNG, JPG, GIF up to 10MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              )}
 
               {/* Image Preview */}
-              {form.watch("imageUrl") && (
+              {(uploadMode === "url" && form.watch("imageUrl")) ||
+              (uploadMode === "file" && previewUrl) ? (
                 <div className="mt-2">
                   <img
-                    src={form.watch("imageUrl")}
+                    src={
+                      uploadMode === "url"
+                        ? form.watch("imageUrl")
+                        : previewUrl!
+                    }
                     alt="Preview"
                     className="w-full h-48 object-cover rounded-md"
                   />
                 </div>
-              )}
+              ) : null}
 
               <FormField
                 control={form.control}
@@ -176,7 +335,7 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -185,10 +344,12 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      {uploadMode === "url" ? "Creating..." : "Uploading..."}
                     </>
-                  ) : (
+                  ) : uploadMode === "url" ? (
                     "Create Post"
+                  ) : (
+                    "Upload Post"
                   )}
                 </Button>
               </div>

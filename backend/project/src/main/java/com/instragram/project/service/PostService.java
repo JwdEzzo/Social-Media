@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
@@ -16,7 +17,6 @@ import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.PostRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -33,7 +33,7 @@ public class PostService {
    private final MappingMethods mappingMethods = new MappingMethods();
 
    // Create Post
-   public void createPost(CreatePostRequestDto requestDto, String username) {
+   public void createPostWithUrl(CreatePostRequestDto requestDto, String username) {
       // Get the AppUser entity from username
       AppUser appUser = appUserRepository.findByUsername(username);
 
@@ -49,16 +49,24 @@ public class PostService {
    }
 
    // Create Post with uploaded image
+   @Transactional
    public void createPostWithUpload(String description, MultipartFile image, String username) {
+      log.info("Create post with upload: description={}, image={}, username={}", description,
+            image == null ? "null" : image.getOriginalFilename(), username);
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
+         log.error("User not found with username: {}", username);
          throw new RuntimeException("User not found with username: " + username);
       }
+
       if (image == null || image.isEmpty()) {
+         log.error("Image file is required");
          throw new RuntimeException("Image file is required");
       }
 
       try {
+         log.info("Creating post with upload: description={}, image={}, username={}", description,
+               image == null ? "null" : image.getOriginalFilename(), username);
          Post post = new Post();
          post.setDescription(description);
          post.setAppUser(appUser);
@@ -68,8 +76,10 @@ public class PostService {
          post.setImageData(image.getBytes());
          post.setImageUrl(null); // Set to null for uploaded images
 
+         log.info("Saving post with upload: post={}", post);
          postRepository.save(post);
       } catch (IOException ex) {
+         log.error("Failed to save uploaded image: {}", ex);
          throw new RuntimeException("Failed to save uploaded image", ex);
       }
    }
@@ -135,6 +145,7 @@ public class PostService {
       postRepository.deleteAll();
    }
 
+   @Transactional
    public byte[] getPostImageBytes(Long postId) {
       Post post = postRepository.findById(postId)
             .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
@@ -144,6 +155,7 @@ public class PostService {
       return post.getImageData();
    }
 
+   @Transactional
    public String getPostImageContentType(Long postId) {
       Post post = postRepository.findById(postId)
             .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));

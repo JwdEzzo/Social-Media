@@ -42,7 +42,7 @@ public class PostController {
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> createPost(@RequestBody CreatePostRequestDto requestDto, Authentication authentication) {
       String username = authentication.getName();
-      postService.createPost(requestDto, username);
+      postService.createPostWithUrl(requestDto, username);
       return ResponseEntity.noContent().build();
    }
 
@@ -53,6 +53,8 @@ public class PostController {
          @RequestParam("description") String description,
          @RequestParam("image") MultipartFile image,
          Authentication authentication) {
+      log.info("Creating post with upload: description={}, image={}, username={}", description,
+            image == null ? "null" : image.getOriginalFilename(), authentication.getName());
       String username = authentication.getName();
       postService.createPostWithUpload(description, image, username);
       return ResponseEntity.noContent().build();
@@ -79,6 +81,7 @@ public class PostController {
       return ResponseEntity.status(HttpStatus.OK).body(responseDtos);
    }
 
+   // GET : Get posts excluding the current logged in user
    @GetMapping("/excluded")
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<List<GetPostResponseDto>> getAllPostsExcludingTheCurrentUser(Authentication authentication) {
