@@ -90,6 +90,16 @@ public class PostController {
       return ResponseEntity.ok(posts);
    }
 
+   // GET : Get all Posts liked by the logged in user
+   @GetMapping("/liked-by-me")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<List<GetPostResponseDto>> getPostsLikedByCurrentUser(Authentication authentication) {
+      String username = authentication.getName();
+      List<GetPostResponseDto> likedPosts = postService.getPostslikedByUser(username);
+      return ResponseEntity.ok(likedPosts);
+   }
+
+   // GET :  Get post count of a user
    @GetMapping("{username}/count")
    public ResponseEntity<Long> getPostCount(@PathVariable String username) {
       long count = postService.getPostCount(username);

@@ -45,7 +45,7 @@ public class PostLikeController {
       }
    }
 
-   // Check if a user liked a post
+   // GET : Check if a user liked a post
    @GetMapping("/post/{postId}/is-liked")
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Boolean> isLikedByCurrentUser(@PathVariable Long postId, Authentication authentication) {

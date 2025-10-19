@@ -89,6 +89,12 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+    getPostsLikedByCurrentUser: builder.query<GetPostResponseDto[], void>({
+      query: () => ({
+        url: "/posts/liked-by-me",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -100,6 +106,7 @@ export const {
   useGetPostsExcludingCurrentUserQuery,
   useGetPostByIdQuery,
   useGetPostsCountQuery,
+  useGetPostsLikedByCurrentUserQuery,
 } = postApi;
 
 export const { util: postApiUtil } = postApi;

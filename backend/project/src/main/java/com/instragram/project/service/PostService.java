@@ -105,6 +105,16 @@ public class PostService {
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
    }
 
+   // Get all Posts liked by a specified user 
+   public List<GetPostResponseDto> getPostslikedByUser(String username) {
+      AppUser user = appUserRepository.findByUsername(username);
+      if (user == null) {
+         throw new RuntimeException("User not found with username: " + username);
+      }
+      List<Post> likedPosts = postRepository.findPostsLikedByUser(username);
+      return mappingMethods.convertListPostEntityToListGetPostResponseDto(likedPosts);
+   }
+
    // Get posts count
    public long getPostCount(String username) {
 
@@ -117,6 +127,7 @@ public class PostService {
       return postRepository.countByAppUserUsername(username);
    }
 
+   // Delete Post by id
    public void deletePost(Long postId) {
 
       if (postRepository.findById(postId) == null) {

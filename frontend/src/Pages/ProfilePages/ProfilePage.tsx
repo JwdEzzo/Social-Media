@@ -8,6 +8,7 @@ import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import {
   useGetPostsByUsernameQuery,
   useGetPostsCountQuery,
+  useGetPostsLikedByCurrentUserQuery,
 } from "@/api/posts/postApi";
 import {
   DropdownMenu,
@@ -35,6 +36,8 @@ function ProfilePage() {
   const { username: loggedInUsername } = useAuth();
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
+  const [isOwnPostsGrid, setIsOwnPostsGrid] = useState<boolean>(true);
+  const [isPostsLikedGrid, setIsPostsLikedGrid] = useState<boolean>(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -72,6 +75,8 @@ function ProfilePage() {
 
   const { data: postCount } = useGetPostsCountQuery(loggedInUsername!);
 
+  const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
+
   async function handleTogglePostLike(postId: number) {
     try {
       await togglePostLike(postId).unwrap();
@@ -79,6 +84,8 @@ function ProfilePage() {
       console.log("Error: ", error);
     }
   }
+
+  console.log(likedPosts);
 
   function handleLogout() {
     dispatch(logout());
