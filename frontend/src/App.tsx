@@ -10,6 +10,8 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import EditCredentials from "@/Pages/ProfilePages/EditCredentials";
 import EditProfile from "./Pages/ProfilePages/EditProfile";
 import HomePage from "./Pages/HomePage/HomePage";
+import FollowerList from "./Pages/FollowPages/FollowerList";
+import FollowingList from "./Pages/FollowPages/FollowingList";
 
 function App() {
   return (
@@ -59,6 +61,23 @@ function App() {
               element={
                 <ProtectedRoute>
                   <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/userprofile/:username/followers"
+              element={
+                <ProtectedRoute>
+                  <FollowerList />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/userprofile/:username/following"
+              element={
+                <ProtectedRoute>
+                  <FollowingList />
                 </ProtectedRoute>
               }
             />

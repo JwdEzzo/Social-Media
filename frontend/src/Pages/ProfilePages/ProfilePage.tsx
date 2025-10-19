@@ -223,26 +223,42 @@ function ProfilePage() {
               </div>
 
               {/* User Stats - Following, Followers */}
-              <div className="flex gap-8 mb-4 items-center justify-center md:justify-start">
-                <div className="text-center">
-                  <span className="font-bold text-lg">{postCount || 0}</span>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <div className="flex gap-4 mb-4 items-center justify-center md:justify-start transition-colors">
+                {/* Number of Posts */}
+                <div className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all">
+                  <div className="font-bold text-xl">{postCount || 0}</div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">
                     Posts
                   </p>
                 </div>
-                <div className="text-center pl-3">
-                  <span className="font-bold text-lg">
+
+                {/* Number of Followers */}
+                <div
+                  className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all"
+                  onClick={() =>
+                    navigate(`/userprofile/${loggedInUsername}/followers`)
+                  }
+                >
+                  <div className="font-bold text-xl">
                     {getFollowerCount || 0}
-                  </span>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs  tracking-wide">
                     Followers
                   </p>
                 </div>
-                <div className="text-center">
-                  <span className="font-bold text-lg">
+
+                {/* Number of Following */}
+                <div
+                  className="text-center hover:bg-gray-800 px-3 py-1 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-all"
+                  onClick={() =>
+                    navigate(`/userprofile/${loggedInUsername}/following`)
+                  }
+                  //
+                >
+                  <div className="font-bold text-xl ">
                     {getFollowingCount || 0}
-                  </span>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs ">
                     Following
                   </p>
                 </div>

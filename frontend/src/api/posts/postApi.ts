@@ -52,6 +52,9 @@ export const postApi = createApi({
         url: `/posts/${username}/count`,
         method: "GET",
       }),
+      providesTags: (_result, _error, username) => [
+        { type: "Post", id: `COUNT_${username}` }, // Unique tag for each user's count
+      ],
     }),
     getPostById: builder.query<GetPostResponseDto, number>({
       query: (id) => ({

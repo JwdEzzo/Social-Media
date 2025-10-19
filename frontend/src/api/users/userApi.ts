@@ -10,7 +10,7 @@ import { baseQueryWithReauth } from "../public/baseApi";
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User"],
+  tagTypes: ["User", "UserList", "Followers", "Followings"],
   endpoints: (builder) => ({
     signUp: builder.mutation<void, SignUpRequestDto>({
       query: (newUser) => ({
@@ -18,6 +18,7 @@ export const userApi = createApi({
         method: "POST",
         body: newUser,
       }),
+      invalidatesTags: [{ type: "UserList", id: "ALL" }],
     }),
     getUsers: builder.query<GetUserResponseDto[], void>({
       query: () => ({
@@ -27,26 +28,49 @@ export const userApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({
-                type: "User" as const,
-                id,
-              })),
-              { type: "User", id: "LIST" },
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "UserList", id: "ALL" },
             ]
-          : [{ type: "User", id: "LIST" }],
+          : [{ type: "UserList", id: "ALL" }],
     }),
     getUserByUsername: builder.query<GetUserResponseDto, string>({
       query: (username) => ({
         url: `/users/${username}`,
         method: "GET",
       }),
-      providesTags: (result, error, username) => [
-        { type: "User", id: username },
-      ],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "User", id: result.id },
+              { type: "User", id: result.username },
+            ]
+          : [],
     }),
     getUsersExcludingCurrentUser: builder.query<GetUserResponseDto[], void>({
       query: () => ({
         url: "/users/excluded",
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "UserList", id: "EXCLUDED" },
+            ]
+          : [{ type: "UserList", id: "EXCLUDED" }],
+    }),
+    getFollowersByUserId: builder.query<GetUserResponseDto[], number>({
+      query: (userId) => ({
+        url: `/users/followers/${userId}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, userId) => [
+        { type: "Followers", id: userId },
+      ],
+    }),
+    getFollowingsByUserId: builder.query<GetUserResponseDto[], number>({
+      query: (userId) => ({
+        url: `/users/followings/${userId}`,
         method: "GET",
       }),
       providesTags: (result) =>
@@ -60,6 +84,7 @@ export const userApi = createApi({
             ]
           : [{ type: "User", id: "LIST" }],
     }),
+
     updateUserCredentials: builder.mutation<
       void,
       { currentUsername: string } & UpdateCredentialsRequestDto
@@ -71,6 +96,9 @@ export const userApi = createApi({
       }),
       invalidatesTags: (result, error, { currentUsername }) => [
         { type: "User", id: currentUsername },
+        // If username changes, invalidate list queries that might show outdated username
+        { type: "UserList", id: "ALL" },
+        { type: "UserList", id: "EXCLUDED" },
       ],
     }),
 
@@ -85,6 +113,8 @@ export const userApi = createApi({
       }),
       invalidatesTags: (result, error, { username }) => [
         { type: "User", id: username },
+        { type: "UserList", id: "ALL" },
+        { type: "UserList", id: "EXCLUDED" },
       ],
     }),
   }),
@@ -96,4 +126,7 @@ export const {
   useGetUserByUsernameQuery,
   useUpdateUserCredentialsMutation,
   useUpdateUserProfileMutation,
+  useGetFollowersByUserIdQuery,
+  useGetFollowingsByUserIdQuery,
+  useGetUsersExcludingCurrentUserQuery,
 } = userApi;

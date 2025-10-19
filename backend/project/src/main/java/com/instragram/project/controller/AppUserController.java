@@ -101,7 +101,7 @@ public class AppUserController {
    }
 
    // GET : All users following a certain user
-   @GetMapping("/users-following/{userId}")
+   @GetMapping("/followers/{userId}")
    public ResponseEntity<List<GetUserResponseDto>> getAllFollowers(@PathVariable Long userId) {
       try {
          List<GetUserResponseDto> followers = appUserService.getAllFollowers(userId);
@@ -112,9 +112,10 @@ public class AppUserController {
    }
 
    // GET : All users that a certain user follows
-   @GetMapping("/users-followed/{userId}")
+   @GetMapping("/followings/{userId}")
    public ResponseEntity<List<GetUserResponseDto>> getAllFollowings(@PathVariable Long userId) {
       try {
+
          List<GetUserResponseDto> followings = appUserService.getAllFollowings(userId);
          return ResponseEntity.status(HttpStatus.OK).body(followings);
       } catch (Exception e) {

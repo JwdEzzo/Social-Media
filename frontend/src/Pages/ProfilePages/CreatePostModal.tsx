@@ -16,11 +16,13 @@ import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import {
+  postApi,
   useCreatePostMutation,
   useUploadPostMutation,
 } from "@/api/posts/postApi";
 import type { CreatePostRequestDto } from "@/types/requestTypes";
 import { useEffect, useState, useRef } from "react";
+import { useDispatch } from "react-redux";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -43,6 +45,7 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dispatch = useDispatch();
 
   const isSubmitting = isCreatingPost || isUploadingPost;
 
@@ -66,6 +69,7 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           imageUrl: data.imageUrl,
         };
         await createPost(postRequest).unwrap();
+        dispatch(postApi.util.invalidateTags([{ type: "Post", id: "COUNT" }]));
       } else {
         if (!selectedFile) {
           return;
