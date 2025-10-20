@@ -94,6 +94,13 @@ export const postApi = createApi({
         url: "/posts/liked-by-me",
         method: "GET",
       }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Post" as const, id })),
+              { type: "Post", id: "LIST" },
+            ]
+          : [{ type: "Post", id: "LIST" }],
     }),
   }),
 });

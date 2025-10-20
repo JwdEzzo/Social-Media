@@ -3,6 +3,7 @@ import {
   useIsFollowedQuery,
   useToggleFollowMutation,
 } from "@/api/followers/followerApi";
+import { postApi } from "@/api/posts/postApi";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import type { GetPostResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle, MoreHorizontal, Plus, Send } from "lucide-react";
+import { useDispatch } from "react-redux";
 
 interface HomePagePostCardProps {
   post: GetPostResponseDto;
@@ -52,6 +54,7 @@ function HomePagePostCard({
     useToggleFollowMutation();
 
   const { data: isFollowed } = useIsFollowedQuery(post.username);
+  const dispatch = useDispatch();
 
   return (
     <div className="w-full">
@@ -97,7 +100,12 @@ function HomePagePostCard({
               className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
                 isPostLiked ? "fill-current text-red-500 dark:text-red-500" : ""
               } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={() => handleTogglePostLike(post.id)}
+              onClick={() => {
+                handleTogglePostLike(post.id);
+                dispatch(
+                  postApi.util.invalidateTags([{ type: "Post", id: "LIST" }])
+                );
+              }}
             />
             <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
               {postLikeCount}

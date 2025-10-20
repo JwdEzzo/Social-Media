@@ -36,8 +36,7 @@ function ProfilePage() {
   const { username: loggedInUsername } = useAuth();
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
-  const [isOwnPostsGrid, setIsOwnPostsGrid] = useState<boolean>(true);
-  const [isPostsLikedGrid, setIsPostsLikedGrid] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"posts" | "liked">("posts"); // Add this state
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -84,8 +83,6 @@ function ProfilePage() {
       console.log("Error: ", error);
     }
   }
-
-  console.log(likedPosts);
 
   function handleLogout() {
     dispatch(logout());
@@ -139,7 +136,12 @@ function ProfilePage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Profile Picture */}
-            <div className="relative">
+            <div
+              className="relative"
+              onClick={() =>
+                navigate(`/userprofile/${loggedInUser.username}/edit-profile`)
+              }
+            >
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
                 <img
                   src={loggedInUser.profilePictureUrl}
@@ -287,40 +289,68 @@ function ProfilePage() {
       {/* Posts Grid */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <button className="flex items-center gap-2 py-4 px-6 border-b-2 border-black dark:border-white text-black dark:text-white font-semibold dark:hover:bg-gray-800 hover:bg-gray-200 transition-colors">
-            <div className="flex items-center gap-2 cursor-pointer ">
-              <Grid3X3 className="h-5 w-5" />
-              <span>Posts</span>
-            </div>
-          </button>
-          <button className="flex items-center gap-2 py-4 px-6 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-800 hover:bg-gray-200 transition-colors">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <Heart className="h-5 w-5 " />
-              <span>Likes</span>
-            </div>
-          </button>
+          <div
+            onClick={() => setViewMode("posts")}
+            className={`flex items-center gap-2 py-4 px-6 border-b-2 transition-colors cursor-pointer 
+              ${
+                viewMode === "posts"
+                  ? "border-black dark:border-white text-black dark:text-white font-semibold"
+                  : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+              }`}
+          >
+            <button>
+              <div className="flex items-center gap-2 cursor-pointer ">
+                <Grid3X3 className="h-5 w-5" />
+                <span>Posts</span>
+              </div>
+            </button>
+          </div>
+          <div
+            onClick={() => setViewMode("liked")}
+            className={`flex items-center gap-2 py-4 px-6 transition-colors 
+              ${
+                viewMode === "liked"
+                  ? "border-black dark:border-white text-black dark:text-white font-semibold"
+                  : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+              }`}
+          >
+            <button>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Heart className="h-5 w-5 " />
+                <span>Likes</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Posts grid */}
         <div className="grid grid-cols-3 gap-1 mt-6">
-          {/* If posts are loading, return 9 placeholders, if not , return posts if they exist, if the posts dont exist, return null */}
-          {isPostsLoading
-            ? [...Array(9)].map((_, index) => (
-                <div
-                  key={`loading-${index}`}
-                  className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
-                >
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                </div>
-              ))
-            : posts
-            ? posts.map((post) => (
-                // Group to allow the child elements (posts) to respond to parent hover states
-                <div key={post.id} className="group relative aspect-square">
-                  <ProfilePagePostCard post={post} />
-                </div>
-              ))
-            : null}
+          {isPostsLoading && viewMode === "posts" ? (
+            [...Array(9)].map((_, index) => (
+              <div
+                key={`loading-${index}`}
+                className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            ))
+          ) : viewMode === "posts" && posts ? (
+            posts.map((post) => (
+              <div key={post.id} className="group relative aspect-square">
+                <ProfilePagePostCard post={post} />
+              </div>
+            ))
+          ) : viewMode === "liked" && likedPosts ? (
+            likedPosts.map((post) => (
+              <div key={post.id} className="group relative aspect-square">
+                <ProfilePagePostCard post={post} />
+              </div>
+            ))
+          ) : viewMode === "liked" ? (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              No liked posts yet
+            </div>
+          ) : null}
         </div>
       </div>
 

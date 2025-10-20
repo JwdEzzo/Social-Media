@@ -1,4 +1,4 @@
-import { useGetPostByIdQuery } from "@/api/posts/postApi";
+import { postApi, useGetPostByIdQuery } from "@/api/posts/postApi";
 import {
   useCreateCommentMutation,
   useGetCommentsByPostIdQuery,
@@ -19,10 +19,12 @@ import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
 import {
+  postLikesApi,
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
 import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
+import { useDispatch } from "react-redux";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -42,6 +44,7 @@ function ViewPost({
   isTogglingPostLike,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
+  const dispatch = useDispatch();
 
   const {
     data: comments,
@@ -235,7 +238,12 @@ function ViewPost({
                     ? "fill-current text-red-500 dark:text-red-500"
                     : ""
                 } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={() => handleTogglePostLike(post?.id ?? 0)}
+                onClick={() => {
+                  handleTogglePostLike(post?.id ?? 0);
+                  dispatch(
+                    postApi.util.invalidateTags([{ type: "Post", id: "LIST" }])
+                  );
+                }}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {postLikeCount}
