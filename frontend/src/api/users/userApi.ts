@@ -96,21 +96,45 @@ export const userApi = createApi({
       }),
       invalidatesTags: (result, error, { currentUsername }) => [
         { type: "User", id: currentUsername },
-        // If username changes, invalidate list queries that might show outdated username
         { type: "UserList", id: "ALL" },
         { type: "UserList", id: "EXCLUDED" },
       ],
     }),
 
-    updateUserProfile: builder.mutation<
+    // URL-based profile update
+    updateUserProfileWithUrl: builder.mutation<
       void,
       { username: string } & UpdateProfileRequestDto
     >({
-      query: ({ username, ...newProfile }) => ({
-        url: `/users/${username}/update-profile`,
+      query: ({ username, ...updateData }) => ({
+        url: `/users/${username}/update-profile-url`,
         method: "PUT",
-        body: newProfile,
+        body: updateData,
       }),
+      invalidatesTags: (result, error, { username }) => [
+        { type: "User", id: username },
+        { type: "UserList", id: "ALL" },
+        { type: "UserList", id: "EXCLUDED" },
+      ],
+    }),
+
+    // File upload profile update
+    updateUserProfileWithUpload: builder.mutation<
+      void,
+      { username: string; bioText?: string; profileImage: File }
+    >({
+      query: ({ username, bioText, profileImage }) => {
+        const formData = new FormData();
+        if (bioText) {
+          formData.append("bioText", bioText);
+        }
+        formData.append("profileImage", profileImage);
+        return {
+          url: `/users/${username}/update-profile-upload`,
+          method: "PUT",
+          body: formData,
+        };
+      },
       invalidatesTags: (result, error, { username }) => [
         { type: "User", id: username },
         { type: "UserList", id: "ALL" },
@@ -125,7 +149,8 @@ export const {
   useGetUsersQuery,
   useGetUserByUsernameQuery,
   useUpdateUserCredentialsMutation,
-  useUpdateUserProfileMutation,
+  useUpdateUserProfileWithUrlMutation,
+  useUpdateUserProfileWithUploadMutation,
   useGetFollowersByUserIdQuery,
   useGetFollowingsByUserIdQuery,
   useGetUsersExcludingCurrentUserQuery,

@@ -1,18 +1,20 @@
 package com.instragram.project.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.LoginRequestDto;
 import com.instragram.project.dto.request.SignUpRequestDto;
@@ -25,6 +27,8 @@ import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
 import com.instragram.project.security.jwt.JwtService;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class AppUserService {
@@ -184,23 +188,70 @@ public class AppUserService {
       appUserRepository.save(oldUser);
    }
 
-   // Update User Profile
-   public void updateUserProfile(String username, UpdateProfileRequestDto newUser) {
-      AppUser oldUser = appUserRepository.findByUsername(username);
+   // Update User Profile With Url
+   public void updateUserProfileWithUrl(String username, UpdateProfileRequestDto updateDto) {
+      AppUser user = appUserRepository.findByUsername(username);
       LocalDateTime updatedNow = LocalDateTime.now();
-      if (oldUser == null) {
+
+      if (user == null) {
          throw new RuntimeException("Error 404 === User with username: " + username + " not found");
       }
-      log.info("Checking if bio text is the same as the old bio text");
-      if (Objects.equals(newUser.getBioText(), oldUser.getBioText())
-            && Objects.equals(newUser.getProfilePictureUrl(), oldUser.getProfilePictureUrl())) {
-         throw new RuntimeException("Bio text and profile pic is the same as the old bio text and profile pic.");
+
+      // Update bio if provided
+      if (updateDto.getBioText() != null) {
+         user.setBioText(updateDto.getBioText());
       }
 
-      oldUser.setBioText(newUser.getBioText());
-      oldUser.setProfilePictureUrl(newUser.getProfilePictureUrl());
-      oldUser.setUpdatedAt(updatedNow);
-      appUserRepository.save(oldUser);
+      // Update profile picture URL if provided
+      if (updateDto.getProfilePictureUrl() != null && !updateDto.getProfilePictureUrl().trim().isEmpty()) {
+         user.setProfilePictureUrl(updateDto.getProfilePictureUrl());
+         // Clear image data since we're using URL now
+         user.setImageData(null);
+         user.setImageName(null);
+         user.setImageType(null);
+         user.setImageSize(null);
+      }
+
+      user.setUpdatedAt(updatedNow);
+      appUserRepository.save(user);
+   }
+
+   // Update User Profile With Upload
+   public void updateUserProfileWithUpload(String username, UpdateProfileRequestDto updateDto, MultipartFile image) {
+      AppUser user = appUserRepository.findByUsername(username);
+      LocalDateTime updatedNow = LocalDateTime.now();
+
+      if (user == null) {
+         throw new RuntimeException("Error 404 === User with username: " + username + " not found");
+      }
+
+      // If no image is provided, only update bio
+      if (image == null || image.isEmpty()) {
+         if (updateDto.getBioText() != null) {
+            user.setBioText(updateDto.getBioText());
+         }
+         user.setUpdatedAt(updatedNow);
+         appUserRepository.save(user);
+         return;
+      }
+
+      try {
+         // Update bio if provided
+         if (updateDto.getBioText() != null) {
+            user.setBioText(updateDto.getBioText());
+         }
+
+         user.setUpdatedAt(updatedNow);
+         user.setImageData(image.getBytes());
+         user.setImageName(image.getOriginalFilename());
+         user.setImageType(image.getContentType());
+         user.setImageSize(image.getSize());
+         user.setProfilePictureUrl("http://localhost:8080/api/instagram/users/" + username + "/profile-image/preview");
+
+         appUserRepository.save(user);
+      } catch (IOException e) {
+         throw new RuntimeException("Failed to save uploaded image", e);
+      }
    }
 
    // Verify Login
@@ -233,5 +284,20 @@ public class AppUserService {
          throw new RuntimeException("User not found with username: " + username);
       }
       appUserRepository.delete(user);
+   }
+
+   @Transactional
+   public byte[] getProfileImageBytes(String username) {
+      AppUser user = appUserRepository.findByUsername(username);
+      if (user.getImageData() == null) {
+         throw new RuntimeException("No image data stored for User Profile Picture: " + username);
+      }
+      return user.getImageData();
+   }
+
+   @Transactional
+   public String getProfileImageContentType(String username) {
+      AppUser user = appUserRepository.findByUsername(username);
+      return user.getImageType() != null ? user.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
    }
 }

@@ -3,11 +3,15 @@ package com.instragram.project.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -46,6 +50,20 @@ public class AppUser {
    private String bioText;
 
    private String profilePictureUrl;
+
+   @Lob
+   @Column(name = "image_data")
+   @JsonIgnore
+   private byte[] imageData;
+
+   @Column(name = "image_name")
+   private String imageName;
+
+   @Column(name = "image_type")
+   private String imageType; // MIME type (e.g., "image/jpeg", "image/png")
+
+   @Column(name = "image_size")
+   private Long imageSize; // File size in bytes
 
    private LocalDateTime createdAt;
 

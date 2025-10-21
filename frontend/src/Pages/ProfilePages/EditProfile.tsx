@@ -11,57 +11,113 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Undo } from "lucide-react";
+import { Loader2, Undo, X, ImageIcon, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
   useGetUserByUsernameQuery,
-  useUpdateUserProfileMutation,
+  useUpdateUserProfileWithUrlMutation,
+  useUpdateUserProfileWithUploadMutation,
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/ModeToggle";
-import { useEffect } from "react";
 import type { UpdateProfileRequestDto } from "@/types/requestTypes";
+import { useEffect, useState, useRef } from "react";
 
 const updateProfileSchema = z.object({
-  bioText: z.string().min(0, "Bio is optional").nullable(),
-  profilePictureUrl: z.string().min(8, "Image URL is required"),
+  bioText: z.string().nullable().optional(),
+  profilePictureUrl: z.string().optional(),
 });
+
 type UpdateProfileSchema = z.infer<typeof updateProfileSchema>;
+type UploadMode = "url" | "file";
 
 function EditProfile() {
   const { username } = useAuth();
-  const [updateUserProfile, { isLoading, isError, isSuccess }] =
-    useUpdateUserProfileMutation();
+  const [
+    updateUserProfileWithUrl,
+    { isLoading: isUpdatingUrl, isError: isUrlError, isSuccess: isUrlSuccess },
+  ] = useUpdateUserProfileWithUrlMutation();
+  const [
+    updateUserProfileWithUpload,
+    {
+      isLoading: isUpdatingUpload,
+      isError: isUploadError,
+      isSuccess: isUploadSuccess,
+    },
+  ] = useUpdateUserProfileWithUploadMutation();
   const { data: user } = useGetUserByUsernameQuery(username!, {
     skip: !username,
   });
   const navigate = useNavigate();
+
+  const [uploadMode, setUploadMode] = useState<UploadMode>("url");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isSubmitting = isUpdatingUrl || isUpdatingUpload;
+  const isError = isUrlError || isUploadError;
+  const isSuccess = isUrlSuccess || isUploadSuccess;
+
   const form = useForm<UpdateProfileSchema>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      bioText: user?.bioText,
-      profilePictureUrl: user?.profilePictureUrl,
+      bioText: user?.bioText || "",
+      profilePictureUrl: user?.profilePictureUrl || "",
     },
   });
 
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        bioText: user.bioText || "",
+        profilePictureUrl: user.profilePictureUrl || "",
+      });
+    }
+  }, [user, form]);
+
   async function handleUpdateProfile(data: UpdateProfileSchema) {
     try {
-      const updateRequest: {
-        username: string;
-      } & UpdateProfileRequestDto = {
-        username: username!,
-        bioText: data.bioText ?? "",
-        profilePictureUrl: data.profilePictureUrl,
-      };
+      if (uploadMode === "url") {
+        if (!data.profilePictureUrl || data.profilePictureUrl.length < 8) {
+          // ← Validate here instead
+          form.setError("profilePictureUrl", {
+            message: "Image URL is required (minimum 8 characters)",
+          });
+          return;
+        }
+        const updateRequest: { username: string } & UpdateProfileRequestDto = {
+          username: username!,
+          bioText: data.bioText || "",
+          profilePictureUrl: data.profilePictureUrl,
+        };
+        await updateUserProfileWithUrl(updateRequest).unwrap();
+      } else {
+        if (!selectedFile) {
+          alert("Please select an image file.");
+          return;
+        }
+        await updateUserProfileWithUpload({
+          username: username!,
+          bioText: data.bioText || undefined,
+          profileImage: selectedFile,
+        }).unwrap();
+      }
 
-      await updateUserProfile(updateRequest).unwrap();
-
-      // Reset form
+      // Reset form and state on success
       form.reset({
         bioText: "",
         profilePictureUrl: "",
       });
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setUploadMode("url");
 
       navigate(`/userprofile/${username}`);
     } catch (error: any) {
@@ -69,13 +125,56 @@ function EditProfile() {
     }
   }
 
+  function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        setSelectedFile(file);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      } else {
+        alert("Please select an image file");
+      }
+    }
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      alert("Please drop an image file");
+    }
+  }
+
+  function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+  }
+
+  function removeSelectedFile() {
+    setSelectedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  // Cleanup preview URL on unmount
   useEffect(() => {
-    const randomNumber = Math.floor(Math.random() * 1000);
-    form.setValue(
-      "profilePictureUrl",
-      `https://picsum.photos/300/300?random=${randomNumber}`
-    );
-  }, [form]);
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="dark:bg-gray-800 min-h-screen flex items-center justify-center p-4">
@@ -101,7 +200,7 @@ function EditProfile() {
                 onSubmit={form.handleSubmit(handleUpdateProfile)}
                 className="space-y-6"
               >
-                {/* Email Field */}
+                {/* Bio Field */}
                 <FormField
                   control={form.control}
                   name="bioText"
@@ -112,7 +211,7 @@ function EditProfile() {
                         <Input
                           placeholder="Enter Bio"
                           {...field}
-                          disabled={isLoading}
+                          disabled={isSubmitting}
                           type="text"
                           value={field.value ?? ""}
                         />
@@ -122,61 +221,148 @@ function EditProfile() {
                   )}
                 />
 
-                {/* Username Field */}
-                <FormField
-                  control={form.control}
-                  name="profilePictureUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Profile Picture</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Upload Profile Picture"
-                          {...field}
-                          value={field.value ?? ""}
-                          disabled={isLoading}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* Image Preview */}
-                {form.watch("profilePictureUrl") && (
-                  <div className="mt-2">
-                    <img
-                      src={form.watch("profilePictureUrl")}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded"
+                {/* Upload Mode Toggle */}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={uploadMode === "url" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setUploadMode("url");
+                      removeSelectedFile();
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Image URL
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={uploadMode === "file" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setUploadMode("file");
+                      form.setValue("profilePictureUrl", "");
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Upload File
+                  </Button>
+                </div>
+
+                {/* URL Mode Field */}
+                {uploadMode === "url" && (
+                  <FormField
+                    control={form.control}
+                    name="profilePictureUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Picture URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/image.jpg"
+                            {...field}
+                            value={field.value ?? ""}
+                            disabled={isSubmitting}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* File Upload Mode */}
+                {uploadMode === "file" && (
+                  <div className="space-y-2">
+                    <FormLabel>Upload Profile Picture</FormLabel>
+                    <div
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer"
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {selectedFile ? (
+                        <div className="space-y-2">
+                          <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {selectedFile.name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSelectedFile();
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Drag and drop an image here, or click to select
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            PNG, JPG, GIF up to 10MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
                     />
                   </div>
                 )}
 
+                {/* Image Preview */}
+                {(uploadMode === "url" && form.watch("profilePictureUrl")) ||
+                (uploadMode === "file" && previewUrl) ? (
+                  <div className="mt-2">
+                    <img
+                      src={
+                        uploadMode === "url"
+                          ? form.watch("profilePictureUrl") || ""
+                          : previewUrl!
+                      }
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded"
+                    />
+                  </div>
+                ) : null}
+
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   className="w-full dark:bg-gray-300 hover:cursor-pointer"
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
+                      {uploadMode === "url" ? "Updating..." : "Uploading..."}
                     </>
                   ) : (
-                    "Update Credentials"
+                    "Update Profile"
                   )}
                 </Button>
 
                 {isError && (
                   <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                    Failed to update credentials. Please try again.
+                    Failed to update profile. Please try again.
                   </div>
                 )}
 
                 {isSuccess && (
                   <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                    Credentials updated successfully!
+                    Profile updated successfully!
                   </div>
                 )}
               </form>
@@ -187,4 +373,5 @@ function EditProfile() {
     </div>
   );
 }
+
 export default EditProfile;

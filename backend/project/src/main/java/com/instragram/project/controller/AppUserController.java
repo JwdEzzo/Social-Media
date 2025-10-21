@@ -3,8 +3,13 @@ package com.instragram.project.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -15,7 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.LoginRequestDto;
 import com.instragram.project.dto.request.SignUpRequestDto;
@@ -125,6 +132,7 @@ public class AppUserController {
 
    // Update User Credentials
    @PutMapping("/{username}/update-credentials")
+   @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> updateUserCredentials(@PathVariable String username,
          @RequestBody UpdateCredentialsRequestDto requestDto) {
       try {
@@ -135,16 +143,70 @@ public class AppUserController {
       }
    }
 
-   // Update User Profile
-   @PutMapping("/{username}/update-profile")
-   public ResponseEntity<Void> updateUserProfile(@PathVariable String username,
-         @RequestBody UpdateProfileRequestDto requestDto) {
+   // Update User Profile with URL
+   @PutMapping(value = "/{username}/update-profile-url", consumes = MediaType.APPLICATION_JSON_VALUE)
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> updateUserProfileWithUrl(
+         @PathVariable String username,
+         @RequestBody UpdateProfileRequestDto updateDto,
+         Authentication authentication) {
+
+      // Validate authorization
+      if (!authentication.getName().equals(username)) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
+
       try {
-         appUserService.updateUserProfile(username, requestDto);
-         return ResponseEntity.status(HttpStatus.OK).build();
-      } catch (Exception e) {
+         appUserService.updateUserProfileWithUrl(username, updateDto);
+         return ResponseEntity.noContent().build();
+      } catch (RuntimeException e) {
+         log.error("Failed to update profile with URL for user: {}", username, e);
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }
+   }
+
+   // Update User Profile with Upload
+   @PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> updateUserProfileWithUpload(
+         @PathVariable String username,
+         @RequestParam(value = "bioText", required = false) String bioText,
+         @RequestParam(value = "profileImage", required = false) MultipartFile image,
+         Authentication authentication) {
+
+      // Validate authorization
+      if (!authentication.getName().equals(username)) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
+
+      UpdateProfileRequestDto dto = new UpdateProfileRequestDto();
+
+      // Only set bioText if it's not null or empty
+      if (bioText != null && !bioText.trim().isEmpty()) {
+         dto.setBioText(bioText);
+      }
+
+      try {
+         // Call the service method. It handles both cases (image present/absent).
+         appUserService.updateUserProfileWithUpload(username, dto, image);
+         return ResponseEntity.noContent().build();
+      } catch (RuntimeException e) {
+         log.error("Failed to update profile for user: {}", username, e);
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      }
+   }
+
+   // GET: serve image bytes for a post
+   @GetMapping(value = "/{username}/profile-image/review")
+   public ResponseEntity<Resource> getProfileImage(@PathVariable String username) {
+      byte[] bytes = appUserService.getProfileImageBytes(username);
+      String contentType = appUserService.getProfileImageContentType(username);
+      ByteArrayResource resource = new ByteArrayResource(bytes);
+      return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
+            .contentType(MediaType
+                  .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+            .body(resource);
    }
 
    // Delete User
