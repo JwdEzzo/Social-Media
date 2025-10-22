@@ -115,6 +115,16 @@ public class PostService {
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(likedPosts);
    }
 
+   // Get all Posts by users followers
+   public List<GetPostResponseDto> getPostsByFollowings(Long id) {
+      AppUser user = appUserRepository.findById(id).get();
+      if (user == null) {
+         throw new RuntimeException("User not found with id: " + id);
+      }
+      List<Post> followingPosts = postRepository.findPostsByFollowing(id);
+      return mappingMethods.convertListPostEntityToListGetPostResponseDto(followingPosts);
+   }
+
    // Get posts count
    public long getPostCount(String username) {
 

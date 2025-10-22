@@ -12,6 +12,7 @@ import EditProfile from "./Pages/ProfilePages/EditProfile";
 import HomePage from "./Pages/HomePage/HomePage";
 import FollowerList from "./Pages/FollowPages/FollowerList";
 import FollowingList from "./Pages/FollowPages/FollowingList";
+import SetProfile from "./Pages/ProfilePages/SetProfile";
 
 function App() {
   return (
@@ -41,6 +42,14 @@ function App() {
               }
             />
             <Route
+              path="/userprofile/:username"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/userprofile/:username/edit-credentials"
               element={
                 <ProtectedRoute>
@@ -53,6 +62,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EditProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/userprofile/:username/set-profile"
+              element={
+                <ProtectedRoute>
+                  <SetProfile />
                 </ProtectedRoute>
               }
             />

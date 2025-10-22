@@ -1,5 +1,6 @@
 import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import {
+  followerApi,
   useIsFollowedQuery,
   useToggleFollowMutation,
 } from "@/api/followers/followerApi";
@@ -8,6 +9,7 @@ import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
+import { userApi } from "@/api/users/userApi";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -73,8 +75,8 @@ function HomePagePostCard({
                 <Button
                   className={`ml-3 cursor-pointer ${
                     isFollowed
-                      ? "fill-current text-white-500 dark:text-white-500 bg-black dark:bg-gray-950"
-                      : ""
+                      ? "fill-current text-white-500 dark:text-white-500 bg-black dark:bg-gray-900 text-white hover:bg-red-700 dark:hover:bg-red-700 "
+                      : "dark:hover:bg-gray-600 dark:hover:text-white"
                   }`}
                   onClick={() => toggleFollow(post.username)}
                   disabled={isTogglingPostLike || isTogglingFollow}

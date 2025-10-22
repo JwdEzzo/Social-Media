@@ -288,15 +288,15 @@ function ProfilePage() {
 
       {/* Posts Grid */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
           <div
             onClick={() => setViewMode("posts")}
-            className={`flex items-center gap-2 py-4 px-6 border-b-2 transition-colors cursor-pointer 
-              ${
-                viewMode === "posts"
-                  ? "border-black dark:border-white text-black dark:text-white font-semibold"
-                  : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-              }`}
+            className={`flex items-center gap-2 py-4 px-6  transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
+        ${
+          viewMode === "posts"
+            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+        }`}
           >
             <button>
               <div className="flex items-center gap-2 cursor-pointer ">
@@ -307,12 +307,12 @@ function ProfilePage() {
           </div>
           <div
             onClick={() => setViewMode("liked")}
-            className={`flex items-center gap-2 py-4 px-6 transition-colors 
-              ${
-                viewMode === "liked"
-                  ? "border-black dark:border-white text-black dark:text-white font-semibold"
-                  : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-              }`}
+            className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+        ${
+          viewMode === "liked"
+            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+        }`}
           >
             <button>
               <div className="flex items-center gap-2 cursor-pointer">

@@ -1,4 +1,7 @@
-import { useGetPostsExcludingCurrentUserQuery } from "@/api/posts/postApi";
+import {
+  useGetFollowingPostsByUserIdQuery,
+  useGetPostsExcludingCurrentUserQuery,
+} from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
@@ -16,8 +19,12 @@ import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 
 function HomePage() {
+  //
+  const [viewMode, setViewMode] = useState<"For You" | "Following">("For You");
   const dispatch = useDispatch();
 
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
@@ -38,6 +45,12 @@ function HomePage() {
     isError: isPostsError,
     refetch: refetchPosts,
   } = useGetPostsExcludingCurrentUserQuery();
+
+  const {
+    data: followingPosts,
+    isLoading: isFollowingPostsLoading,
+    isError: isFollowingPostsError,
+  } = useGetFollowingPostsByUserIdQuery();
 
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
@@ -61,7 +74,7 @@ function HomePage() {
   }
 
   // Loading state
-  if (isPostsLoading) {
+  if (isPostsLoading || isFollowingPostsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -73,7 +86,7 @@ function HomePage() {
   }
 
   // Error state
-  if (isPostsError) {
+  if (isPostsError || isFollowingPostsError) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
@@ -98,30 +111,74 @@ function HomePage() {
         {/* Navbar */}
         <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="h-8 w-8" />
-              <h1 className="text-4xl tracking-tight font-[GreatVibes] bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-                Social Media
-              </h1>
-            </div>
+            <SidebarTrigger className="h-8 w-8" />
+            <h1 className="text-4xl tracking-tight font-[GreatVibes] bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+              Social Media
+            </h1>
             <ModeToggle />
+          </div>
+          {/* FYP Or Following */}
+          <div className="flex items-center justify-center text-center transition-colors">
+            <div
+              className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
+                viewMode === "For You"
+                  ? "dark:border-b-2 dark:border-b-gray-500"
+                  : "dark:border-b-2 dark:border-b-gray-800"
+              }`}
+              onClick={() => setViewMode("For You")}
+            >
+              <div className="flex mx-auto justify-center text-center gap-10 ">
+                <CardTitle
+                  className={`text-xl cursor-pointer ${
+                    viewMode === "For You" ? "" : ""
+                  }`}
+                >
+                  For You
+                </CardTitle>
+              </div>
+            </div>
+            <div
+              className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
+                viewMode === "Following"
+                  ? "border-b-2 dark:border-b-gray-500"
+                  : "border-b-2 dark:border-b-gray-800"
+              }`}
+              onClick={() => setViewMode("Following")}
+            >
+              <div className="flex mx-auto justify-center text-center gap-10">
+                <CardTitle className={`text-xl cursor-pointer flex-1`}>
+                  Following
+                </CardTitle>
+              </div>
+            </div>
           </div>
         </header>
 
         {/* Main Content */}
         <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
-            {/* Map over posts - now using PostCard component */}
-            {apiPosts?.map((post) => (
-              <HomePagePostCard
-                // refetchPosts={refetchPosts}
-                key={post.id}
-                post={post}
-                onViewComments={handleViewModal}
-                handleTogglePostLike={handleTogglePostLike}
-                isTogglingPostLike={isTogglingPostLike}
-              />
-            ))}
+            {/* Map over posts - now using HomePagePostCard component */}
+            {viewMode === "For You"
+              ? apiPosts?.map((post) => (
+                  <HomePagePostCard
+                    // refetchPosts={refetchPosts}
+                    key={post.id}
+                    post={post}
+                    onViewComments={handleViewModal}
+                    handleTogglePostLike={handleTogglePostLike}
+                    isTogglingPostLike={isTogglingPostLike}
+                  />
+                ))
+              : followingPosts?.map((post) => (
+                  <HomePagePostCard
+                    // refetchPosts={refetchPosts}
+                    key={post.id}
+                    post={post}
+                    onViewComments={handleViewModal}
+                    handleTogglePostLike={handleTogglePostLike}
+                    isTogglingPostLike={isTogglingPostLike}
+                  />
+                ))}
           </div>
 
           {/* View Post Modal */}

@@ -197,7 +197,7 @@ public class AppUserController {
    }
 
    // GET: serve image bytes for a post
-   @GetMapping(value = "/{username}/profile-image/review")
+   @GetMapping(value = "/{username}/profile-image/preview")
    public ResponseEntity<Resource> getProfileImage(@PathVariable String username) {
       byte[] bytes = appUserService.getProfileImageBytes(username);
       String contentType = appUserService.getProfileImageContentType(username);

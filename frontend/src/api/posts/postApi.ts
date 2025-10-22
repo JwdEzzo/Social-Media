@@ -102,6 +102,19 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+    getFollowingPostsByUserId: builder.query<GetPostResponseDto[], void>({
+      query: () => ({
+        url: "/posts/my-followers",
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Post" as const, id })),
+              { type: "Post", id: "LIST" },
+            ]
+          : [{ type: "Post", id: "LIST" }],
+    }),
   }),
 });
 
@@ -114,6 +127,7 @@ export const {
   useGetPostByIdQuery,
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
+  useGetFollowingPostsByUserIdQuery,
 } = postApi;
 
 export const { util: postApiUtil } = postApi;

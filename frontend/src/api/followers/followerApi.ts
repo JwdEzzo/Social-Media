@@ -43,3 +43,5 @@ export const {
   useIsFollowedQuery,
   useGetFollowingCountQuery,
 } = followerApi;
+
+export const { util: followerApiUtil } = followerApi;

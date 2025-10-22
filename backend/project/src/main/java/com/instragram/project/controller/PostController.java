@@ -24,6 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
+import com.instragram.project.model.AppUser;
+import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.service.PostService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,9 @@ public class PostController {
 
    @Autowired
    private PostService postService;
+
+   @Autowired
+   private AppUserRepository appUserRepository;
 
    // POST: create post
    @PostMapping("/create-post")
@@ -97,6 +102,19 @@ public class PostController {
       String username = authentication.getName();
       List<GetPostResponseDto> likedPosts = postService.getPostslikedByUser(username);
       return ResponseEntity.ok(likedPosts);
+   }
+
+   // GET : Get all Posts liked by the logged in user
+   @GetMapping("/my-followers")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<List<GetPostResponseDto>> getFollowingPosts(Authentication authentication) {
+      String username = authentication.getName();
+      AppUser user = appUserRepository.findByUsername(username);
+      if (user == null) {
+         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      }
+      List<GetPostResponseDto> followingPosts = postService.getPostsByFollowings(user.getId());
+      return ResponseEntity.ok().body(followingPosts);
    }
 
    // GET :  Get post count of a user

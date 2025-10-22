@@ -79,7 +79,7 @@ function SignUp() {
         })
       );
 
-      navigate(`/userprofile/${response.username}`);
+      navigate(`/userprofile/${response.username}/set-profile`);
     } catch (error: any) {
       console.error("Sign up error:", error);
 

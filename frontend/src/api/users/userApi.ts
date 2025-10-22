@@ -155,3 +155,5 @@ export const {
   useGetFollowingsByUserIdQuery,
   useGetUsersExcludingCurrentUserQuery,
 } = userApi;
+
+export const { util: userApiUtil } = userApi;
