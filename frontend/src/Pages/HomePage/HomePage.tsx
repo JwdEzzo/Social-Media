@@ -118,21 +118,17 @@ function HomePage() {
             <ModeToggle />
           </div>
           {/* FYP Or Following */}
-          <div className="flex items-center justify-center text-center transition-colors">
+          <div className="flex items-center justify-center text-center transition-colors cursor-pointer">
             <div
               className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
                 viewMode === "For You"
-                  ? "dark:border-b-2 dark:border-b-gray-500"
-                  : "dark:border-b-2 dark:border-b-gray-800"
+                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black "
+                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
               }`}
               onClick={() => setViewMode("For You")}
             >
               <div className="flex mx-auto justify-center text-center gap-10 ">
-                <CardTitle
-                  className={`text-xl cursor-pointer ${
-                    viewMode === "For You" ? "" : ""
-                  }`}
-                >
+                <CardTitle className={`text-xl cursor-pointer`}>
                   For You
                 </CardTitle>
               </div>
@@ -140,8 +136,8 @@ function HomePage() {
             <div
               className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
                 viewMode === "Following"
-                  ? "border-b-2 dark:border-b-gray-500"
-                  : "border-b-2 dark:border-b-gray-800"
+                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black"
+                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
               }`}
               onClick={() => setViewMode("Following")}
             >
@@ -200,3 +196,15 @@ function HomePage() {
 }
 
 export default HomePage;
+
+//  onClick={() =>
+//                     toggleFollow(post.username)
+//                       .unwrap()
+//                       .then(() => {
+//                         dispatch(
+//                           postApi.util.invalidateTags([
+//                             { type: "Post", id: "LIST" },
+//                           ])
+//                         );
+//                       })
+//                   }

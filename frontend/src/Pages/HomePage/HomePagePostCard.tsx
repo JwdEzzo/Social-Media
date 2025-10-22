@@ -1,15 +1,13 @@
 import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import {
-  followerApi,
   useIsFollowedQuery,
   useToggleFollowMutation,
-} from "@/api/followers/followerApi";
+} from "@/api/followers/followApi";
 import { postApi } from "@/api/posts/postApi";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
-import { userApi } from "@/api/users/userApi";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { GetPostResponseDto } from "@/types/responseTypes";
-import { Heart, MessageCircle, MoreHorizontal, Plus, Send } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 import { useDispatch } from "react-redux";
 
 interface HomePagePostCardProps {
@@ -75,10 +73,20 @@ function HomePagePostCard({
                 <Button
                   className={`ml-3 cursor-pointer ${
                     isFollowed
-                      ? "fill-current text-white-500 dark:text-white-500 bg-black dark:bg-gray-900 text-white hover:bg-red-700 dark:hover:bg-red-700 "
-                      : "dark:hover:bg-gray-600 dark:hover:text-white"
+                      ? "fill-current text-white-500 dark:text-white-500 bg-black dark:bg-gray-900 text-white  hover:bg-red-700 dark:hover:bg-red-700 "
+                      : "dark:hover:bg-gray-600 dark:hover:text-white bg-gray-300 hover:bg-gray-400  text-black"
                   }`}
-                  onClick={() => toggleFollow(post.username)}
+                  onClick={() =>
+                    toggleFollow(post.username)
+                      .unwrap()
+                      .then(() => {
+                        dispatch(
+                          postApi.util.invalidateTags([
+                            { type: "Post", id: "LIST" },
+                          ])
+                        );
+                      })
+                  }
                   disabled={isTogglingPostLike || isTogglingFollow}
                 >
                   {isFollowed ? "Following" : "Follow"}

@@ -30,7 +30,7 @@ import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import {
   useGetFollowerCountQuery,
   useGetFollowingCountQuery,
-} from "@/api/followers/followerApi";
+} from "@/api/followers/followApi";
 
 function ProfilePage() {
   const { username: loggedInUsername } = useAuth();

@@ -1,7 +1,7 @@
 import {
   useIsFollowedQuery,
   useToggleFollowMutation,
-} from "@/api/followers/followerApi";
+} from "@/api/followers/followApi";
 import { Button } from "@/components/ui/button";
 import type { GetUserResponseDto } from "@/types/responseTypes";
 
