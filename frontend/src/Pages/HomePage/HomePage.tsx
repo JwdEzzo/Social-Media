@@ -1,4 +1,5 @@
 import {
+  postApi,
   useGetFollowingPostsByUserIdQuery,
   useGetPostsExcludingCurrentUserQuery,
 } from "@/api/posts/postApi";
@@ -19,8 +20,8 @@ import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 
 function HomePage() {
   //
@@ -30,7 +31,6 @@ function HomePage() {
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
     (state: RootState) => state.viewPostModal
   );
-
   // Get logged-in username (string)
   const { username: loggedInUsername } = useAuth();
 
@@ -57,7 +57,11 @@ function HomePage() {
 
   async function handleTogglePostLike(postId: number) {
     try {
-      await togglePostLike(postId).unwrap();
+      await togglePostLike(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+        });
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -72,6 +76,10 @@ function HomePage() {
   function handleCloseViewModal() {
     dispatch(closePostModal());
   }
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [viewMode]);
 
   // Loading state
   if (isPostsLoading || isFollowingPostsLoading) {

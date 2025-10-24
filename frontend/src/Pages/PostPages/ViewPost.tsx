@@ -1,4 +1,8 @@
-import { postApi, useGetPostByIdQuery } from "@/api/posts/postApi";
+import {
+  postApi,
+  useDeletePostByPostIdMutation,
+  useGetPostByIdQuery,
+} from "@/api/posts/postApi";
 import {
   useCreateCommentMutation,
   useGetCommentsByPostIdQuery,
@@ -8,23 +12,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Edit,
   Heart,
   MessageCircle,
   MoreHorizontal,
   RotateCcw,
   Send,
+  Trash2,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
 import {
-  postLikesApi,
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
 import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
 import { useDispatch } from "react-redux";
+import { closePostModal } from "@/slices/viewPostSlice";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -82,6 +96,9 @@ function ViewPost({
     }
   );
 
+  const [deletePostById, { isLoading: isPostDeleting }] =
+    useDeletePostByPostIdMutation();
+
   async function handleToggleCommentLike(commentId: number) {
     try {
       await toggleCommentLike(commentId).unwrap();
@@ -105,7 +122,38 @@ function ViewPost({
     }
   }
 
+  async function handleDeletePost(postId: number) {
+    if (post?.id) {
+      try {
+        await deletePostById(post.id).unwrap(); // unwrap() helps catch errors
+        // Close the modal only after successful deletion
+        dispatch(closePostModal()); // Dispatrch tghe closePostModal action
+      } catch (error) {
+        console.error("Failed to delete post:", error);
+      }
+    }
+  }
+
   if (!isOpen) return null;
+
+  // Don't render the post content until the data matches the selected post ID
+  // Since we are changing views between posts, the old post data from the cache is still present in POST and COMMENTS variables , all whilst the new query is being fetched.
+  // By doing this, we stop the rendering of the post until the data has been properly fetched and replaced the old one.
+  if (post?.id !== selectedPostId) {
+    return (
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={handleCloseViewModal}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading post...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isPostLoading || isCommentsLoading) {
     return (
@@ -117,6 +165,22 @@ function ViewPost({
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             Loading post...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPostDeleting) {
+    return (
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={handleCloseViewModal}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Deleting Post...
           </p>
         </div>
       </div>
@@ -189,7 +253,34 @@ function ViewPost({
               />
               <h1 className="font-bold">{post?.username}</h1>
             </div>
-            <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="min-w-fit dark:bg-gray-900"
+                align="center"
+              >
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <div className="flex items-center justify-start gap-7 cursor-pointer ">
+                    <DropdownMenuItem className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900">
+                      Edit
+                    </DropdownMenuItem>
+                    <Edit className="size-4 text-blue-200" />
+                  </div>
+                  <div
+                    className="flex items-center justify-start cursor-pointer"
+                    onClick={() => handleDeletePost(post.id)}
+                  >
+                    <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+                      Delete
+                    </DropdownMenuItem>
+                    <Trash2 className="size-4 text-red-200" />
+                  </div>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Scrollable content area */}

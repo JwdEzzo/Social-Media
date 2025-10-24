@@ -112,9 +112,6 @@ function HomePagePostCard({
               } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
               onClick={() => {
                 handleTogglePostLike(post.id);
-                dispatch(
-                  postApi.util.invalidateTags([{ type: "Post", id: "LIST" }])
-                );
               }}
             />
             <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">

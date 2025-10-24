@@ -71,6 +71,7 @@ export const postApi = createApi({
       }),
       providesTags: (_result, _error, username) => [
         { type: "Post", id: username },
+        { type: "Post", id: "LIST" },
       ],
     }),
     getPostsExcludingCurrentUser: builder.query<GetPostResponseDto[], void>({
@@ -115,6 +116,16 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+    deletePostByPostId: builder.mutation<void, number>({
+      query: (postId) => ({
+        url: `/posts/delete/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, postId) => [
+        { type: "Post", id: postId },
+        { type: "Post", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -128,6 +139,7 @@ export const {
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
   useGetFollowingPostsByUserIdQuery,
+  useDeletePostByPostIdMutation,
 } = postApi;
 
 export const { util: postApiUtil } = postApi;

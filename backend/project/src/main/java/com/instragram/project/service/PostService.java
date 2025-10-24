@@ -1,6 +1,7 @@
 package com.instragram.project.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
+import com.instragram.project.dto.request.EditPostWithUploadRequestDto;
+import com.instragram.project.dto.request.EditPostWithUrlRequestDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
@@ -135,6 +138,64 @@ public class PostService {
       }
 
       return postRepository.countByAppUserUsername(username);
+   }
+
+   // Update/Edit a post with upload
+   public void updatePostWithUrl(Long postId, EditPostWithUrlRequestDto requestDto, String username)
+         throws IOException {
+      AppUser appUser = appUserRepository.findByUsername(username);
+      Post oldPost = postRepository.findById(postId).get();
+      LocalDateTime now = LocalDateTime.now();
+      if (oldPost == null) {
+         throw new RuntimeException("Post not found with id: " + postId);
+      }
+
+      if (appUser == null) {
+         throw new RuntimeException("User not found with username: " + username);
+      }
+
+      if (oldPost.getAppUser() != appUser || !oldPost.getAppUser().getUsername().equals(username)) {
+         throw new RuntimeException("You do not have permission to update this post");
+      }
+
+      oldPost.setDescription(requestDto.getDescription());
+      oldPost.setImageUrl(requestDto.getImageUrl());
+      oldPost.setUpdatedAt(now);
+      postRepository.save(oldPost);
+
+   }
+
+   // Update/Edit a post with upload
+   public void updatePostWithUpload(Long postId, EditPostWithUploadRequestDto requestDto, String username)
+         throws IOException {
+      AppUser appUser = appUserRepository.findByUsername(username);
+      Post oldPost = postRepository.findById(postId).get();
+      LocalDateTime now = LocalDateTime.now();
+      if (oldPost == null) {
+         throw new RuntimeException("Post not found with id: " + postId);
+      }
+
+      if (oldPost == null) {
+         throw new RuntimeException("Post not found with id: " + postId);
+      }
+
+      if (appUser == null) {
+         throw new RuntimeException("User not found with username: " + username);
+      }
+
+      if (oldPost.getAppUser() != appUser || !oldPost.getAppUser().getUsername().equals(username)) {
+         throw new RuntimeException("You do not have permission to update this post");
+      }
+
+      oldPost.setDescription(requestDto.getDescription());
+      oldPost.setImageData(requestDto.getImage().getBytes());
+      oldPost.setImageName(requestDto.getImage().getOriginalFilename());
+      oldPost.setImageSize(requestDto.getImage().getSize());
+      oldPost.setImageType(requestDto.getImage().getContentType());
+      oldPost.setImageUrl("http://localhost:8080/api/instagram/posts/" + postId + "/image");
+      oldPost.setUpdatedAt(now);
+      postRepository.save(oldPost);
+
    }
 
    // Delete Post by id

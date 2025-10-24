@@ -1,5 +1,6 @@
 package com.instragram.project.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.instragram.project.dto.request.CreatePostRequestDto;
+import com.instragram.project.dto.request.EditPostWithUploadRequestDto;
+import com.instragram.project.dto.request.EditPostWithUrlRequestDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
@@ -137,18 +141,29 @@ public class PostController {
             .body(resource);
    }
 
-   @DeleteMapping("/{postId}")
+   // PUT: Update/Edit a post
+   @PutMapping("/edit-with-url/{postId}")
+   public ResponseEntity<Void> editPostWithUrl(@PathVariable Long postId,
+         @RequestBody EditPostWithUrlRequestDto requestDto, Authentication authentication) throws IOException {
+      String username = authentication.getName();
+      postService.updatePostWithUrl(postId, requestDto, username);
+      return ResponseEntity.noContent().build();
+   }
+
+   @PutMapping("/edit-with-upload/{postId}")
+   public ResponseEntity<Void> editPostWithUpload(@PathVariable Long postId,
+         EditPostWithUploadRequestDto requestDto, Authentication authentication) throws IOException {
+      String username = authentication.getName();
+      postService.updatePostWithUpload(postId, requestDto, username);
+      return ResponseEntity.noContent().build();
+   }
+
+   // Delete Post By Id
+   @DeleteMapping("/delete/{postId}")
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> deletePost(@PathVariable Long postId, Authentication authentication) {
       String username = authentication.getName();
       postService.deletePostByUser(username, postId);
-      return ResponseEntity.noContent().build();
-   }
-
-   // Delete all posts
-   @DeleteMapping("/delete-all")
-   public ResponseEntity<Void> deleteAllPosts() {
-      postService.deleteAllPosts();
       return ResponseEntity.noContent().build();
    }
 
