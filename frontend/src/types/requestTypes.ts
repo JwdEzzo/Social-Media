@@ -30,3 +30,13 @@ export interface WriteCommentRequestDto {
   content: string;
   postId: number;
 }
+
+export interface EditPostWithUrlRequestDto {
+  description: string;
+  imageUrl: string;
+}
+
+export interface EditPostWithUploadRequestDto {
+  description: string;
+  image: File;
+}

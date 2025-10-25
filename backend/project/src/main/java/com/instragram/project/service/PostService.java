@@ -175,10 +175,6 @@ public class PostService {
          throw new RuntimeException("Post not found with id: " + postId);
       }
 
-      if (oldPost == null) {
-         throw new RuntimeException("Post not found with id: " + postId);
-      }
-
       if (appUser == null) {
          throw new RuntimeException("User not found with username: " + username);
       }

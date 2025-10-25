@@ -13,6 +13,7 @@ import HomePage from "./Pages/HomePage/HomePage";
 import FollowerList from "./Pages/FollowPages/FollowerList";
 import FollowingList from "./Pages/FollowPages/FollowingList";
 import SetProfile from "./Pages/ProfilePages/SetProfile";
+import EditPost from "./Pages/PostPages/EditPost";
 
 function App() {
   return (
@@ -95,6 +96,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <FollowingList />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/userprofile/:username/post/edit/:postId"
+              element={
+                <ProtectedRoute>
+                  <EditPost />
                 </ProtectedRoute>
               }
             />

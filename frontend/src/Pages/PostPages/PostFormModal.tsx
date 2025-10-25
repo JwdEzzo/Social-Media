@@ -1,3 +1,4 @@
+// components/CreatePostModal.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,18 +15,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
-import {
-  postApi,
-  useCreatePostMutation,
-  useUploadPostMutation,
-} from "@/api/posts/postApi";
-import type { CreatePostRequestDto } from "@/types/requestTypes";
-import { useEffect, useState, useRef } from "react";
-import { useDispatch } from "react-redux";
 
-interface CreatePostModalProps {
+import { useEffect, useState, useRef } from "react";
+
+// We use the isOpen prop to control the visibility of the CreatePostModal
+// onSubmit Prop will be passed down by the parent component, either CreatePostModal or EditPostModal
+// initialData Prop is the initial values for the form
+// mode Prop will be edit in the EditPostModal and create in the CreatePostModal
+interface PostFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmit: (data: PostFormData) => Promise<void>;
+  initialData: {
+    description?: string;
+    imageUrl?: string;
+  };
+  mode: "create" | "edit";
+  isSubmitting: boolean;
+}
+
+// Interface for the form data
+export interface PostFormData {
+  description: string;
+  imageUrl: string;
+  image?: File;
+  uploadMode: "url" | "file";
 }
 
 const postSchema = z.object({
@@ -34,19 +48,20 @@ const postSchema = z.object({
 });
 
 type PostSchema = z.infer<typeof postSchema>;
-
 type UploadMode = "url" | "file";
 
-function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
-  const [createPost, { isLoading: isCreatingPost }] = useCreatePostMutation();
-  const [uploadPost, { isLoading: isUploadingPost }] = useUploadPostMutation();
+function PostFormModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  mode,
+  isSubmitting,
+}: PostFormModalProps) {
   const [uploadMode, setUploadMode] = useState<UploadMode>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dispatch = useDispatch();
-
-  const isSubmitting = isCreatingPost || isUploadingPost;
 
   const form = useForm<PostSchema>({
     resolver: zodResolver(postSchema),
@@ -56,32 +71,48 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     },
   });
 
+  const getRandomSentence = () => {
+    const sentences = [
+      "Just another beautiful day!",
+      "Living my best life.",
+      "Creating memories that last forever.",
+      "Chasing dreams and catching stars.",
+      "Life is an adventure, embrace it!",
+      "Making today count.",
+      "Happiness is found in simple moments.",
+      "Grateful for this amazing journey.",
+      "Capturing the essence of joy.",
+      "Every moment is a fresh beginning.",
+      "Finding beauty in unexpected places.",
+      "Creating my own sunshine.",
+      "Life is too short for boring moments.",
+      "Exploring the world one step at a time.",
+      "In pursuit of happiness and good vibes.",
+    ];
+    return sentences[Math.floor(Math.random() * sentences.length)];
+  };
+
   async function handleFormSubmit(data: PostSchema) {
     try {
-      if (uploadMode === "url") {
-        if (!data.imageUrl) {
-          form.setError("imageUrl", { message: "Image URL is required" });
-          return;
-        }
-        const postRequest: CreatePostRequestDto = {
-          description: data.description,
-          imageUrl: data.imageUrl,
-        };
-        await createPost(postRequest).unwrap();
-        dispatch(postApi.util.invalidateTags([{ type: "Post", id: "COUNT" }]));
-      } else {
-        if (!selectedFile) {
-          return;
-        }
-        await uploadPost({
-          description: data.description,
-          image: selectedFile,
-        }).unwrap();
+      if (uploadMode === "url" && !data.imageUrl) {
+        form.setError("imageUrl", { message: "Image URL is required" });
+        return;
       }
 
+      if (uploadMode === "file" && !selectedFile && mode === "create") {
+        return;
+      }
+
+      await onSubmit({
+        description: data.description,
+        imageUrl: data.imageUrl || "",
+        image: selectedFile || undefined,
+        uploadMode,
+      });
+
       handleClose();
-    } catch (error: any) {
-      console.error("Failed to create post:", error);
+    } catch (error) {
+      console.log(`Failed to ${mode} post:`, error);
     }
   }
 
@@ -133,43 +164,30 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     }
   }
 
-  // Generate random sentences
-  const getRandomSentence = () => {
-    const sentences = [
-      "Just another beautiful day!",
-      "Living my best life.",
-      "Creating memories that last forever.",
-      "Chasing dreams and catching stars.",
-      "Life is an adventure, embrace it!",
-      "Making today count.",
-      "Happiness is found in simple moments.",
-      "Grateful for this amazing journey.",
-      "Capturing the essence of joy.",
-      "Every moment is a fresh beginning.",
-      "Finding beauty in unexpected places.",
-      "Creating my own sunshine.",
-      "Life is too short for boring moments.",
-      "Exploring the world one step at a time.",
-      "In pursuit of happiness and good vibes.",
-    ];
-    return sentences[Math.floor(Math.random() * sentences.length)];
-  };
-
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && mode === "create" && !initialData) {
+      // Only set random data for create mode without initial data
       const randomNumber = Math.floor(Math.random() * 1000);
       form.setValue(
         "imageUrl",
         `https://picsum.photos/1080/1920?random=${randomNumber}`
       );
       form.setValue("description", getRandomSentence());
-    } else {
-      // Clean up preview URL when modal closes
+    } else if (isOpen && initialData) {
+      // Set initial data for edit mode
+      form.setValue("description", initialData.description || "");
+      form.setValue("imageUrl", initialData.imageUrl || "");
+    }
+  }, [isOpen, initialData, mode]);
+
+  useEffect(() => {
+    // Clean up preview URL when modal closes
+    return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-    }
-  }, [isOpen, form]);
+    };
+  }, [previewUrl]);
 
   if (!isOpen) return null;
 
@@ -177,7 +195,9 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg">
         <CardHeader>
-          <CardTitle>Create New Post</CardTitle>
+          <CardTitle>
+            {mode === "create" ? "Create New Post" : "Edit Post"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -315,19 +335,21 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               />
 
               {/* Random description button */}
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    form.setValue("description", getRandomSentence())
-                  }
-                  disabled={isSubmitting}
-                >
-                  Random Description
-                </Button>
-              </div>
+              {mode === "create" && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      form.setValue("description", getRandomSentence())
+                    }
+                    disabled={isSubmitting}
+                  >
+                    Random Description
+                  </Button>
+                </div>
+              )}
 
               {/* Error message for form-level errors */}
               {form.formState.errors.root && (
@@ -347,12 +369,20 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadMode === "url" ? "Creating..." : "Uploading..."}
+                      {mode === "create"
+                        ? uploadMode === "url"
+                          ? "Creating..."
+                          : "Uploading..."
+                        : "Updating..."}
                     </>
-                  ) : uploadMode === "url" ? (
-                    "Create Post"
+                  ) : mode === "create" ? (
+                    uploadMode === "url" ? (
+                      "Create Post"
+                    ) : (
+                      "Upload Post"
+                    )
                   ) : (
-                    "Upload Post"
+                    "Update Post"
                   )}
                 </Button>
               </div>
@@ -364,4 +394,4 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   );
 }
 
-export default CreatePostModal;
+export default PostFormModal;

@@ -1,6 +1,10 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/api/public/baseApi";
-import type { CreatePostRequestDto } from "@/types/requestTypes";
+import type {
+  CreatePostRequestDto,
+  EditPostWithUploadRequestDto,
+  EditPostWithUrlRequestDto,
+} from "@/types/requestTypes";
 import type { GetPostResponseDto } from "@/types/responseTypes";
 
 export const postApi = createApi({
@@ -116,6 +120,37 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+    editPostWithUrl: builder.mutation<
+      void,
+      EditPostWithUrlRequestDto & { postId: number }
+    >({
+      query: ({ postId, ...body }) => ({
+        url: `/posts/edit-with-url/${postId}`,
+        method: "PUT",
+        body: body,
+      }),
+      invalidatesTags: (result, error, { postId }) => [
+        { type: "Post", id: postId },
+        { type: "Post", id: "LIST" },
+      ],
+    }),
+
+    editPostWithUpload: builder.mutation<
+      void,
+      EditPostWithUploadRequestDto & { postId: number }
+    >({
+      query: ({ postId, ...body }) => {
+        const formData = new FormData();
+        formData.append("description", body.description);
+        formData.append("image", body.image);
+        return {
+          url: `/posts/edit-with-upload/${postId}`,
+          method: "PUT",
+          body: body,
+        };
+      },
+    }),
+
     deletePostByPostId: builder.mutation<void, number>({
       query: (postId) => ({
         url: `/posts/delete/${postId}`,
@@ -139,6 +174,8 @@ export const {
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
   useGetFollowingPostsByUserIdQuery,
+  useEditPostWithUrlMutation,
+  useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,
 } = postApi;
 

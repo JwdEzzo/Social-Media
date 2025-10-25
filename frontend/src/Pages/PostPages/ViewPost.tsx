@@ -39,6 +39,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ function ViewPost({
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
   const dispatch = useDispatch();
-
+  const navigate = useNavigate();
   const {
     data: comments,
     isLoading: isCommentsLoading,
@@ -264,7 +265,14 @@ function ViewPost({
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuGroup>
                   <div className="flex items-center justify-start gap-7 cursor-pointer ">
-                    <DropdownMenuItem className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900">
+                    <DropdownMenuItem
+                      className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                      onClick={() =>
+                        navigate(
+                          `userprofile/${post?.username}/post/edit/${post.id}`
+                        )
+                      }
+                    >
                       Edit
                     </DropdownMenuItem>
                     <Edit className="size-4 text-blue-200" />
