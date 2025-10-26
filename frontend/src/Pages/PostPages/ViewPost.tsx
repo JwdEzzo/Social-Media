@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import EditPost from "./EditPost";
+import { useGetCommentReplyCountQuery } from "@/api/comments/commentRepliesApi";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -124,7 +124,7 @@ function ViewPost({
     }
   }
 
-  async function handleDeletePost(postId: number) {
+  async function handleDeletePost() {
     if (post?.id) {
       try {
         await deletePostById(post.id).unwrap(); // unwrap() helps catch errors
@@ -280,7 +280,7 @@ function ViewPost({
                   </div>
                   <div
                     className="flex items-center justify-start cursor-pointer"
-                    onClick={() => handleDeletePost(post.id)}
+                    onClick={() => handleDeletePost()}
                   >
                     <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
                       Delete

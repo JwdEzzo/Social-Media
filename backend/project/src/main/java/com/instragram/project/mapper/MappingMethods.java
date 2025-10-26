@@ -10,13 +10,17 @@ import org.springframework.stereotype.Component;
 import com.instragram.project.dto.request.CreatePostRequestDto;
 import com.instragram.project.dto.request.SignUpRequestDto;
 import com.instragram.project.dto.request.WriteCommentRequestDto;
+import com.instragram.project.dto.request.WriteReplyRequestDto;
 import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
+import com.instragram.project.dto.response.GetReplyResponseDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
+import com.instragram.project.model.CommentReply;
 import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
+import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
 
 @Component
@@ -30,6 +34,9 @@ public class MappingMethods {
 
    @Autowired
    private PostRepository postRepository;
+
+   @Autowired
+   private CommentRepository commentRepository;
 
    // Convert SignUpRequestDto to AppUser Entity
    public AppUser convertSignUpRequestToAppUserEntity(SignUpRequestDto requestDto) {
@@ -131,4 +138,36 @@ public class MappingMethods {
             .collect(Collectors.toList());
    }
 
+   // Convert WriteReplyRequestDto to CommentReply Entity 
+   public CommentReply convertWriteReplyRequestDtoToCommentReplyEntity(String username,
+         WriteReplyRequestDto requestDto) {
+      AppUser appUser = appUserRepository.findByUsername(username);
+      Comment comment = commentRepository.findById(requestDto.getCommentId()).get();
+
+      CommentReply commentReply = new CommentReply();
+      commentReply.setContent(requestDto.getContent());
+      commentReply.setAppUser(appUser);
+      commentReply.setComment(comment);
+
+      return commentReply;
+   }
+
+   // Convert CommentReply Entity to GetCommentReplyResponseDto
+   public GetReplyResponseDto convertCommentReplyEntityToGetCommentReplyResponseDto(CommentReply commentReply) {
+      GetReplyResponseDto responseDto = new GetReplyResponseDto();
+      responseDto.setId(commentReply.getId());
+      responseDto.setContent(commentReply.getContent());
+      responseDto.setCreatedAt(commentReply.getCreatedAt());
+      responseDto.setAppUser(convertAppUserEntityToGetUserResponse(commentReply.getAppUser()));
+      return responseDto;
+   }
+
+   // Convert List<CommentReply> to List<GetCommentReplyResponseDto> responseDtos; 
+   public List<GetReplyResponseDto> convertListCommentReplyEntityToListGetCommentReplyResponseDto(
+         List<CommentReply> commentReplies) {
+      return commentReplies
+            .stream()
+            .map(this::convertCommentReplyEntityToGetCommentReplyResponseDto)
+            .collect(Collectors.toList());
+   }
 }

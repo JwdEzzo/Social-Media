@@ -9,6 +9,7 @@ import viewPostModalReducer from "@/slices/viewPostSlice";
 import { postLikesApi } from "@/api/posts/postLikesApi";
 import { commentLikesApi } from "@/api/comments/commentLikesApi";
 import { followApi } from "@/api/followers/followApi";
+import { commentRepliesApi } from "@/api/comments/commentRepliesApi";
 
 // Combine all reducers
 const appReducer = combineReducers({
@@ -21,6 +22,7 @@ const appReducer = combineReducers({
   [postLikesApi.reducerPath]: postLikesApi.reducer,
   [commentLikesApi.reducerPath]: commentLikesApi.reducer,
   [followApi.reducerPath]: followApi.reducer,
+  [commentRepliesApi.reducerPath]: commentRepliesApi.reducer,
 });
 
 // Root reducer that resets state on logout
@@ -42,6 +44,7 @@ export const store = configureStore({
       commentApi.middleware,
       postLikesApi.middleware,
       commentLikesApi.middleware,
+      commentRepliesApi.middleware,
       followApi.middleware,
     ]),
 });

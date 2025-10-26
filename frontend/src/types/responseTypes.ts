@@ -32,3 +32,10 @@ export interface GetCommentResponseDto {
   createdAt: string;
   appUser: GetUserResponseDto;
 }
+
+export interface GetReplyResponseDto {
+  id: number;
+  content: string;
+  createdAt: string;
+  appUser: GetUserResponseDto;
+}

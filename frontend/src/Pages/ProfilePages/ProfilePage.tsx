@@ -41,6 +41,11 @@ function ProfilePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  function sortPostsByIdDesc<T extends { id: number }>(a: T, b: T) {
+    if (!posts) return [];
+    return [...posts].sort((a, b) => b.id - a.id);
+  }
+
   // Get modal state from Redux store
   // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
   // We call the state from Redux store in both components
@@ -75,6 +80,20 @@ function ProfilePage() {
   const { data: postCount } = useGetPostsCountQuery(loggedInUsername!);
 
   const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
+
+  const sortedPosts = posts
+    ? [...posts].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    : [];
+
+  const sortedLikedPosts = likedPosts
+    ? [...likedPosts].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    : [];
 
   async function handleTogglePostLike(postId: number) {
     try {
@@ -335,13 +354,13 @@ function ProfilePage() {
               </div>
             ))
           ) : viewMode === "posts" && posts ? (
-            posts.map((post) => (
+            sortedPosts.map((post) => (
               <div key={post.id} className="group relative aspect-square">
                 <ProfilePagePostCard post={post} />
               </div>
             ))
           ) : viewMode === "liked" && likedPosts ? (
-            likedPosts.map((post) => (
+            sortedLikedPosts.map((post) => (
               <div key={post.id} className="group relative aspect-square">
                 <ProfilePagePostCard post={post} />
               </div>

@@ -110,10 +110,6 @@ function PostFormModal({
     }
   }
 
-  function handleCancel() {
-    handleClose();
-  }
-
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
@@ -194,7 +190,10 @@ function PostFormModal({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={handleClose}
     >
-      <Card className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg">
+      <Card
+        className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader>
           <CardTitle>
             {title || `${mode === "create" ? "Create" : "Edit"} Post`}

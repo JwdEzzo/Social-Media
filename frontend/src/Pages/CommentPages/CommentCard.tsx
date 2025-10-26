@@ -2,6 +2,7 @@ import {
   useGetCommentLikeCountQuery,
   useIsCommentLikedQuery,
 } from "@/api/comments/commentLikesApi";
+import { useGetCommentReplyCountQuery } from "@/api/comments/commentRepliesApi";
 import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
 
@@ -25,6 +26,15 @@ function CommentCard({
   const { data: isCommentLiked } = useIsCommentLikedQuery(comment?.id ?? 0, {
     skip: !comment?.id || comment.id === 0,
   });
+
+  const { data: commentReplyCount } = useGetCommentReplyCountQuery(
+    comment?.id ?? 0,
+    {
+      skip: !comment?.id || comment.id === 0,
+    }
+  );
+
+  console.log(commentReplyCount);
 
   return (
     <div className="py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
@@ -70,7 +80,7 @@ function CommentCard({
             </span>
             <MessageCircle className="h-5 w-5 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors " />
             <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-3">
-              12
+              {commentReplyCount}
             </span>
           </div>
         </div>

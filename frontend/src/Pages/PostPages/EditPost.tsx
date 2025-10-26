@@ -36,6 +36,7 @@ function EditPost() {
           ...editWithUrlRequest,
           postId: parseInt(postId!),
         }).unwrap();
+        navigate(`/userprofile/${post?.username}`);
       } else {
         if (!data.file) {
           throw new Error("File is required");
@@ -49,6 +50,7 @@ function EditPost() {
           ...editWithUploadRequest,
           postId: parseInt(postId!),
         }).unwrap();
+        navigate(`/userprofile/${post?.username}`);
       }
     } catch (error: any) {
       console.error("Failed to edit post:", error);
@@ -60,13 +62,13 @@ function EditPost() {
       isOpen={true}
       isSubmitting={isSubmitting}
       handleSubmit={handleFormSubmit}
-      handleClose={() => navigate(`/userprofile/${post?.username}`)}
       mode={"edit"}
       title={"Edit Post"}
       initialValues={{
         description: post?.description,
         imageUrl: post?.imageUrl,
       }}
+      handleClose={function (): void {}}
     />
   );
 }
