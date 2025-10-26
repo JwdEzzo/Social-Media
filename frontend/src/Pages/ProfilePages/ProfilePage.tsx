@@ -2,7 +2,7 @@ import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Button } from "@/components/ui/button";
 import { Camera, Edit3, Grid3X3, Heart, LogOut, MoveLeft } from "lucide-react";
-import CreatePostModal from "@/Pages/ProfilePages/CreatePostModal";
+import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
 import { useState } from "react";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import {

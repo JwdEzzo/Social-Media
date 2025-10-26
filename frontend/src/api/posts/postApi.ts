@@ -146,7 +146,7 @@ export const postApi = createApi({
         return {
           url: `/posts/edit-with-upload/${postId}`,
           method: "PUT",
-          body: body,
+          body: formData,
         };
       },
     }),

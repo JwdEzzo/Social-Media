@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Form,
   FormControl,
@@ -10,51 +9,43 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-import { useState, useRef, useEffect } from "react";
-
-interface PostFormModalProps {
-  isOpen: boolean;
-  isSubmitting: boolean;
-  handleSubmit: (data: PostFormData) => void;
-  handleClose: () => void;
-  initialValues?: {
-    description?: string;
-    imageUrl?: string;
-  };
-  mode: "create" | "edit";
-  title: string;
-}
+const postSchema = z.object({
+  description: z.string().min(0),
+  imageUrl: z.string().optional(),
+});
 
 type PostSchema = z.infer<typeof postSchema>;
 
 type UploadMode = "url" | "file";
 
-const postSchema = z.object({
-  description: z.string().min(0, "Description is required"),
-  imageUrl: z.string().optional(),
-});
-
-export interface PostFormData {
-  description: string;
-  imageUrl?: string;
-  file?: File;
-  uploadMode: "url" | "file";
+interface PostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialValues?: Partial<PostSchema>;
+  isSubmitting?: boolean;
+  submitLabel?: string;
+  onSubmit: (payload: {
+    description: string;
+    imageUrl?: string;
+    image?: File | null;
+  }) => Promise<void>;
 }
 
-function PostFormModal({
-  isSubmitting,
-  initialValues,
-  mode,
-  title,
-  handleSubmit,
-  handleClose,
+export default function PostModal({
   isOpen,
-}: PostFormModalProps) {
+  onClose,
+  initialValues,
+  isSubmitting = false,
+  submitLabel = "Submit",
+  onSubmit,
+}: PostModalProps) {
   const [uploadMode, setUploadMode] = useState<UploadMode>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -63,37 +54,44 @@ function PostFormModal({
   const form = useForm<PostSchema>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      description: initialValues?.description || "",
-      imageUrl: initialValues?.imageUrl || "",
-      // imageUrl:
-      //   "imageUrl" in initialValues &&
-      //   typeof initialValues.imageUrl === "string"
-      //     ? initialValues.imageUrl
-      //     : "",
+      description: initialValues?.description ?? "",
+      imageUrl: initialValues?.imageUrl ?? "",
     },
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        description: initialValues?.description ?? "",
+        imageUrl: initialValues?.imageUrl ?? "",
+      });
+      // set preview if initial file url provided (only for url mode)
+      if (initialValues?.imageUrl) {
+        setUploadMode("url");
+      }
+    } else {
+      // cleanup object URLs
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      setSelectedFile(null);
+      setUploadMode("url");
+      form.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialValues]);
+
   async function handleFormSubmit(data: PostSchema) {
     try {
-      if (uploadMode === "url" && !data.imageUrl) {
-        form.setError("imageUrl", { message: "Image URL is required" });
-        return;
-      }
-
-      if (uploadMode === "file" && !selectedFile) {
-        return;
-      }
-
-      handleSubmit({
+      await onSubmit({
         description: data.description,
-        imageUrl: data.imageUrl,
-        file: selectedFile || undefined,
-        uploadMode,
+        imageUrl: uploadMode === "url" ? data.imageUrl : undefined,
+        image: uploadMode === "file" ? selectedFile : null,
       });
-
       handleClose();
-    } catch (error: any) {
-      console.error("Failed to submit post:", error);
+    } catch (err) {
+      console.error("Post submit failed", err);
     }
   }
 
@@ -108,10 +106,6 @@ function PostFormModal({
         alert("Please select an image file");
       }
     }
-  }
-
-  function handleCancel() {
-    handleClose();
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -140,65 +134,21 @@ function PostFormModal({
       fileInputRef.current.value = "";
     }
   }
-  // Random sentences generator
-  const getRandomSentence = () => {
-    const sentences = [
-      "Just another beautiful day!",
-      "Living my best life.",
-      "Creating memories that last forever.",
-      "Chasing dreams and catching stars.",
-      "Life is an adventure, embrace it!",
-      "Making today count.",
-      "Happiness is found in simple moments.",
-      "Grateful for this amazing journey.",
-      "Capturing the essence of joy.",
-      "Every moment is a fresh beginning.",
-      "Finding beauty in unexpected places.",
-      "Creating my own sunshine.",
-      "Life is too short for boring moments.",
-      "Exploring the world one step at a time.",
-      "In pursuit of happiness and good vibes.",
-    ];
-    return sentences[Math.floor(Math.random() * sentences.length)];
-  };
 
-  useEffect(() => {
-    if (isOpen && mode === "create") {
-      // Only generate random data for create mode
-      const randomNumber = Math.floor(Math.random() * 1000);
-      form.setValue(
-        "imageUrl",
-        `https://picsum.photos/1080/1920?random=${randomNumber}`
-      );
-      form.setValue("description", getRandomSentence());
-    } else if (isOpen && mode === "edit" && initialValues) {
-      // Set initial values for edit mode
-      form.setValue("description", initialValues.description || "");
-      form.setValue("imageUrl", initialValues.imageUrl || "");
-    }
-  }, [isOpen, mode, initialValues, form]);
-
-  useEffect(() => {
-    // Clean up preview URL when modal closes
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+  function handleClose() {
+    form.reset();
+    removeSelectedFile();
+    setUploadMode("url");
+    onClose();
+  }
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={handleClose}
-    >
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg">
         <CardHeader>
-          <CardTitle>
-            {title || `${mode === "create" ? "Create" : "Edit"} Post`}
-          </CardTitle>
+          <CardTitle>{submitLabel}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -206,7 +156,6 @@ function PostFormModal({
               onSubmit={form.handleSubmit(handleFormSubmit)}
               className="space-y-4"
             >
-              {/* Upload Mode Toggle */}
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -228,7 +177,6 @@ function PostFormModal({
                 </Button>
               </div>
 
-              {/* URL Mode */}
               {uploadMode === "url" && (
                 <FormField
                   control={form.control}
@@ -249,7 +197,6 @@ function PostFormModal({
                 />
               )}
 
-              {/* File Upload Mode */}
               {uploadMode === "file" && (
                 <div className="space-y-2">
                   <FormLabel>Upload Image</FormLabel>
@@ -300,7 +247,6 @@ function PostFormModal({
                 </div>
               )}
 
-              {/* Image Preview */}
               {(uploadMode === "url" && form.watch("imageUrl")) ||
               (uploadMode === "file" && previewUrl) ? (
                 <div className="mt-2">
@@ -335,28 +281,6 @@ function PostFormModal({
                 )}
               />
 
-              {/* Random description button - only show in create mode */}
-              {mode === "create" && (
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      form.setValue("description", getRandomSentence())
-                    }
-                    disabled={isSubmitting}
-                  >
-                    Random Description
-                  </Button>
-                </div>
-              )}
-
-              {/* Error message for form-level errors */}
-              {form.formState.errors.root && (
-                <FormMessage>{form.formState.errors.root.message}</FormMessage>
-              )}
-
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   type="button"
@@ -370,12 +294,10 @@ function PostFormModal({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {mode === "create" ? "Creating..." : "Updating..."}
+                      {submitLabel}
                     </>
-                  ) : mode === "create" ? (
-                    "Create Post"
                   ) : (
-                    "Update Post"
+                    submitLabel
                   )}
                 </Button>
               </div>
@@ -386,5 +308,3 @@ function PostFormModal({
     </div>
   );
 }
-
-export default PostFormModal;

@@ -16,17 +16,21 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import {
   postApi,
-  useCreatePostMutation,
-  useUploadPostMutation,
+  useEditPostWithUploadMutation,
+  useEditPostWithUrlMutation,
+  useGetPostByIdQuery,
 } from "@/api/posts/postApi";
-import type { CreatePostRequestDto } from "@/types/requestTypes";
-import { useEffect, useState, useRef } from "react";
+import type {
+  EditPostWithUploadRequestDto,
+  EditPostWithUrlRequestDto,
+} from "@/types/requestTypes";
+import { useState, useRef } from "react";
 import { useDispatch } from "react-redux";
-
-interface CreatePostModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import type { GetPostResponseDto } from "@/types/responseTypes";
+import { useNavigate, useParams } from "react-router-dom";
+import PostFormModal, {
+  type PostFormData,
+} from "@/Pages/PostPages/PostFormModal";
 
 const postSchema = z.object({
   description: z.string().min(0, "Description is required"),
@@ -37,22 +41,30 @@ type PostSchema = z.infer<typeof postSchema>;
 
 type UploadMode = "url" | "file";
 
-function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
-  const [createPost, { isLoading: isCreatingPost }] = useCreatePostMutation();
-  const [uploadPost, { isLoading: isUploadingPost }] = useUploadPostMutation();
+function EditPost() {
+  const navigate = useNavigate();
+  const { postId } = useParams<{ postId: string }>();
+  const { data: post, isLoading: isPostLoading } = useGetPostByIdQuery(
+    parseInt(postId!)
+  );
+
+  const [editPostWithUrl, { isLoading: isEditingUrl }] =
+    useEditPostWithUrlMutation();
+  const [editPostWithUpload, { isLoading: isEditingUpload }] =
+    useEditPostWithUploadMutation();
+
   const [uploadMode, setUploadMode] = useState<UploadMode>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dispatch = useDispatch();
 
-  const isSubmitting = isCreatingPost || isUploadingPost;
+  const isSubmitting = isEditingUrl || isEditingUpload;
 
   const form = useForm<PostSchema>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      description: "",
-      imageUrl: "",
+      description: post?.description,
+      imageUrl: post?.imageUrl,
     },
   });
 
@@ -63,34 +75,35 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           form.setError("imageUrl", { message: "Image URL is required" });
           return;
         }
-        const postRequest: CreatePostRequestDto = {
+        const editWithUrlRequest: EditPostWithUrlRequestDto = {
           description: data.description,
           imageUrl: data.imageUrl,
         };
-        await createPost(postRequest).unwrap();
-        dispatch(postApi.util.invalidateTags([{ type: "Post", id: "COUNT" }]));
-      } else {
-        if (!selectedFile) {
-          return;
-        }
-        await uploadPost({
-          description: data.description,
-          image: selectedFile,
+        await editPostWithUrl({
+          ...editWithUrlRequest,
+          postId: parseInt(postId!),
         }).unwrap();
+
+        navigate(`/userprofile/${post?.username}`);
       }
 
-      handleClose();
-    } catch (error: any) {
-      console.error("Failed to create post:", error);
-    }
-  }
+      if (selectedFile) {
+        const editWithUploadRequest: EditPostWithUploadRequestDto = {
+          description: data.description,
+          image: selectedFile,
+        };
 
-  function handleClose() {
-    form.reset();
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setUploadMode("url");
-    onClose();
+        console.log(selectedFile);
+        await editPostWithUpload({
+          ...editWithUploadRequest,
+          postId: parseInt(postId!),
+        }).unwrap();
+
+        navigate(`/userprofile/${post?.username}`);
+      }
+    } catch (error: any) {
+      console.error("Failed to edit post:", error);
+    }
   }
 
   function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
@@ -155,29 +168,11 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     return sentences[Math.floor(Math.random() * sentences.length)];
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      const randomNumber = Math.floor(Math.random() * 1000);
-      form.setValue(
-        "imageUrl",
-        `https://picsum.photos/1080/1920?random=${randomNumber}`
-      );
-      form.setValue("description", getRandomSentence());
-    } else {
-      // Clean up preview URL when modal closes
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    }
-  }, [isOpen, form]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 dark:bg-gray-950">
       <Card className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg">
         <CardHeader>
-          <CardTitle>Create New Post</CardTitle>
+          <CardTitle>Edit Post</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -338,8 +333,8 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleClose}
                   disabled={isSubmitting}
+                  onClick={() => navigate(`/userprofile/${post?.username}`)}
                 >
                   Cancel
                 </Button>
@@ -347,12 +342,12 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadMode === "url" ? "Creating..." : "Uploading..."}
+                      {uploadMode === "url"
+                        ? "Editing Url..."
+                        : "Uploading a new Image..."}
                     </>
-                  ) : uploadMode === "url" ? (
-                    "Create Post"
                   ) : (
-                    "Upload Post"
+                    "Edit Post"
                   )}
                 </Button>
               </div>
@@ -360,8 +355,20 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           </Form>
         </CardContent>
       </Card>
+      {/* <PostFormModal
+        isOpen={true}
+        isSubmitting={isSubmitting}
+        handleSubmit={handleFormSubmit}
+        handleClose={function (): void {}}
+        mode={"edit"}
+        title={"Edit Post"}
+        initialValues={{
+          description: post?.description,
+          imageUrl: post?.imageUrl,
+        }}
+      /> */}
     </div>
   );
 }
 
-export default CreatePostModal;
+export default EditPost;

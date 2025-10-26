@@ -40,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import EditPost from "./EditPost";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -269,7 +270,7 @@ function ViewPost({
                       className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
                       onClick={() =>
                         navigate(
-                          `userprofile/${post?.username}/post/edit/${post.id}`
+                          `/userprofile/${post?.username}/post/edit/${post.id}`
                         )
                       }
                     >
