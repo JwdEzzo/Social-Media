@@ -2,21 +2,33 @@ import {
   useGetCommentLikeCountQuery,
   useIsCommentLikedQuery,
 } from "@/api/comments/commentLikesApi";
-import { useGetCommentReplyCountQuery } from "@/api/comments/commentRepliesApi";
+import {
+  useCreateReplyMutation,
+  useGetCommentReplyCountQuery,
+  useGetRepliesByCommentIdQuery,
+} from "@/api/comments/commentRepliesApi";
 import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import ReplyCard from "../ReplyPages/ReplyCard";
+import type { WriteReplyRequestDto } from "@/types/requestTypes";
 
 interface CommentCardProps {
   comment: GetCommentResponseDto;
   handleToggleCommentLike: (commentId: number) => void;
   isTogglingCommentLike: boolean;
+  createReply: (request: WriteReplyRequestDto) => void;
 }
 
 function CommentCard({
   comment,
   handleToggleCommentLike,
   isTogglingCommentLike,
+  createReply,
 }: CommentCardProps) {
+  const [showReplies, setShowReplies] = useState(false);
+  const [newReply, setNewReply] = useState<string>("");
+
   const { data: commentLikeCount } = useGetCommentLikeCountQuery(
     comment?.id ?? 0,
     {
@@ -34,7 +46,28 @@ function CommentCard({
     }
   );
 
-  console.log(commentReplyCount);
+  async function handleAddReply(e: FormEvent) {
+    e.preventDefault();
+    if (!newReply.trim() || !comment.id) {
+      return;
+    }
+    try {
+      await createReply({
+        content: newReply,
+        commentId: comment.id,
+      });
+      setNewReply("");
+    } catch (error) {
+      console.log("Error creating a reply:", error);
+    }
+  }
+
+  // Fetch replies when showReplies is true
+  const { data: replies, isLoading: isRepliesLoading } =
+    useGetRepliesByCommentIdQuery(
+      { commentId: comment.id },
+      { skip: !showReplies }
+    );
 
   return (
     <div className="py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
@@ -49,16 +82,16 @@ function CommentCard({
         {/* Comment Content */}
         <div className="flex-1 min-w-0 pr-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-sm dark:text-white font-sans">
+            <span className="font-bold text-[12px] dark:text-white font-sans">
               {comment.appUser.username}
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block">
+            <span className="text-[10px] pt-1 text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block ">
               {comment.createdAt.substring(0, 10)}
             </span>
           </div>
 
-          <div className="mb-2">
-            <span className="text-sm dark:text-white break-words font-serif">
+          <div className="mb-1">
+            <span className="text-[12px] dark:text-white break-words font-normal">
               {comment.content}
             </span>
           </div>
@@ -66,7 +99,7 @@ function CommentCard({
           {/* Comment Actions */}
           <div className="flex items-center ">
             <Heart
-              className={`h-5 w-5 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+              className={`h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
                 isCommentLiked
                   ? "fill-current text-red-500 dark:text-red-500"
                   : ""
@@ -75,14 +108,53 @@ function CommentCard({
               }`}
               onClick={() => handleToggleCommentLike(comment.id)}
             />
-            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-3">
+            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-2 ">
               {commentLikeCount}
             </span>
-            <MessageCircle className="h-5 w-5 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors " />
-            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-3">
+            <MessageCircle
+              className="h-4 w-4  cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors "
+              onClick={() => setShowReplies(!showReplies)}
+            />
+            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 ">
               {commentReplyCount}
             </span>
           </div>
+
+          {/* If replyCount>0 , display a "View Replies" button  */}
+          {/* This button will setShowReplies state to true */}
+          {/* Which in turn, will display the list of replies below the targeted comment*/}
+          {/* View Replies Button */}
+          {commentReplyCount! > 0 && (
+            <button
+              onClick={() => setShowReplies(!showReplies)}
+              className="text-[12px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mt-2"
+            >
+              {showReplies
+                ? "Hide replies"
+                : `View ${commentReplyCount} ${
+                    commentReplyCount === 1 ? "reply" : "replies"
+                  }`}
+            </button>
+          )}
+
+          {/* Replies Section */}
+          {showReplies && (
+            <div>
+              {isRepliesLoading ? (
+                <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
+                  Loading replies...
+                </div>
+              ) : replies && replies.length > 0 ? (
+                replies.map((reply) => (
+                  <ReplyCard key={reply.id} reply={reply} />
+                ))
+              ) : (
+                <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
+                  No replies yet
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { useGetCommentReplyCountQuery } from "@/api/comments/commentRepliesApi";
+import { useCreateReplyMutation } from "@/api/comments/commentRepliesApi";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -62,6 +62,19 @@ function ViewPost({
   const [newComment, setNewComment] = useState<string>("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [
+    createComment,
+    { isLoading: isCreateLoading, isError: isCreateError },
+  ] = useCreateCommentMutation();
+
+  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
+    useToggleCommentLikeMutation();
+
+  const [
+    createReply,
+    { isLoading: isReplyingLoading, isError: isReplyingError },
+  ] = useCreateReplyMutation();
+
   const {
     data: comments,
     isLoading: isCommentsLoading,
@@ -75,14 +88,6 @@ function ViewPost({
     isError: isPostError,
     refetch: refetchPost,
   } = useGetPostByIdQuery(selectedPostId!);
-
-  const [
-    createComment,
-    { isLoading: isCreateLoading, isError: isCreateError },
-  ] = useCreateCommentMutation();
-
-  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
-    useToggleCommentLikeMutation();
 
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
@@ -295,7 +300,7 @@ function ViewPost({
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto p-4">
             {/* Post description */}
-            <div className="mb-4 flex items-start gap-1 flex-shrink-0">
+            <div className="mb-2 flex items-start gap-1 flex-shrink-0">
               <div className="flex-shrink-0">
                 {" "}
                 {/* Add this class */}
@@ -306,23 +311,24 @@ function ViewPost({
                 />
               </div>
               <div>
-                <div className="font-normal">{post?.description}</div>
-                <div className="text-sm  text-gray-500 dark:text-gray-400 mt-1">
+                <div className="font-normal text-sm">{post?.description}</div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
                   {post?.createdAt.substring(0, 10)}
                 </div>
               </div>
             </div>
 
-            <hr className="my-4 border-gray-300 dark:border-gray-700" />
+            <hr className="border-gray-300 dark:border-gray-700" />
 
             {/* Comments */}
-            <div className="space-y-3">
+            <div>
               {comments?.map((comment) => (
                 <CommentCard
                   key={comment.id}
                   comment={comment}
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
+                  createReply={createReply}
                   //
                 />
               ))}
