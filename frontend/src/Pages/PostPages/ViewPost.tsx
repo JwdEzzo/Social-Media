@@ -60,8 +60,20 @@ function ViewPost({
   isTogglingPostLike,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
+  const [showReplies, setShowReplies] = useState(false);
+  const [replyMode, setReplyMode] = useState<{
+    isReplying: boolean;
+    commentId: number | null;
+    username: string | null;
+  }>({
+    isReplying: false,
+    commentId: null,
+    username: null,
+  });
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [
     createComment,
     { isLoading: isCreateLoading, isError: isCreateError },
@@ -119,14 +131,52 @@ function ViewPost({
     if (!newComment.trim() || !selectedPostId) return;
 
     try {
-      await createComment({
-        content: newComment,
-        postId: selectedPostId,
-      }).unwrap();
+      if (replyMode.isReplying && replyMode.commentId) {
+        // Create a reply
+        await createReply({
+          content: newComment,
+          commentId: replyMode.commentId,
+        }).unwrap();
+
+        // Reset reply mode
+        setReplyMode({
+          isReplying: false,
+          commentId: null,
+          username: null,
+        });
+        setShowReplies(true);
+      } else {
+        // Create a comment
+        await createComment({
+          content: newComment,
+          postId: selectedPostId,
+        }).unwrap();
+      }
+
       setNewComment("");
     } catch (error) {
-      console.error("Failed to add comment:", error);
+      console.error("Failed to add comment/reply:", error);
     }
+  }
+
+  // Function to activate reply mode
+  function handleReplyToComment(commentId: number, username: string) {
+    setReplyMode({
+      isReplying: true,
+      commentId,
+      username,
+    });
+    setNewComment(""); // Clear the input, placeholder still here.
+  }
+
+  // Function to cancel reply mode
+  function cancelReplyMode() {
+    setReplyMode({
+      isReplying: false,
+      commentId: null,
+      username: null,
+    });
+    setNewComment("");
   }
 
   async function handleDeletePost() {
@@ -162,7 +212,7 @@ function ViewPost({
     );
   }
 
-  if (isPostLoading || isCommentsLoading) {
+  if (isPostLoading || isCommentsLoading || isReplyingLoading) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -194,7 +244,7 @@ function ViewPost({
     );
   }
 
-  if (isPostError || isCommentsError) {
+  if (isPostError || isCommentsError || isReplyingError) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -328,8 +378,9 @@ function ViewPost({
                   comment={comment}
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
-                  createReply={createReply}
-                  //
+                  onReply={handleReplyToComment}
+                  showReplies={showReplies}
+                  setShowReplies={setShowReplies}
                 />
               ))}
             </div>
@@ -364,6 +415,22 @@ function ViewPost({
 
           {/* Comment input - Fixed at bottom */}
           <div className="p-4 border-t flex-shrink-0">
+            {/* Reply indicator - shows who you're replying to */}
+            {replyMode.isReplying && (
+              <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Replying to{" "}
+                  <span className="font-bold">{replyMode.username}</span>
+                </span>
+                <button
+                  onClick={cancelReplyMode}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
             <form className="flex w-full gap-2" onSubmit={handleAddComment}>
               <img
                 src={loggedInUser?.profilePictureUrl}
@@ -373,7 +440,11 @@ function ViewPost({
               <Input
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
+                placeholder={
+                  replyMode.isReplying
+                    ? `Reply to ${replyMode.username}...`
+                    : "Add a comment..."
+                }
                 className="flex-1"
               />
               <Button

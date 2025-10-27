@@ -1,28 +1,26 @@
+import {
+  useGetReplyLikeCountQuery,
+  useIsReplyLikedQuery,
+  useToggleReplyLikeMutation,
+} from "@/api/comments/commentReplyLikesApi";
 import type { GetReplyResponseDto } from "@/types/responseTypes";
 import { Heart } from "lucide-react";
 
 interface ReplyCardProps {
   reply: GetReplyResponseDto;
-  handleToggleReplyLike?: (replyId: number) => void;
-  isTogglingReplyLike?: boolean;
 }
 
-function ReplyCard({
-  reply,
-  handleToggleReplyLike,
-  isTogglingReplyLike,
-}: ReplyCardProps) {
-  // You'll need to add these API hooks when you implement reply likes
-  // const { data: replyLikeCount } = useGetReplyLikeCountQuery(reply?.id ?? 0, {
-  //   skip: !reply?.id || reply.id === 0,
-  // });
-  // const { data: isReplyLiked } = useIsReplyLikedQuery(reply?.id ?? 0, {
-  //   skip: !reply?.id || reply.id === 0,
-  // });
+function ReplyCard({ reply }: ReplyCardProps) {
+  const [toggleReplyLike, { isLoading: isLikeToggling, isError: isLikeError }] =
+    useToggleReplyLikeMutation();
 
-  // Placeholder values until you implement reply likes API
-  const replyLikeCount = 0;
-  const isReplyLiked = false;
+  const { data: replyLikeCount } = useGetReplyLikeCountQuery(reply?.id ?? 0, {
+    skip: !reply?.id || reply.id === 0,
+  });
+
+  const { data: isReplyLiked } = useIsReplyLikedQuery(reply?.id ?? 0, {
+    skip: !reply?.id || reply.id === 0,
+  });
 
   return (
     <div className="pt-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
@@ -59,8 +57,8 @@ function ReplyCard({
                 isReplyLiked
                   ? "fill-current text-red-500 dark:text-red-500"
                   : ""
-              } ${isTogglingReplyLike ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={() => handleToggleReplyLike?.(reply.id)}
+              } ${isLikeToggling ? "opacity-50 cursor-not-allowed" : ""}`}
+              onClick={() => toggleReplyLike(reply.id)}
             />
             <span className="text-gray-700 dark:text-gray-300 text-[13px] pl-1 pr-3 pb-[1px]">
               {replyLikeCount}

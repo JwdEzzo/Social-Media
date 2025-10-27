@@ -3,32 +3,31 @@ import {
   useIsCommentLikedQuery,
 } from "@/api/comments/commentLikesApi";
 import {
-  useCreateReplyMutation,
   useGetCommentReplyCountQuery,
   useGetRepliesByCommentIdQuery,
 } from "@/api/comments/commentRepliesApi";
 import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
-import type { WriteReplyRequestDto } from "@/types/requestTypes";
 
 interface CommentCardProps {
   comment: GetCommentResponseDto;
   handleToggleCommentLike: (commentId: number) => void;
   isTogglingCommentLike: boolean;
-  createReply: (request: WriteReplyRequestDto) => void;
+  onReply: (commentId: number, username: string) => void;
+  showReplies: boolean;
+  setShowReplies: Dispatch<SetStateAction<boolean>>;
 }
 
 function CommentCard({
   comment,
   handleToggleCommentLike,
   isTogglingCommentLike,
-  createReply,
+  onReply,
+  showReplies,
+  setShowReplies,
 }: CommentCardProps) {
-  const [showReplies, setShowReplies] = useState(false);
-  const [newReply, setNewReply] = useState<string>("");
-
   const { data: commentLikeCount } = useGetCommentLikeCountQuery(
     comment?.id ?? 0,
     {
@@ -45,22 +44,6 @@ function CommentCard({
       skip: !comment?.id || comment.id === 0,
     }
   );
-
-  async function handleAddReply(e: FormEvent) {
-    e.preventDefault();
-    if (!newReply.trim() || !comment.id) {
-      return;
-    }
-    try {
-      await createReply({
-        content: newReply,
-        commentId: comment.id,
-      });
-      setNewReply("");
-    } catch (error) {
-      console.log("Error creating a reply:", error);
-    }
-  }
 
   // Fetch replies when showReplies is true
   const { data: replies, isLoading: isRepliesLoading } =
@@ -85,7 +68,7 @@ function CommentCard({
             <span className="font-bold text-[12px] dark:text-white font-sans">
               {comment.appUser.username}
             </span>
-            <span className="text-[10px] pt-1 text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block ">
+            <span className="text-[10px] pt-1 text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block">
               {comment.createdAt.substring(0, 10)}
             </span>
           </div>
@@ -97,7 +80,7 @@ function CommentCard({
           </div>
 
           {/* Comment Actions */}
-          <div className="flex items-center ">
+          <div className="flex items-center">
             <Heart
               className={`h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
                 isCommentLiked
@@ -108,21 +91,21 @@ function CommentCard({
               }`}
               onClick={() => handleToggleCommentLike(comment.id)}
             />
-            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-2 ">
+            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-2">
               {commentLikeCount}
             </span>
             <MessageCircle
-              className="h-4 w-4  cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors "
-              onClick={() => setShowReplies(!showReplies)}
+              className="h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+              onClick={() => {
+                onReply(comment.id, comment.appUser.username);
+                setShowReplies(true);
+              }}
             />
-            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 ">
+            <span className="text-gray-700 dark:text-gray-300 text-sm pl-1">
               {commentReplyCount}
             </span>
           </div>
 
-          {/* If replyCount>0 , display a "View Replies" button  */}
-          {/* This button will setShowReplies state to true */}
-          {/* Which in turn, will display the list of replies below the targeted comment*/}
           {/* View Replies Button */}
           {commentReplyCount! > 0 && (
             <button
