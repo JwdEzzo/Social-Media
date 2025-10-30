@@ -22,6 +22,7 @@ import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 
 function HomePage() {
   //
@@ -55,6 +56,9 @@ function HomePage() {
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
 
+  const [toggleSave, { isLoading: isTogglingSavePost }] =
+    useTogglePostSaveMutation();
+
   async function handleTogglePostLike(postId: number) {
     try {
       await togglePostLike(postId)
@@ -62,6 +66,14 @@ function HomePage() {
         .then(() => {
           dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
         });
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+  }
+
+  async function handleToggleSavePost(postId: number) {
+    try {
+      await toggleSave(postId).unwrap();
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -171,6 +183,8 @@ function HomePage() {
                     onViewComments={handleViewModal}
                     handleTogglePostLike={handleTogglePostLike}
                     isTogglingPostLike={isTogglingPostLike}
+                    handleToggleSavePost={handleToggleSavePost}
+                    isTogglingSavePost={isTogglingSavePost}
                   />
                 ))
               : followingPosts?.map((post) => (
@@ -181,6 +195,8 @@ function HomePage() {
                     onViewComments={handleViewModal}
                     handleTogglePostLike={handleTogglePostLike}
                     isTogglingPostLike={isTogglingPostLike}
+                    handleToggleSavePost={handleToggleSavePost}
+                    isTogglingSavePost={isTogglingSavePost}
                   />
                 ))}
           </div>

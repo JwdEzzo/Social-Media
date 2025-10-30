@@ -8,6 +8,10 @@ import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
+import {
+  useGetPostSaveCountQuery,
+  useIsPostSavedQuery,
+} from "@/api/posts/postSavesApi";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +22,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { GetPostResponseDto } from "@/types/responseTypes";
-import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Send,
+} from "lucide-react";
 import { useDispatch } from "react-redux";
 
 interface HomePagePostCardProps {
@@ -26,6 +36,8 @@ interface HomePagePostCardProps {
   onViewComments: (postId: number) => void;
   handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
+  handleToggleSavePost: (postId: number) => void;
+  isTogglingSavePost: boolean;
 }
 
 function HomePagePostCard({
@@ -33,6 +45,8 @@ function HomePagePostCard({
   onViewComments,
   handleTogglePostLike,
   isTogglingPostLike,
+  handleToggleSavePost,
+  isTogglingSavePost,
 }: HomePagePostCardProps) {
   //
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
@@ -40,6 +54,14 @@ function HomePagePostCard({
   });
 
   const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: isPostSaved } = useIsPostSavedQuery(post?.id ?? 0, {
+    skip: !post?.id || post.id === 0,
+  });
+
+  const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
 
@@ -105,27 +127,42 @@ function HomePagePostCard({
             </div>
           </CardDescription>
           {/*  Post Actions */}
-          <div className="flex items-center pt-2">
-            <Heart
-              className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
-                isPostLiked ? "fill-current text-red-500 dark:text-red-500" : ""
-              } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={() => {
-                handleTogglePostLike(post.id);
-              }}
-            />
-            <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
-              {postLikeCount}
-            </span>
-            <MessageCircle
-              className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
-              onClick={() => onViewComments(post.id)}
-              //
-            />
-            <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
-              {postCommentCount}
-            </span>
-            <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center pt-2">
+              <Heart
+                className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+                  isPostLiked
+                    ? "fill-current text-red-500 dark:text-red-500"
+                    : ""
+                } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => handleTogglePostLike(post.id)}
+              />
+              <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                {postLikeCount}
+              </span>
+              <MessageCircle
+                className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                onClick={() => onViewComments(post.id)}
+                //
+              />
+              <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                {postCommentCount}
+              </span>
+              <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
+            </div>
+            <div className="flex items-center ">
+              <Bookmark
+                className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 transition-colors ${
+                  isPostSaved
+                    ? "fill-current text-yellow-500 dark:text-yellow-500"
+                    : ""
+                } ${isTogglingSavePost ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => handleToggleSavePost(post.id)}
+              />
+              <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                {postSaveCount}
+              </span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

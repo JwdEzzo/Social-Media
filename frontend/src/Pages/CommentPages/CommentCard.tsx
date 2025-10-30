@@ -120,6 +120,11 @@ function CommentCard({
             </button>
           )}
 
+          {/* If showReplies is true, render the replies */}
+          {/* If replies are loading, show loading replies... */}
+          {/* If they are loaded, and their length is > 0 , render them */}
+          {/* If either the 1st condition or the 3rd is false, show "No replies yet" */}
+
           {/* Replies Section */}
           {showReplies && (
             <div>
