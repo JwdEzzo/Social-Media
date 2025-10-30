@@ -122,7 +122,7 @@ function HomePagePostCard({
               <img
                 src={post.imageUrl}
                 alt={post.description}
-                className="w-full aspect-square object-cover"
+                className="w-full h-100 aspect-square object-fit"
               />
             </div>
           </CardDescription>
