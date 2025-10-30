@@ -107,6 +107,20 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+
+    getPostsSavedByCurrentUser: builder.query<GetPostResponseDto[], void>({
+      query: () => ({
+        url: "/posts/saved-by-me",
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Post" as const, id })),
+              { type: "Post", id: "LIST" },
+            ]
+          : [{ type: "Post", id: "LIST" }],
+    }),
     getFollowingPostsByUserId: builder.query<GetPostResponseDto[], void>({
       query: () => ({
         url: "/posts/my-followers",
@@ -174,6 +188,7 @@ export const {
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
   useGetFollowingPostsByUserIdQuery,
+  useGetPostsSavedByCurrentUserQuery,
   useEditPostWithUrlMutation,
   useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,

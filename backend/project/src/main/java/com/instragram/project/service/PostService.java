@@ -118,6 +118,16 @@ public class PostService {
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(likedPosts);
    }
 
+   // Get all posts saved by a specified user
+   public List<GetPostResponseDto> getPostsSavedByUser(String username) {
+      AppUser user = appUserRepository.findByUsername(username);
+      if (user == null) {
+         throw new RuntimeException("User not found with username: " + username);
+      }
+      List<Post> savedPosts = postRepository.findPostsSavedByUser(username);
+      return mappingMethods.convertListPostEntityToListGetPostResponseDto(savedPosts);
+   }
+
    // Get all Posts by users followers
    public List<GetPostResponseDto> getPostsByFollowings(Long id) {
       AppUser user = appUserRepository.findById(id).get();

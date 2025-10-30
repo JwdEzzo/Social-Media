@@ -1,14 +1,24 @@
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Button } from "@/components/ui/button";
-import { Camera, Edit3, Grid3X3, Heart, LogOut, MoveLeft } from "lucide-react";
+import {
+  Bookmark,
+  Camera,
+  Edit3,
+  Grid3X3,
+  Heart,
+  LogOut,
+  MoveLeft,
+} from "lucide-react";
 import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
 import { useState } from "react";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import {
+  postApi,
   useGetPostsByUsernameQuery,
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
+  useGetPostsSavedByCurrentUserQuery,
 } from "@/api/posts/postApi";
 import {
   DropdownMenu,
@@ -31,20 +41,18 @@ import {
   useGetFollowerCountQuery,
   useGetFollowingCountQuery,
 } from "@/api/followers/followApi";
+import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 
 function ProfilePage() {
   const { username: loggedInUsername } = useAuth();
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<"posts" | "liked">("posts"); // Add this state
+  const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
+    "posts"
+  ); // Add this state
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  function sortPostsByIdDesc<T extends { id: number }>(a: T, b: T) {
-    if (!posts) return [];
-    return [...posts].sort((a, b) => b.id - a.id);
-  }
 
   // Get modal state from Redux store
   // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
@@ -69,6 +77,9 @@ function ProfilePage() {
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
 
+  const [toggleSave, { isLoading: isTogglingSavePost }] =
+    useTogglePostSaveMutation();
+
   const { data: getFollowerCount } = useGetFollowerCountQuery(
     loggedInUsername!
   );
@@ -81,6 +92,8 @@ function ProfilePage() {
 
   const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
 
+  const { data: savedPosts } = useGetPostsSavedByCurrentUserQuery();
+
   const sortedPosts = posts
     ? [...posts].sort(
         (a, b) =>
@@ -90,6 +103,13 @@ function ProfilePage() {
 
   const sortedLikedPosts = likedPosts
     ? [...likedPosts].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    : [];
+
+  const sortedSavedPosts = savedPosts
+    ? [...savedPosts].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
@@ -110,6 +130,18 @@ function ProfilePage() {
 
   function handleCloseViewModal() {
     dispatch(closePostModal());
+  }
+
+  async function handleToggleSavePost(postId: number) {
+    try {
+      await toggleSave(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+        });
+    } catch (error) {
+      console.log("Error: ", error);
+    }
   }
 
   if (isLoading) {
@@ -305,7 +337,7 @@ function ProfilePage() {
         </div>
       </div>
 
-      {/* Posts Grid */}
+      {/* Change view between the USER posts and the LIKED Posts */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
           <div
@@ -340,6 +372,22 @@ function ProfilePage() {
               </div>
             </button>
           </div>
+          <div
+            onClick={() => setViewMode("saved")}
+            className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+        ${
+          viewMode === "saved"
+            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+        }`}
+          >
+            <button>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Bookmark className="h-5 w-5 " />
+                <span>Saved</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Posts grid */}
@@ -369,6 +417,16 @@ function ProfilePage() {
             <div className="col-span-full text-center py-8 text-gray-500">
               No liked posts yet
             </div>
+          ) : viewMode === "saved" && savedPosts ? (
+            sortedSavedPosts.map((post) => (
+              <div key={post.id} className="group relative aspect-square">
+                <ProfilePagePostCard post={post} />
+              </div>
+            ))
+          ) : viewMode === "saved" ? (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              No saved posts yet
+            </div>
           ) : null}
         </div>
       </div>
@@ -390,6 +448,8 @@ function ProfilePage() {
         loggedInUser={loggedInUser}
         handleTogglePostLike={handleTogglePostLike}
         isTogglingPostLike={isTogglingPostLike}
+        handleToggleSavePost={handleToggleSavePost}
+        isTogglingSavePost={isTogglingSavePost}
       />
     </div>
   );

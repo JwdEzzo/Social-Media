@@ -73,7 +73,11 @@ function HomePage() {
 
   async function handleToggleSavePost(postId: number) {
     try {
-      await toggleSave(postId).unwrap();
+      await toggleSave(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+        });
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -212,6 +216,8 @@ function HomePage() {
             loggedInUser={loggedInUser}
             handleTogglePostLike={handleTogglePostLike}
             isTogglingPostLike={isTogglingPostLike}
+            handleToggleSavePost={handleToggleSavePost}
+            isTogglingSavePost={isTogglingSavePost}
           />
         </main>
       </SidebarInset>

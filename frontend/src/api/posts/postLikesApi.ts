@@ -1,7 +1,5 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../public/baseApi";
-//
-//
 
 export const postLikesApi = createApi({
   reducerPath: "postLikesApi",

@@ -108,6 +108,15 @@ public class PostController {
       return ResponseEntity.ok(likedPosts);
    }
 
+   // GET : Get all Posts saved by the logged in user
+   @GetMapping("/saved-by-me")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<List<GetPostResponseDto>> getPostsSavedByCurrentUser(Authentication authentication) {
+      String username = authentication.getName();
+      List<GetPostResponseDto> savedPosts = postService.getPostsSavedByUser(username);
+      return ResponseEntity.ok(savedPosts);
+   }
+
    // GET : Get all Posts liked by the logged in user
    @GetMapping("/my-followers")
    @PreAuthorize("isAuthenticated()")
