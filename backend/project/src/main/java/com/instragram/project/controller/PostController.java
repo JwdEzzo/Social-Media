@@ -62,8 +62,6 @@ public class PostController {
          @RequestParam("description") String description,
          @RequestParam("image") MultipartFile image,
          Authentication authentication) {
-      log.info("Creating post with upload: description={}, image={}, username={}", description,
-            image == null ? "null" : image.getOriginalFilename(), authentication.getName());
       String username = authentication.getName();
       postService.createPostWithUpload(description, image, username);
       return ResponseEntity.noContent().build();
@@ -137,7 +135,14 @@ public class PostController {
       return ResponseEntity.ok(count);
    }
 
-   // GET: serve image bytes for a post
+   // GET : Get posts by searching description
+   @GetMapping("/search-posts/containing/{description}")
+   public ResponseEntity<List<GetPostResponseDto>> getPostsByDescription(@PathVariable String description) {
+      List<GetPostResponseDto> posts = postService.getPostsByDescription(description);
+      return ResponseEntity.status(HttpStatus.OK).body(posts);
+   }
+
+   // GET : serve image bytes for a post
    @GetMapping(value = "/{postId}/image")
    public ResponseEntity<Resource> getPostImage(@PathVariable Long postId) {
       byte[] bytes = postService.getPostImageBytes(postId);
@@ -150,7 +155,7 @@ public class PostController {
             .body(resource);
    }
 
-   // PUT: Update/Edit a post
+   // PUT : Update/Edit a post
    @PutMapping("/edit-with-url/{postId}")
    public ResponseEntity<Void> editPostWithUrl(@PathVariable Long postId,
          @RequestBody EditPostWithUrlRequestDto requestDto, Authentication authentication) throws IOException {

@@ -11,8 +11,10 @@ interface ReplyCardProps {
 }
 
 function ReplyCard({ reply }: ReplyCardProps) {
-  const [toggleReplyLike, { isLoading: isLikeToggling, isError: isLikeError }] =
-    useToggleReplyLikeMutation();
+  const [
+    toggleReplyLike,
+    { isLoading: isLikeToggling, isError: _isLikeError },
+  ] = useToggleReplyLikeMutation();
 
   const { data: replyLikeCount } = useGetReplyLikeCountQuery(reply?.id ?? 0, {
     skip: !reply?.id || reply.id === 0,

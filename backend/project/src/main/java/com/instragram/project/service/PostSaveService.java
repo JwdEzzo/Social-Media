@@ -32,26 +32,21 @@ public class PostSaveService {
    // Toggle PostSave
    @Transactional
    public void toggleSave(String username, Long postId) {
-      log.info("Toggle save: username={}, postId={}", username, postId);
       AppUser user = appUserRepository.findByUsername(username);
       Post post = postRepository.findById(postId).get();
 
       if (user == null) {
-         log.error("User not found with username: {}", username);
          throw new RuntimeException("User not found with username: " + username);
       }
 
       if (postSaveRepository.existsByAppUserAndPost(user, post)) {
-         log.info("Unsave post: username={}, postId={}", username, postId);
          postSaveRepository.deleteByAppUserAndPost(user, post);
       } else {
-         log.info("Save post: username={}, postId={}", username, postId);
          PostSave save = new PostSave();
          save.setAppUser(user);
          save.setPost(post);
          postSaveRepository.save(save);
       }
-      log.info("Toggle save finished successfully");
 
    }
 

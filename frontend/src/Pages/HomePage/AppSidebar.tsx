@@ -1,5 +1,4 @@
-// AppSidebar.tsx
-import { ChevronUp, LogOutIcon, User, User2 } from "lucide-react";
+import { ChevronUp, LogOutIcon, Search, User, User2 } from "lucide-react";
 
 import {
   Sidebar,
@@ -21,11 +20,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 function AppSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { username } = useAuth();
+
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   function handleLogout() {
     dispatch(logout());
@@ -34,6 +37,29 @@ function AppSidebar() {
 
   function navigateBackToProfile() {
     navigate(`/userprofile/${username}`);
+  }
+
+  function handleSearch() {
+    console.log("Search function called");
+    console.log("Current search query:", searchQuery);
+
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      console.log("Navigating to search results");
+      setIsOpen(false);
+      setSearchQuery("");
+    } else {
+      console.log("Search query is empty, not navigating");
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      handleSearch();
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+      setSearchQuery("");
+    }
   }
 
   return (
@@ -49,8 +75,35 @@ function AppSidebar() {
                   //
                 >
                   <User />
-                  Profile
+                  <span>Profile</span>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                {isOpen ? (
+                  <div className="px-3 py-2">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus
+                      onBlur={() => {
+                        setIsOpen(false);
+                        setSearchQuery("");
+                      }}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </div>
+                ) : (
+                  <SidebarMenuButton
+                    className="dark:hover:bg-gray-900 transition-colors"
+                    onClick={() => setIsOpen(true)}
+                  >
+                    <Search />
+                    <span>Search</span>
+                  </SidebarMenuButton>
+                )}
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -103,5 +156,4 @@ function AppSidebar() {
     </Sidebar>
   );
 }
-
 export default AppSidebar;

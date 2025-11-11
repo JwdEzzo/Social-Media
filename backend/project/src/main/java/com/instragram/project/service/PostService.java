@@ -258,4 +258,12 @@ public class PostService {
       return post.getImageType() != null ? post.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
    }
 
+   // Search post by description (not case sensitive)
+   public List<GetPostResponseDto> getPostsByDescription(String description) {
+      List<Post> foundPosts = postRepository.findByDescriptionContaining(description);
+      List<GetPostResponseDto> postResponseDtos = mappingMethods
+            .convertListPostEntityToListGetPostResponseDto(foundPosts);
+      return postResponseDtos;
+   }
+
 }

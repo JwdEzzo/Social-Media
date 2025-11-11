@@ -14,6 +14,7 @@ import FollowerList from "./Pages/FollowPages/FollowerList";
 import FollowingList from "./Pages/FollowPages/FollowingList";
 import SetProfile from "./Pages/ProfilePages/SetProfile";
 import EditPost from "./Pages/PostPages/EditPost";
+import SearchPostPage from "./Pages/PostPages/SearchPostPage";
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <ProtectedRoute>
+                  <SearchPostPage />
                 </ProtectedRoute>
               }
             />

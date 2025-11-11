@@ -134,6 +134,21 @@ export const postApi = createApi({
             ]
           : [{ type: "Post", id: "LIST" }],
     }),
+
+    getPostsByDescription: builder.query<GetPostResponseDto[], string>({
+      query: (description) => ({
+        url: `/posts/search-posts/containing/${description}`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Post" as const, id })),
+              { type: "Post", id: "LIST" },
+            ]
+          : [{ type: "Post", id: "LIST" }],
+    }),
+
     editPostWithUrl: builder.mutation<
       void,
       EditPostWithUrlRequestDto & { postId: number }
@@ -189,6 +204,7 @@ export const {
   useGetPostsLikedByCurrentUserQuery,
   useGetFollowingPostsByUserIdQuery,
   useGetPostsSavedByCurrentUserQuery,
+  useGetPostsByDescriptionQuery,
   useEditPostWithUrlMutation,
   useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,

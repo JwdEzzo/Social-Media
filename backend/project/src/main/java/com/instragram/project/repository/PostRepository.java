@@ -29,4 +29,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       @Query("SELECT ps.post FROM PostSave ps WHERE ps.appUser.username = :username")
       List<Post> findPostsSavedByUser(@Param("username") String username);
 
+      @Query("SELECT p FROM Post p WHERE LOWER(p.description) LIKE LOWER(CONCAT('%', :description, '%'))")
+      List<Post> findByDescriptionContaining(@Param("description") String description);
+
+      // List<Post> findByDescriptionContainingIgnoreCase(String description);
 }
