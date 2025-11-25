@@ -52,7 +52,7 @@ function EditPost() {
         }).unwrap();
         navigate(`/userprofile/${post?.username}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to edit post:", error);
     }
   }

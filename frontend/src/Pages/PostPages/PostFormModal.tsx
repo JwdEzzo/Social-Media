@@ -92,7 +92,7 @@ function PostFormModal({
       });
 
       handleClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to submit post:", error);
     }
   }

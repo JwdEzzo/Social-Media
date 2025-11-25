@@ -80,6 +80,7 @@ function SignUp() {
       );
 
       navigate(`/userprofile/${response.username}/set-profile`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Sign up error:", error);
 

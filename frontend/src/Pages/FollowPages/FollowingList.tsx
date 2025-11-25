@@ -23,7 +23,7 @@ function FollowingList() {
     data: followers,
     isLoading: isFollowersLoading,
     isError: isFollowersError,
-  } = useGetFollowingsByUserIdQuery(loggedInUser?.id!, {
+  } = useGetFollowingsByUserIdQuery(loggedInUser?.id ?? 0, {
     skip: !loggedInUser?.id,
   });
 

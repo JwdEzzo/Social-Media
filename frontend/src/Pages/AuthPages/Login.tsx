@@ -62,7 +62,7 @@ function Login() {
         })
       );
       navigate(`/userprofile/${response.username}`);
-    } catch (error: any) {
+    } catch (error) {
       // Set error field for login failure
       form.setError("password", {
         type: "manual",

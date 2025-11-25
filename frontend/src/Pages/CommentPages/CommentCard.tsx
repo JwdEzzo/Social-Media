@@ -8,7 +8,7 @@ import {
 } from "@/api/comments/commentRepliesApi";
 import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { type Dispatch, type SetStateAction } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
 
 interface CommentCardProps {

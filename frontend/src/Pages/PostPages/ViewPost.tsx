@@ -18,7 +18,6 @@ import {
   MessageCircle,
   MoreHorizontal,
   RotateCcw,
-  Send,
   Share2,
   Trash2,
 } from "lucide-react";

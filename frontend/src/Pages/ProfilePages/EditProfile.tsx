@@ -120,7 +120,7 @@ function EditProfile() {
       setUploadMode("url");
 
       navigate(`/userprofile/${username}`);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Update failed:", error);
     }
   }

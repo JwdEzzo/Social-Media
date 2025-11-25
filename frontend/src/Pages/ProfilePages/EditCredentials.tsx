@@ -106,6 +106,7 @@ function EditCredentials() {
       });
 
       navigate(`/userprofile/${username}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Update credentials error:", error);
       let errorMessage = "Failed to update credentials";
