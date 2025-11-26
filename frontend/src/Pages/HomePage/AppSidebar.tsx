@@ -22,12 +22,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 
+type SearchType = "post" | "user";
+
 function AppSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { username } = useAuth();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [searchType, setSearchType] = useState<SearchType>();
+  const [isPostSearchOpen, setIsPostSearchOpen] = useState<boolean>(false);
+  const [isUserSearchOpen, setIsUserSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   function handleLogout() {
@@ -39,27 +43,39 @@ function AppSidebar() {
     navigate(`/userprofile/${username}`);
   }
 
-  function handleSearch() {
-    console.log("Search function called");
-    console.log("Current search query:", searchQuery);
-
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      console.log("Navigating to search results");
-      setIsOpen(false);
+  function handlePostSearch() {
+    if (searchType === "post" && searchQuery.trim()) {
+      navigate(`/search/posts?q=${encodeURIComponent(searchQuery)}`);
+      setIsPostSearchOpen(false);
       setSearchQuery("");
-    } else {
-      console.log("Search query is empty, not navigating");
+    }
+  }
+
+  function handleUserSearch() {
+    if (searchType === "user" && searchQuery.trim()) {
+      navigate(`/search/users?q=${encodeURIComponent(searchQuery)}`);
+      setIsUserSearchOpen(false);
+      setSearchQuery("");
     }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
-      handleSearch();
-    } else if (e.key === "Escape") {
-      setIsOpen(false);
-      setSearchQuery("");
+      if (searchType === "post") {
+        handlePostSearch();
+      } else if (searchType === "user") {
+        handleUserSearch();
+      }
     }
+  }
+
+  function handleSearchBlur(searchType: SearchType) {
+    if (searchType === "post") {
+      setIsPostSearchOpen(false);
+    } else if (searchType === "user") {
+      setIsUserSearchOpen(false);
+    }
+    setSearchQuery("");
   }
 
   return (
@@ -72,44 +88,66 @@ function AppSidebar() {
                 <SidebarMenuButton
                   className="dark:hover:bg-gray-900 transition-colors"
                   onClick={navigateBackToProfile}
-                  //
                 >
                   <User />
                   <span>Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                {isOpen ? (
+
+              <SidebarMenuItem onClick={() => setSearchType("post")}>
+                {isPostSearchOpen ? (
                   <div className="px-3 py-2">
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search posts..."
                       className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
-                      onBlur={() => {
-                        setIsOpen(false);
-                        setSearchQuery("");
-                      }}
+                      onBlur={() => handleSearchBlur("post")}
                       onKeyDown={handleKeyDown}
                     />
                   </div>
                 ) : (
                   <SidebarMenuButton
                     className="dark:hover:bg-gray-900 transition-colors"
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => setIsPostSearchOpen(true)}
                   >
                     <Search />
-                    <span>Search</span>
+                    <span>Search Post</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
+
+              <SidebarMenuItem onClick={() => setSearchType("user")}>
+                {isUserSearchOpen ? (
+                  <div className="px-3 py-2">
+                    <input
+                      type="text"
+                      placeholder="Search users..."
+                      className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus
+                      onBlur={() => handleSearchBlur("user")}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </div>
+                ) : (
+                  <SidebarMenuButton
+                    className="dark:hover:bg-gray-900 transition-colors"
+                    onClick={() => setIsUserSearchOpen(true)}
+                  >
+                    <Search />
+                    <span>Search User</span>
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}
                   className="dark:hover:bg-gray-900 transition-colors"
-                  //
                 >
                   <LogOutIcon className="text-red-500" />
                   <span className="text-red-500">Logout</span>
@@ -124,8 +162,9 @@ function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="dark:hover:bg-gray-900 transition-colors ">
-                  <User2 /> <span className="font-bold">{username}</span>
+                <SidebarMenuButton className="dark:hover:bg-gray-900 transition-colors">
+                  <User2 />
+                  <span className="font-bold">{username}</span>
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -134,17 +173,15 @@ function AppSidebar() {
                 className="w-[--radix-popper-anchor-width] dark:bg-gray-800 bg-white transition-colors"
               >
                 <DropdownMenuItem
-                  className=" dark:hover:bg-gray-700 transition-colors"
+                  className="dark:hover:bg-gray-700 transition-colors"
                   onClick={navigateBackToProfile}
-                  //
                 >
                   <span>Profile</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className=" dark:hover:bg-gray-700 transition-colors"
+                  className="dark:hover:bg-gray-700 transition-colors"
                   onClick={handleLogout}
-                  //
                 >
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -156,4 +193,5 @@ function AppSidebar() {
     </Sidebar>
   );
 }
+
 export default AppSidebar;

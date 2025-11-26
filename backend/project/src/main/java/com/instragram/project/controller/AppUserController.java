@@ -30,6 +30,7 @@ import com.instragram.project.dto.request.UpdateCredentialsRequestDto;
 import com.instragram.project.dto.request.UpdateProfileRequestDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
 import com.instragram.project.dto.response.LoginResponseDto;
+import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.service.AppUserService;
 
 import jakarta.validation.Valid;
@@ -125,6 +126,17 @@ public class AppUserController {
 
          List<GetUserResponseDto> followings = appUserService.getAllFollowings(userId);
          return ResponseEntity.status(HttpStatus.OK).body(followings);
+      } catch (Exception e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      }
+   }
+
+   // GET: Search users by username
+   @GetMapping("/search/{username}")
+   public ResponseEntity<List<SearchUserResponseDto>> searchUsers(@PathVariable String username) {
+      try {
+         List<SearchUserResponseDto> users = appUserService.searchUsers(username);
+         return ResponseEntity.status(HttpStatus.OK).body(users);
       } catch (Exception e) {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }

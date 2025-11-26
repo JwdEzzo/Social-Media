@@ -30,6 +30,7 @@ import {
   Send,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 interface HomePagePostCardProps {
   post: GetPostResponseDto;
@@ -49,6 +50,9 @@ function HomePagePostCard({
   isTogglingSavePost,
 }: HomePagePostCardProps) {
   //
+
+  const navigate = useNavigate();
+
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -89,9 +93,19 @@ function HomePagePostCard({
                 <img
                   src={post.profilePictureUrl}
                   alt={post.description}
-                  className="w-10 h-10 rounded-full"
+                  className="w-10 h-10 rounded-full cursor-pointer"
+                  onClick={() =>
+                    navigate(`/searcheduserprofile/${post.username}`)
+                  }
                 />
-                <h1>{post.username}</h1>
+                <h1
+                  className="cursor-pointer"
+                  onClick={() =>
+                    navigate(`/searcheduserprofile/${post.username}`)
+                  }
+                >
+                  {post.username}
+                </h1>
                 <Button
                   className={`ml-3 cursor-pointer ${
                     isFollowed

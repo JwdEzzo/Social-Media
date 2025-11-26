@@ -72,6 +72,9 @@ public class Post {
    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
    private List<PostLike> postLikes;
 
+   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+   private List<PostSave> postSaves;
+
    @PrePersist
    public void onCreate() {
       createdAt = LocalDateTime.now();

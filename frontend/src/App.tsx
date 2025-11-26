@@ -1,6 +1,5 @@
 import "./App.css";
 import { ThemeProvider } from "./components/ThemeProvider";
-import ProfilePage from "@/Pages/ProfilePages/ProfilePage";
 import { store } from "./store/store";
 import { Provider } from "react-redux";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -14,7 +13,12 @@ import FollowerList from "./Pages/FollowPages/FollowerList";
 import FollowingList from "./Pages/FollowPages/FollowingList";
 import SetProfile from "./Pages/ProfilePages/SetProfile";
 import EditPost from "./Pages/PostPages/EditPost";
-import SearchPostPage from "./Pages/PostPages/SearchPostPage";
+import SearchPostPage from "@/Pages/SearchPages/SearchPostPage";
+// import UserProfilePage from "./Pages/ProfilePages/UserProfilePage";
+// import ProfilePage from "@/Pages/ProfilePages/YourProfilePage";
+import { UserProfilePageRouted } from "@/Pages/ProfilePages/UserProfilePage";
+import { YourProfilePageRouted } from "@/Pages/ProfilePages/YourProfilePage";
+import SearchUsersPage from "./Pages/SearchPages/SearchUsersPage";
 
 function App() {
   return (
@@ -25,16 +29,9 @@ function App() {
             {/* Unprotected Routes */}
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+
             <Route
-              path="/userprofile/:username"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/search"
+              path="/search/posts"
               element={
                 <ProtectedRoute>
                   <SearchPostPage />
@@ -42,23 +39,30 @@ function App() {
               }
             />
 
+            <Route
+              path="/search/users"
+              element={
+                <ProtectedRoute>
+                  <SearchUsersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/searcheduserprofile/:searchedUsername"
+              element={<UserProfilePageRouted />}
+            />
+
             {/* Protected Routes */}
             <Route
               path="/userprofile/:username"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <YourProfilePageRouted />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/userprofile/:username"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/userprofile/:username/edit-credentials"
               element={

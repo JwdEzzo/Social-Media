@@ -1,18 +1,9 @@
-import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Button } from "@/components/ui/button";
 import {
-  Bookmark,
-  Camera,
-  Edit3,
-  Grid3X3,
-  Heart,
-  LogOut,
-  MoveLeft,
-} from "lucide-react";
-import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
-import { useState } from "react";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
+  useGetFollowerCountQuery,
+  useGetFollowingCountQuery,
+  useIsFollowedQuery,
+  useToggleFollowMutation,
+} from "@/api/followers/followApi";
 import {
   postApi,
   useGetPostsByUsernameQuery,
@@ -20,6 +11,25 @@ import {
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
 } from "@/api/posts/postApi";
+import { useGetUserByUsernameQuery } from "@/api/users/userApi";
+import { useAuth } from "@/auth/useAuth";
+import { Button } from "@/components/ui/button";
+import {
+  Camera,
+  Grid3X3,
+  Heart,
+  MoveLeft,
+  Bookmark,
+  Edit3,
+  LogOut,
+} from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
+import { ModeToggle } from "@/components/ModeToggle";
+import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
+import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
+import { useDispatch } from "react-redux";
+import { logout } from "@/auth/authSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,32 +39,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { logout } from "@/auth/authSlice";
-import ProfilePagePostCard from "../PostPages/ProfilePagePostCard";
-import ViewPost from "../PostPages/ViewPost";
+import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
+import ViewPost from "@/Pages/PostPages/ViewPost";
 import type { RootState } from "@/store/store";
 import { closePostModal } from "@/slices/viewPostSlice";
-import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import {
-  useGetFollowerCountQuery,
-  useGetFollowingCountQuery,
-} from "@/api/followers/followApi";
-import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
+import { useSelector } from "react-redux";
+import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 
-function ProfilePage() {
+interface ProfilePageProps {
+  isOwnProfile: boolean;
+}
+
+function ProfilePage({ isOwnProfile }: ProfilePageProps) {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { username: loggedInUsername } = useAuth();
-  const [showCreatePostModal, setShowCreatePostModal] =
-    useState<boolean>(false);
+  const { searchedUsername } = useParams<{ searchedUsername: string }>();
   const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
     "posts"
-  ); // Add this state
+  );
+  const [showCreatePostModal, setShowCreatePostModal] =
+    useState<boolean>(false);
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  // Get modal state from Redux store
   // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
   // We call the state from Redux store in both components
   // We then pass them as props to the ViewPost component
@@ -62,38 +68,65 @@ function ProfilePage() {
     (state: RootState) => state.viewPostModal
   );
 
+  // Determine which username to use
+  const profileUsername = isOwnProfile ? loggedInUsername : searchedUsername;
+
+  // API Queries
   const {
-    data: loggedInUser,
-    isLoading,
-    isError,
-  } = useGetUserByUsernameQuery(loggedInUsername!, {
-    skip: !loggedInUsername,
+    data: profileUser,
+    isLoading: isUserLoading,
+    isError: isUserError,
+  } = useGetUserByUsernameQuery(profileUsername!, {
+    skip: !profileUsername,
   });
 
-  const { data: posts, isLoading: isPostsLoading } = useGetPostsByUsernameQuery(
-    loggedInUsername!
+  const { data: loggedInUserData } = useGetUserByUsernameQuery(
+    loggedInUsername!,
+    {
+      skip: !loggedInUsername,
+    }
   );
 
-  const [togglePostLike, { isLoading: isTogglingPostLike }] =
-    useTogglePostLikeMutation();
+  const [toggleFollow] = useToggleFollowMutation();
 
-  const [toggleSave, { isLoading: isTogglingSavePost }] =
-    useTogglePostSaveMutation();
+  const { data: isFollowed } = useIsFollowedQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
+
+  const {
+    data: posts,
+    isLoading: isPostsLoading,
+    isError: isPostsError,
+  } = useGetPostsByUsernameQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
   const { data: getFollowerCount } = useGetFollowerCountQuery(
-    loggedInUsername!
+    profileUsername!,
+    {
+      skip: !profileUsername,
+    }
   );
 
   const { data: getFollowingCount } = useGetFollowingCountQuery(
-    loggedInUsername!
+    profileUsername!,
+    {
+      skip: !profileUsername,
+    }
   );
 
-  const { data: postCount } = useGetPostsCountQuery(loggedInUsername!);
+  const { data: postCount } = useGetPostsCountQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
   const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
-
   const { data: savedPosts } = useGetPostsSavedByCurrentUserQuery();
+  const [togglePostLike, { isLoading: isTogglingPostLike }] =
+    useTogglePostLikeMutation();
+  const [toggleSave, { isLoading: isTogglingSavePost }] =
+    useTogglePostSaveMutation();
 
+  // Sorting logic
   const sortedPosts = posts
     ? [...posts].sort(
         (a, b) =>
@@ -115,9 +148,32 @@ function ProfilePage() {
       )
     : [];
 
+  // Handlers
   async function handleTogglePostLike(postId: number) {
+    if (!isOwnProfile) return;
     try {
       await togglePostLike(postId).unwrap();
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+  }
+
+  async function handleToggleSavePost(postId: number) {
+    if (!isOwnProfile) return;
+    try {
+      await toggleSave(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+        });
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+  }
+
+  async function handleFollow() {
+    try {
+      await toggleFollow(profileUser!.username).unwrap();
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -132,21 +188,10 @@ function ProfilePage() {
     dispatch(closePostModal());
   }
 
-  async function handleToggleSavePost(postId: number) {
-    try {
-      await toggleSave(postId)
-        .unwrap()
-        .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
-        });
-    } catch (error) {
-      console.log("Error: ", error);
-    }
-  }
-
-  if (isLoading) {
+  // Loading state
+  if (!profileUsername || isUserLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
           <p className="mt-4">Loading profile...</p>
@@ -155,10 +200,11 @@ function ProfilePage() {
     );
   }
 
-  if (isError) {
+  // Error states
+  if (isUserError || (isOwnProfile && isPostsError)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-red-100 rounded-lg">
+        <div className="text-center p-6 bg-gray-700 rounded-lg">
           <h2 className="text-xl font-bold text-red-600">Error</h2>
           <p className="text-red-500">Could not load profile</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
@@ -169,15 +215,225 @@ function ProfilePage() {
     );
   }
 
-  if (!loggedInUser) {
+  // User not found
+  if (!profileUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-gray-100 rounded-lg">
+        <div className="text-center p-6 bg-gray-700 rounded-lg">
           <h2 className="text-xl font-bold">User Not Found</h2>
           <p>The requested user does not exist</p>
         </div>
       </div>
     );
+  }
+
+  // Navigation handlers
+  function navigateToFollowers() {
+    navigate(`/userprofile/${profileUsername}/followers`);
+  }
+
+  function navigateToFollowing() {
+    navigate(`/userprofile/${profileUsername}/following`);
+  }
+
+  function navigateToEditProfile() {
+    if (isOwnProfile) {
+      navigate(`/userprofile/${profileUser?.username}/edit-profile`);
+    }
+  }
+
+  // Conditional rendering based on profile type
+
+  function renderProfilePicture() {
+    return (
+      <div
+        className={`relative ${isOwnProfile ? "cursor-pointer" : ""}`}
+        onClick={isOwnProfile ? navigateToEditProfile : undefined}
+      >
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+          <img
+            src={profileUser?.profilePictureUrl}
+            alt={profileUser?.username}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        {isOwnProfile && (
+          <button className="absolute bottom-2 right-2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow">
+            <Camera className="h-4 w-4 text-gray-600" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  function renderActionButtons() {
+    return (
+      <div className="flex gap-2 max-md:justify-center">
+        {isOwnProfile ? (
+          <div>
+            <Button
+              onClick={() => navigate(`/home/${loggedInUsername}`)}
+              className="cursor-pointer mr-2"
+            >
+              <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
+              Home Page
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+                align="start"
+              >
+                <DropdownMenuLabel className="text-gray-700 dark:text-gray-300 font-bold">
+                  {profileUser?.username}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
+                    onClick={() =>
+                      navigate(
+                        `/userprofile/${profileUser?.username}/edit-profile`
+                      )
+                    }
+                  >
+                    Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(
+                        `/userprofile/${profileUser?.username}/edit-credentials`
+                      )
+                    }
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
+                  >
+                    Edit Credentials
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:bg-red-100 dark:focus:bg-red-900/30 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span className="font-bold">Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : (
+          <Button
+            onClick={() => navigate(`/home/${loggedInUsername}`)}
+            className="cursor-pointer"
+          >
+            <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
+            Home Page
+          </Button>
+        )}
+        <ModeToggle />
+      </div>
+    );
+  }
+
+  function renderBio() {
+    return (
+      <div className="text-left max-w-md">
+        <p className="font-light text-sm max-md:text-center">
+          {profileUser?.bioText || "No bio available"}
+        </p>
+      </div>
+    );
+  }
+
+  function renderCreatePostButton() {
+    return (
+      isOwnProfile && (
+        <div className="flex items-center justify-start max-md:justify-center">
+          <Button
+            className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
+            onClick={() => setShowCreatePostModal(true)}
+          >
+            Create Post
+          </Button>
+        </div>
+      )
+    );
+  }
+
+  function renderPostsGrid() {
+    if (isPostsLoading && viewMode === "posts") {
+      return (
+        <div className="grid grid-cols-3 gap-1 mt-6">
+          {[...Array(9)].map((_, index) => (
+            <div
+              key={`loading-${index}`}
+              className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
+            >
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (viewMode === "posts" && posts) {
+      return (
+        <div className="grid grid-cols-3 gap-1 mt-6">
+          {sortedPosts.map((post) => (
+            <div key={post.id} className="group relative aspect-square">
+              <ProfilePagePostCard post={post} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (viewMode === "liked") {
+      if (likedPosts) {
+        return (
+          <div className="grid grid-cols-3 gap-1 mt-6">
+            {sortedLikedPosts.map((post) => (
+              <div key={post.id} className="group relative aspect-square">
+                <ProfilePagePostCard post={post} />
+              </div>
+            ))}
+          </div>
+        );
+      } else {
+        return (
+          <div className="col-span-full text-center py-8 text-gray-500">
+            No liked posts yet
+          </div>
+        );
+      }
+    }
+
+    if (viewMode === "saved") {
+      if (savedPosts) {
+        return (
+          <div className="grid grid-cols-3 gap-1 mt-6">
+            {sortedSavedPosts.map((post) => (
+              <div key={post.id} className="group relative aspect-square">
+                <ProfilePagePostCard post={post} />
+              </div>
+            ))}
+          </div>
+        );
+      } else {
+        return (
+          <div className="col-span-full text-center py-8 text-gray-500">
+            No saved posts yet
+          </div>
+        );
+      }
+    }
+
+    return null;
   }
 
   return (
@@ -187,99 +443,35 @@ function ProfilePage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Profile Picture */}
-            <div
-              className="relative"
-              onClick={() =>
-                navigate(`/userprofile/${loggedInUser.username}/edit-profile`)
-              }
-            >
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                <img
-                  src={loggedInUser.profilePictureUrl}
-                  alt={loggedInUser.username}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <button className="absolute bottom-2 right-2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow">
-                <Camera className="h-4 w-4 text-gray-600" />
-              </button>
-            </div>
+            {renderProfilePicture()}
 
             {/* Profile Info */}
             <div className="flex-1 text-center md:text-left">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold">
-                    {loggedInUser.username}
-                  </h1>
-                  <div className="text-left max-w-md">
-                    <p className="font-light text-sm max-md:text-center">
-                      {loggedInUser.bioText || "No bio available"}
-                    </p>
+                  <div className="flex gap-2 ">
+                    <h1 className="text-2xl font-bold">
+                      {profileUser.username}
+                    </h1>
+                    {!isOwnProfile ? (
+                      <Button
+                        className={`${
+                          isFollowed
+                            ? "fill-current text-white-500 text-white dark:text-white-500 bg-gray-700 dark:bg-gray-900 dark:hover:bg-gray-900 "
+                            : ""
+                        }`}
+                        onClick={handleFollow}
+                        //
+                      >
+                        {isFollowed ? "Following" : "Follow"}
+                      </Button>
+                    ) : null}
                   </div>
+                  {renderBio()}
                 </div>
 
-                {/* Dropdown Menu, Edit username or credentials */}
-                <div className="flex gap-2 max-md:justify-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="cursor-pointer">
-                        {" "}
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Settings
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
-                      align="start"
-                    >
-                      <DropdownMenuLabel className="text-gray-700 dark:text-gray-300 font-bold">
-                        {loggedInUser.username}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem
-                          className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
-                          onClick={() =>
-                            navigate(
-                              `/userprofile/${loggedInUser.username}/edit-profile`
-                            )
-                          }
-                        >
-                          Edit Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigate(
-                              `/userprofile/${loggedInUser.username}/edit-credentials`
-                            )
-                          }
-                          className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
-                          //
-                        >
-                          Edit Credentials
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
-                      <DropdownMenuItem
-                        onClick={handleLogout}
-                        className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:bg-red-100 dark:focus:bg-red-900/30 cursor-pointer"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span className="font-bold">Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <ModeToggle />
-                  <Button
-                    onClick={() => navigate(`/home/${loggedInUsername}`)}
-                    className="cursor-pointer"
-                  >
-                    <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700 "></MoveLeft>
-                    Home Page
-                  </Button>
-                </div>
+                {/* Action Buttons */}
+                {renderActionButtons()}
               </div>
 
               {/* User Stats - Following, Followers */}
@@ -295,14 +487,12 @@ function ProfilePage() {
                 {/* Number of Followers */}
                 <div
                   className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all"
-                  onClick={() =>
-                    navigate(`/userprofile/${loggedInUsername}/followers`)
-                  }
+                  onClick={navigateToFollowers}
                 >
                   <div className="font-bold text-xl">
                     {getFollowerCount || 0}
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs  tracking-wide">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs tracking-wide">
                     Followers
                   </p>
                 </div>
@@ -310,39 +500,30 @@ function ProfilePage() {
                 {/* Number of Following */}
                 <div
                   className="text-center hover:bg-gray-800 px-3 py-1 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-all"
-                  onClick={() =>
-                    navigate(`/userprofile/${loggedInUsername}/following`)
-                  }
-                  //
+                  onClick={navigateToFollowing}
                 >
-                  <div className="font-bold text-xl ">
+                  <div className="font-bold text-xl">
                     {getFollowingCount || 0}
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs ">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">
                     Following
                   </p>
                 </div>
               </div>
-              <div className="flex items-center justify-start max-md:justify-center">
-                <Button
-                  className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
-                  onClick={() => setShowCreatePostModal(true)}
-                >
-                  Create Post
-                </Button>
-              </div>
-              {/* Bio */}
+
+              {/* Create Post Button */}
+              {renderCreatePostButton()}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Change view between the USER posts and the LIKED Posts */}
+      {/* View Mode Tabs */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
           <div
             onClick={() => setViewMode("posts")}
-            className={`flex items-center gap-2 py-4 px-6  transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
+            className={`flex items-center gap-2 py-4 px-6 transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
         ${
           viewMode === "posts"
             ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
@@ -350,102 +531,86 @@ function ProfilePage() {
         }`}
           >
             <button>
-              <div className="flex items-center gap-2 cursor-pointer ">
+              <div className="flex items-center gap-2 cursor-pointer">
                 <Grid3X3 className="h-5 w-5" />
                 <span>Posts</span>
               </div>
             </button>
           </div>
-          <div
-            onClick={() => setViewMode("liked")}
-            className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
-        ${
-          viewMode === "liked"
-            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-        }`}
-          >
-            <button>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Heart className="h-5 w-5 " />
-                <span>Likes</span>
+
+          {isOwnProfile ? (
+            <>
+              <div
+                onClick={() => setViewMode("liked")}
+                className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+            ${
+              viewMode === "liked"
+                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+            }`}
+              >
+                <button>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-5 w-5 " />
+                    <span>Likes</span>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
-          <div
-            onClick={() => setViewMode("saved")}
-            className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
-        ${
-          viewMode === "saved"
-            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-        }`}
-          >
-            <button>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Bookmark className="h-5 w-5 " />
-                <span>Saved</span>
+              <div
+                onClick={() => setViewMode("saved")}
+                className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+            ${
+              viewMode === "saved"
+                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+            }`}
+              >
+                <button>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <Bookmark className="h-5 w-5 " />
+                    <span>Saved</span>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
+            </>
+          ) : (
+            <div
+              onClick={() => setViewMode("liked")}
+              className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+            ${
+              viewMode === "liked"
+                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
+                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+            }`}
+            >
+              <button>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <Heart className="h-5 w-5 " />
+                  <span>Likes</span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Posts grid */}
-        <div className="grid grid-cols-3 gap-1 mt-6">
-          {isPostsLoading && viewMode === "posts" ? (
-            [...Array(9)].map((_, index) => (
-              <div
-                key={`loading-${index}`}
-                className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
-              >
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-              </div>
-            ))
-          ) : viewMode === "posts" && posts ? (
-            sortedPosts.map((post) => (
-              <div key={post.id} className="group relative aspect-square">
-                <ProfilePagePostCard post={post} />
-              </div>
-            ))
-          ) : viewMode === "liked" && likedPosts ? (
-            sortedLikedPosts.map((post) => (
-              <div key={post.id} className="group relative aspect-square">
-                <ProfilePagePostCard post={post} />
-              </div>
-            ))
-          ) : viewMode === "liked" ? (
-            <div className="col-span-full text-center py-8 text-gray-500">
-              No liked posts yet
-            </div>
-          ) : viewMode === "saved" && savedPosts ? (
-            sortedSavedPosts.map((post) => (
-              <div key={post.id} className="group relative aspect-square">
-                <ProfilePagePostCard post={post} />
-              </div>
-            ))
-          ) : viewMode === "saved" ? (
-            <div className="col-span-full text-center py-8 text-gray-500">
-              No saved posts yet
-            </div>
-          ) : null}
-        </div>
+        {/* Posts Grid */}
+        {renderPostsGrid()}
       </div>
 
       {/* Create Post Modal */}
-      <CreatePostModal
-        isOpen={showCreatePostModal}
-        onClose={() => setShowCreatePostModal(false)}
-      />
+      {isOwnProfile && (
+        <CreatePostModal
+          isOpen={showCreatePostModal}
+          onClose={() => setShowCreatePostModal(false)}
+        />
+      )}
 
       {/* View Post Modal */}
-      {/* // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
-      // We call the state from Redux store in both components
-      // We then pass them as props to the ViewPost component */}
       <ViewPost
         isOpen={isViewModalOpen}
         handleCloseViewModal={handleCloseViewModal}
         selectedPostId={selectedPostId}
-        loggedInUser={loggedInUser}
+        loggedInUser={loggedInUserData}
         handleTogglePostLike={handleTogglePostLike}
         isTogglingPostLike={isTogglingPostLike}
         handleToggleSavePost={handleToggleSavePost}

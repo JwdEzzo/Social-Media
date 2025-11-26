@@ -52,6 +52,7 @@ interface ViewPostProps {
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponseDto | undefined;
+
   handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
   handleToggleSavePost: (postId: number) => void;

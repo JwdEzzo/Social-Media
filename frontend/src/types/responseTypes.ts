@@ -39,3 +39,10 @@ export interface GetReplyResponseDto {
   createdAt: string;
   appUser: GetUserResponseDto;
 }
+
+export interface SearchUserResponseDto {
+  id: number;
+  username: string;
+  bioText: string;
+  profilePictureUrl: string;
+}

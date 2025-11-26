@@ -22,6 +22,7 @@ import com.instragram.project.dto.request.UpdateCredentialsRequestDto;
 import com.instragram.project.dto.request.UpdateProfileRequestDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
 import com.instragram.project.dto.response.LoginResponseDto;
+import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
@@ -126,6 +127,13 @@ public class AppUserService {
             .stream()
             .map(follower -> mappingMethods
                   .convertAppUserEntityToGetUserResponse(follower))
+            .collect(Collectors.toList());
+   }
+
+   public List<SearchUserResponseDto> searchUsers(String username) {
+      List<AppUser> users = appUserRepository.findByUsernameContaining(username);
+      return users.stream()
+            .map(user -> mappingMethods.convertAppUserEntityToSearchUserResponse(user))
             .collect(Collectors.toList());
    }
 

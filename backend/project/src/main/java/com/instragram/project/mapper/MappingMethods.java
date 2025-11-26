@@ -15,6 +15,7 @@ import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
 import com.instragram.project.dto.response.GetReplyResponseDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
+import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentReply;
@@ -85,6 +86,15 @@ public class MappingMethods {
       responseDto.setCreatedAt(appUser.getCreatedAt());
       responseDto.setUpdatedAt(appUser.getUpdatedAt());
       responseDto.setPosts(convertListPostEntityToListGetPostResponseDto(appUser.getPosts()));
+      return responseDto;
+   }
+
+   // Convert AppUser to SearchUserResponseDto
+   public SearchUserResponseDto convertAppUserEntityToSearchUserResponse(AppUser appUser) {
+      SearchUserResponseDto responseDto = new SearchUserResponseDto();
+      responseDto.setId(appUser.getId());
+      responseDto.setUsername(appUser.getUsername());
+      responseDto.setProfilePictureUrl(appUser.getProfilePictureUrl());
       return responseDto;
    }
 
@@ -170,4 +180,5 @@ public class MappingMethods {
             .map(this::convertCommentReplyEntityToGetCommentReplyResponseDto)
             .collect(Collectors.toList());
    }
+
 }

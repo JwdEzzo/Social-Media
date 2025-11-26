@@ -3,7 +3,10 @@ import type {
   UpdateCredentialsRequestDto,
   UpdateProfileRequestDto,
 } from "@/types/requestTypes";
-import type { GetUserResponseDto } from "@/types/responseTypes";
+import type {
+  GetUserResponseDto,
+  SearchUserResponseDto,
+} from "@/types/responseTypes";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../public/baseApi";
 
@@ -64,7 +67,7 @@ export const userApi = createApi({
         url: `/users/followers/${userId}`,
         method: "GET",
       }),
-      providesTags: (result, error, userId) => [
+      providesTags: (_result, _error, userId) => [
         { type: "Followers", id: userId },
       ],
     }),
@@ -85,6 +88,20 @@ export const userApi = createApi({
           : [{ type: "User", id: "LIST" }],
     }),
 
+    searchUsersByUsername: builder.query<SearchUserResponseDto[], string>({
+      query: (username) => ({
+        url: `/users/search/${username}`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "UserList", id: "ALL" },
+            ]
+          : [{ type: "UserList", id: "ALL" }],
+    }),
+
     updateUserCredentials: builder.mutation<
       void,
       { currentUsername: string } & UpdateCredentialsRequestDto
@@ -94,7 +111,7 @@ export const userApi = createApi({
         method: "PUT",
         body: newCredentials,
       }),
-      invalidatesTags: (result, error, { currentUsername }) => [
+      invalidatesTags: (_result, _error, { currentUsername }) => [
         { type: "User", id: currentUsername },
         { type: "UserList", id: "ALL" },
         { type: "UserList", id: "EXCLUDED" },
@@ -111,7 +128,7 @@ export const userApi = createApi({
         method: "PUT",
         body: updateData,
       }),
-      invalidatesTags: (result, error, { username }) => [
+      invalidatesTags: (_result, _error, { username }) => [
         { type: "User", id: username },
         { type: "UserList", id: "ALL" },
         { type: "UserList", id: "EXCLUDED" },
@@ -135,7 +152,7 @@ export const userApi = createApi({
           body: formData,
         };
       },
-      invalidatesTags: (result, error, { username }) => [
+      invalidatesTags: (_result, _error, { username }) => [
         { type: "User", id: username },
         { type: "UserList", id: "ALL" },
         { type: "UserList", id: "EXCLUDED" },
@@ -148,12 +165,13 @@ export const {
   useSignUpMutation,
   useGetUsersQuery,
   useGetUserByUsernameQuery,
-  useUpdateUserCredentialsMutation,
-  useUpdateUserProfileWithUrlMutation,
-  useUpdateUserProfileWithUploadMutation,
   useGetFollowersByUserIdQuery,
   useGetFollowingsByUserIdQuery,
   useGetUsersExcludingCurrentUserQuery,
+  useSearchUsersByUsernameQuery,
+  useUpdateUserCredentialsMutation,
+  useUpdateUserProfileWithUrlMutation,
+  useUpdateUserProfileWithUploadMutation,
 } = userApi;
 
 export const { util: userApiUtil } = userApi;

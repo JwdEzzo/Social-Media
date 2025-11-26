@@ -16,9 +16,9 @@ import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
-import ViewPost from "./ViewPost";
+import ViewPost from "@/Pages/PostPages/ViewPost";
 import { postApi } from "@/api/posts/postApi";
-import AppSidebar from "../HomePage/AppSidebar";
+import AppSidebar from "@/Pages/HomePage/AppSidebar";
 
 function SearchPostPage() {
   const [searchParams] = useSearchParams();
