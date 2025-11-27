@@ -69,6 +69,7 @@ export const userApi = createApi({
       }),
       providesTags: (_result, _error, userId) => [
         { type: "Followers", id: userId },
+        { type: "User", id: "LIST" },
       ],
     }),
     getFollowingsByUserId: builder.query<GetUserResponseDto[], number>({

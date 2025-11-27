@@ -61,7 +61,7 @@ function Login() {
           message: "You are logged in",
         })
       );
-      navigate(`/userprofile/${response.username}`);
+      navigate(`/home/${response.username}`);
     } catch (error) {
       // Set error field for login failure
       form.setError("password", {

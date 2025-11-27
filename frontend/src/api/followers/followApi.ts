@@ -4,7 +4,7 @@ import { baseQueryWithReauth } from "@/api/public/baseApi";
 export const followApi = createApi({
   reducerPath: "followerApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Follow"],
+  tagTypes: ["Follow", "User", "UserList"],
   endpoints: (builder) => ({
     toggleFollow: builder.mutation<void, string>({
       query: (followingUsername) => ({
@@ -14,6 +14,7 @@ export const followApi = createApi({
       invalidatesTags: (_result, _error, followingUsername) => [
         { type: "Follow", id: followingUsername },
         { type: "Follow", id: "COUNT" },
+        { type: "User", id: "LIST" },
       ],
     }),
     getFollowerCount: builder.query<number, string>({

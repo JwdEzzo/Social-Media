@@ -1,14 +1,18 @@
 import {
-  useGetFollowersByUserIdQuery,
+  useGetFollowingsByUserIdQuery,
   useGetUserByUsernameQuery,
 } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import FollowerCard from "./FollowerCard";
+import FollowingCard from "@/Pages/FollowPages/Followings/FollowingCard";
 import { ModeToggle } from "@/components/ModeToggle";
 
-function FollowerList() {
+interface FollowingListProps {
+  profileUsername: string;
+}
+
+function FollowingList({ profileUsername }: FollowingListProps) {
   const { username: loggedInUsername } = useAuth();
 
   const {
@@ -20,14 +24,24 @@ function FollowerList() {
   });
 
   const {
-    data: followers,
-    isLoading: isFollowersLoading,
-    isError: isFollowersError,
-  } = useGetFollowersByUserIdQuery(loggedInUser?.id ?? 0, {
-    skip: !loggedInUser?.id,
+    data: profileUser,
+    isLoading: isProfileUserLoading,
+    isError: isProfileUserError,
+  } = useGetUserByUsernameQuery(profileUsername, {
+    skip: !profileUsername,
   });
 
-  if (isFollowersLoading || isLoggedInUserLoading) {
+  const {
+    data: followings,
+    isLoading: isFollowingsLoading,
+    isError: isFollowingsError,
+  } = useGetFollowingsByUserIdQuery(profileUser?.id ?? 0, {
+    skip: !profileUser?.id,
+  });
+
+  console.log(followings);
+
+  if (isFollowingsLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen ">
         <div className="text-center">
@@ -49,7 +63,7 @@ function FollowerList() {
     );
   }
 
-  if (isFollowersError || isLoggedInUserError) {
+  if (isFollowingsError || isLoggedInUserError || isProfileUserError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center p-6 bg-red-100 rounded-lg">
@@ -68,15 +82,18 @@ function FollowerList() {
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Your Followers</CardTitle>
+            <CardTitle className="text-xl">
+              {profileUsername}'s Following
+            </CardTitle>
             <ModeToggle />
           </div>
         </CardHeader>
         <CardContent>
-          {followers?.map((follower) => (
-            <FollowerCard
-              follower={follower}
-              //
+          {followings?.map((following) => (
+            <FollowingCard
+              key={following.id}
+              following={following}
+              loggedInUsername={loggedInUsername!}
             />
           ))}
         </CardContent>
@@ -84,4 +101,4 @@ function FollowerList() {
     </div>
   );
 }
-export default FollowerList;
+export default FollowingList;

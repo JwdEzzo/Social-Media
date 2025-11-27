@@ -1,14 +1,18 @@
 import {
-  useGetFollowingsByUserIdQuery,
+  useGetFollowersByUserIdQuery,
   useGetUserByUsernameQuery,
 } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
 import { ModeToggle } from "@/components/ModeToggle";
-import FollowingCard from "./FollowingCard";
 
-function FollowingList() {
+interface FollowerListProps {
+  profileUsername: string;
+}
+
+function FollowerList({ profileUsername }: FollowerListProps) {
   const { username: loggedInUsername } = useAuth();
 
   const {
@@ -20,25 +24,24 @@ function FollowingList() {
   });
 
   const {
+    data: profileUser,
+    isLoading: isProfileUserLoading,
+    isError: isProfileUserError,
+  } = useGetUserByUsernameQuery(profileUsername, {
+    skip: !profileUsername,
+  });
+
+  const {
     data: followers,
     isLoading: isFollowersLoading,
     isError: isFollowersError,
-  } = useGetFollowingsByUserIdQuery(loggedInUser?.id ?? 0, {
-    skip: !loggedInUser?.id,
+  } = useGetFollowersByUserIdQuery(profileUser?.id ?? 0, {
+    skip: !profileUser?.id,
   });
 
-  if (!loggedInUser) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-gray-500 rounded-lg">
-          <h2 className="text-xl font-bold">User Not Found</h2>
-          <p>The requested user does not exist</p>
-        </div>
-      </div>
-    );
-  }
+  console.log(followers);
 
-  if (isFollowersLoading || isLoggedInUserLoading) {
+  if (isFollowersLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen ">
         <div className="text-center">
@@ -49,10 +52,21 @@ function FollowingList() {
     );
   }
 
-  if (isFollowersError || isLoggedInUserError) {
+  if (!loggedInUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-red-400 rounded-lg">
+        <div className="text-center p-6 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-bold">User Not Found</h2>
+          <p>The requested user does not exist</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isFollowersError || isLoggedInUserError || isProfileUserError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-6 bg-red-100 rounded-lg">
           <h2 className="text-xl font-bold text-red-600">Error</h2>
           <p className="text-red-500">Could not load profile</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
@@ -68,14 +82,18 @@ function FollowingList() {
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Your Following</CardTitle>
+            <CardTitle className="text-xl">
+              {profileUsername}'s Followers
+            </CardTitle>
             <ModeToggle />
           </div>
         </CardHeader>
         <CardContent>
           {followers?.map((follower) => (
-            <FollowingCard
+            <FollowerCard
+              key={follower.id}
               follower={follower}
+              loggedInUsername={loggedInUsername!}
               //
             />
           ))}
@@ -84,4 +102,4 @@ function FollowingList() {
     </div>
   );
 }
-export default FollowingList;
+export default FollowerList;

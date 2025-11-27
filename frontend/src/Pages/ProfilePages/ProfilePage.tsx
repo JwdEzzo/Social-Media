@@ -11,7 +11,7 @@ import {
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
 } from "@/api/posts/postApi";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
+import { useGetUserByUsernameQuery, userApi } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,6 +174,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   async function handleFollow() {
     try {
       await toggleFollow(profileUser!.username).unwrap();
+      dispatch(userApi.util.invalidateTags([{ type: "User", id: "LIST" }]));
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -229,11 +230,19 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   // Navigation handlers
   function navigateToFollowers() {
-    navigate(`/userprofile/${profileUsername}/followers`);
+    if (isOwnProfile) {
+      navigate(`/userprofile/${profileUsername}/yourfollowers`);
+    } else {
+      navigate(`/userprofile/${profileUsername}/userfollowers`);
+    }
   }
 
   function navigateToFollowing() {
-    navigate(`/userprofile/${profileUsername}/following`);
+    if (isOwnProfile) {
+      navigate(`/userprofile/${profileUsername}/yourfollowings`);
+    } else {
+      navigate(`/userprofile/${profileUsername}/userfollowings`);
+    }
   }
 
   function navigateToEditProfile() {

@@ -9,16 +9,16 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import EditCredentials from "@/Pages/ProfilePages/EditCredentials";
 import EditProfile from "./Pages/ProfilePages/EditProfile";
 import HomePage from "./Pages/HomePage/HomePage";
-import FollowerList from "./Pages/FollowPages/FollowerList";
-import FollowingList from "./Pages/FollowPages/FollowingList";
 import SetProfile from "./Pages/ProfilePages/SetProfile";
 import EditPost from "./Pages/PostPages/EditPost";
 import SearchPostPage from "@/Pages/SearchPages/SearchPostPage";
-// import UserProfilePage from "./Pages/ProfilePages/UserProfilePage";
-// import ProfilePage from "@/Pages/ProfilePages/YourProfilePage";
 import { UserProfilePageRouted } from "@/Pages/ProfilePages/UserProfilePage";
 import { YourProfilePageRouted } from "@/Pages/ProfilePages/YourProfilePage";
 import SearchUsersPage from "./Pages/SearchPages/SearchUsersPage";
+import { YourFollowerListRouted } from "./Pages/FollowPages/Followers/YourFollowerList";
+import { UserFollowerListRouted } from "./Pages/FollowPages/Followers/UserFollowerList";
+import { UserFollowingListRouted } from "./Pages/FollowPages/Followings/UserFollowingList";
+import { YourFollowingListRouted } from "./Pages/FollowPages/Followings/YourFollowingList";
 
 function App() {
   return (
@@ -96,19 +96,36 @@ function App() {
               }
             />
             <Route
-              path="/userprofile/:username/followers"
+              path="/userprofile/:username/yourfollowers"
               element={
                 <ProtectedRoute>
-                  <FollowerList />
+                  <YourFollowerListRouted />
                 </ProtectedRoute>
               }
             />
 
             <Route
-              path="/userprofile/:username/following"
+              path="/userprofile/:username/userfollowers"
               element={
                 <ProtectedRoute>
-                  <FollowingList />
+                  <UserFollowerListRouted />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/userprofile/:username/yourfollowings"
+              element={
+                <ProtectedRoute>
+                  <YourFollowingListRouted />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/userprofile/:username/userfollowings"
+              element={
+                <ProtectedRoute>
+                  <UserFollowingListRouted />
                 </ProtectedRoute>
               }
             />
