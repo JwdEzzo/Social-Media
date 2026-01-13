@@ -1,4 +1,4 @@
-import { ModeToggle } from "./ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 function Navbar() {

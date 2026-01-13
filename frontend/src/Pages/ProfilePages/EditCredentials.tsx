@@ -21,7 +21,7 @@ import {
   useUpdateUserCredentialsMutation,
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 const updateCredentialsSchema = z.object({
   email: z.string().email().nullable().optional(),

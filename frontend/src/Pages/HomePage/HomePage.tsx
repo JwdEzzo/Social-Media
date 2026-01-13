@@ -4,7 +4,7 @@ import {
   useGetPostsExcludingCurrentUserQuery,
 } from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { RotateCcw } from "lucide-react";
 import ViewPost from "../PostPages/ViewPost";
 import {

@@ -24,7 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v3";
 import type { LoginRequest } from "@/types/requestTypes";
 import { setCredentials } from "@/auth/authSlice";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 const loginSchema = z.object({
   username: z.string().min(6, "Username is required"),

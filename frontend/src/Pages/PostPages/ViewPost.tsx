@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import CommentCard from "../CommentPages/CommentCard";
-import "@/components/scrollbar.css";
+import "@/components/style/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
 import {
   useGetPostLikeCountQuery,

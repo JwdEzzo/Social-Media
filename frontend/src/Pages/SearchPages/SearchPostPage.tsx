@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { useGetPostsByDescriptionQuery } from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { RotateCcw } from "lucide-react";
 import {
   SidebarProvider,

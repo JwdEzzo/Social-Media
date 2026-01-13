@@ -1,5 +1,5 @@
 import { useSearchUsersByUsernameQuery } from "@/api/users/userApi";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";

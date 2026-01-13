@@ -1,6 +1,6 @@
 import { useLoginMutation } from "@/auth/authApi";
 import { useSignUpMutation } from "@/api/users/userApi";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,

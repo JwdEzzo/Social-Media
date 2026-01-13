@@ -1,5 +1,5 @@
 import "./App.css";
-import { ThemeProvider } from "./components/ThemeProvider";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { store } from "./store/store";
 import { Provider } from "react-redux";
 import { BrowserRouter, Routes, Route } from "react-router-dom";

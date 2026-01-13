@@ -20,7 +20,7 @@ import {
   useUpdateUserProfileWithUploadMutation,
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import type { UpdateProfileRequestDto } from "@/types/requestTypes";
 import { useEffect, useState, useRef } from "react";
 

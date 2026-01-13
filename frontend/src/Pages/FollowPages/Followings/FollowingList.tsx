@@ -6,7 +6,7 @@ import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FollowingCard from "@/Pages/FollowPages/Followings/FollowingCard";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 interface FollowingListProps {
   profileUsername: string;
