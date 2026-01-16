@@ -32,7 +32,7 @@ import {
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-interface HomePagePostCardProps {
+export interface HomePagePostCardProps {
   post: GetPostResponseDto;
   onViewComments: (postId: number) => void;
   handleTogglePostLike: (postId: number) => void;
@@ -73,7 +73,7 @@ function HomePagePostCard({
     post?.id ?? 0,
     {
       skip: !post?.id || post.id === 0,
-    }
+    },
   );
 
   const [toggleFollow, { isLoading: isTogglingFollow }] =
@@ -119,7 +119,7 @@ function HomePagePostCard({
                         dispatch(
                           postApi.util.invalidateTags([
                             { type: "Post", id: "LIST" },
-                          ])
+                          ]),
                         );
                       })
                   }

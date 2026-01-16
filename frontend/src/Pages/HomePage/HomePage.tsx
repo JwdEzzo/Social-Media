@@ -18,11 +18,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
+import HomePagePostCardList from "./react-window/HomePagePostCardList";
 
 function HomePage() {
   //
@@ -30,14 +30,14 @@ function HomePage() {
   const dispatch = useDispatch();
 
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal
+    (state: RootState) => state.viewPostModal,
   );
   // Get logged-in username (string)
   const { username: loggedInUsername } = useAuth();
 
   // Get logged-in USER object
   const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || ""
+    loggedInUsername || "",
   );
 
   const {
@@ -175,34 +175,17 @@ function HomePage() {
         </header>
 
         {/* Main Content */}
+        {/* Main Content */}
         <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
-          <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
-            {/* Map over posts - now using HomePagePostCard component */}
-            {viewMode === "For You"
-              ? apiPosts?.map((post) => (
-                  <HomePagePostCard
-                    // refetchPosts={refetchPosts}
-                    key={post.id}
-                    post={post}
-                    onViewComments={handleViewModal}
-                    handleTogglePostLike={handleTogglePostLike}
-                    isTogglingPostLike={isTogglingPostLike}
-                    handleToggleSavePost={handleToggleSavePost}
-                    isTogglingSavePost={isTogglingSavePost}
-                  />
-                ))
-              : followingPosts?.map((post) => (
-                  <HomePagePostCard
-                    // refetchPosts={refetchPosts}
-                    key={post.id}
-                    post={post}
-                    onViewComments={handleViewModal}
-                    handleTogglePostLike={handleTogglePostLike}
-                    isTogglingPostLike={isTogglingPostLike}
-                    handleToggleSavePost={handleToggleSavePost}
-                    isTogglingSavePost={isTogglingSavePost}
-                  />
-                ))}
+          <div className="max-w-2xl w-full px-4">
+            <HomePagePostCardList
+              posts={viewMode === "For You" ? apiPosts! : followingPosts!}
+              onViewComments={handleViewModal}
+              handleTogglePostLike={handleTogglePostLike}
+              isTogglingPostLike={isTogglingPostLike}
+              handleToggleSavePost={handleToggleSavePost}
+              isTogglingSavePost={isTogglingSavePost}
+            />
           </div>
 
           {/* View Post Modal */}

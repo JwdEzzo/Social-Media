@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
+import HomePagePostCard from "@/Trash/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import ViewPost from "@/Pages/PostPages/ViewPost";
