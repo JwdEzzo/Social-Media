@@ -20,7 +20,13 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { useState, useCallback, type FormEvent } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type FormEvent,
+} from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
@@ -68,7 +74,6 @@ function ViewPost({
   isTogglingSavePost,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
-  // We removed showReplies state , now each CommentCard now manages its own
   const [replyMode, setReplyMode] = useState<{
     isReplying: boolean;
     commentId: number | null;
@@ -78,6 +83,10 @@ function ViewPost({
     commentId: null,
     username: null,
   });
+
+  // Ref to track scroll position in the comments area
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -90,11 +99,9 @@ function ViewPost({
   const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
     useToggleCommentLikeMutation();
 
-  const [
-    createReply,
-    { isLoading: isReplyingLoading, isError: isReplyingError },
-  ] = useCreateReplyMutation();
+  const [createReply] = useCreateReplyMutation();
 
+  // Fetch comments for the current post
   const {
     data: comments,
     isLoading: isCommentsLoading,
@@ -102,6 +109,7 @@ function ViewPost({
     refetch: refetchComments,
   } = useGetCommentsByPostIdQuery({ postId: selectedPostId! });
 
+  // Fetch post details
   const {
     data: post,
     isLoading: isPostLoading,
@@ -109,6 +117,7 @@ function ViewPost({
     refetch: refetchPost,
   } = useGetPostByIdQuery(selectedPostId!);
 
+  // Fetch post like status and count
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -116,6 +125,7 @@ function ViewPost({
     skip: !post?.id || post.id === 0,
   });
 
+  // Fetch comment count for the post
   const { data: postCommentCount } = useGetPostCommentCountQuery(
     post?.id ?? 0,
     {
@@ -123,6 +133,7 @@ function ViewPost({
     },
   );
 
+  // Fetch save count and status for the post
   const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -131,10 +142,35 @@ function ViewPost({
     skip: !post?.id || post.id === 0,
   });
 
+  // Mutation for deleting the post
   const [deletePostById, { isLoading: isPostDeleting }] =
     useDeletePostByPostIdMutation();
 
-  // Wrap handleToggleCommentLike in useCallback
+  // Effect to save scroll position when user scrolls
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      scrollPositionRef.current = container.scrollTop;
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Effect to restore scroll position after comments update
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container && scrollPositionRef.current > 0) {
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        container.scrollTop = scrollPositionRef.current;
+      });
+    }
+  }, [comments]);
+
+  // Callback to toggle comment like status
   const handleToggleCommentLike = useCallback(
     async (commentId: number) => {
       try {
@@ -146,28 +182,33 @@ function ViewPost({
     [toggleCommentLike],
   );
 
-  // Wrap handleAddComment in useCallback
+  // Callback to handle adding a new comment or reply
   const handleAddComment = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
       if (!newComment.trim() || !selectedPostId) return;
 
+      // Save current scroll position
+      if (scrollContainerRef.current) {
+        scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+      }
+
       try {
         if (replyMode.isReplying && replyMode.commentId) {
-          // Create a reply
+          // Create a reply to a comment
           await createReply({
             content: newComment,
             commentId: replyMode.commentId,
           }).unwrap();
 
-          // Reset reply mode
+          // Reset reply mode after successful creation
           setReplyMode({
             isReplying: false,
             commentId: null,
             username: null,
           });
         } else {
-          // Create a comment
+          // Create a new comment
           await createComment({
             content: newComment,
             postId: selectedPostId,
@@ -182,7 +223,7 @@ function ViewPost({
     [newComment, selectedPostId, replyMode, createReply, createComment],
   );
 
-  // Wrap in useCallback
+  // Callback to enter reply mode for a specific comment
   const handleReplyToComment = useCallback(
     (commentId: number, username: string) => {
       setReplyMode({
@@ -195,6 +236,7 @@ function ViewPost({
     [],
   );
 
+  // Callback to cancel reply mode
   const cancelReplyMode = useCallback(() => {
     setReplyMode({
       isReplying: false,
@@ -204,6 +246,7 @@ function ViewPost({
     setNewComment("");
   }, []);
 
+  // Callback to handle post deletion
   const handleDeletePost = useCallback(async () => {
     if (post?.id) {
       try {
@@ -217,7 +260,7 @@ function ViewPost({
 
   if (!isOpen) return null;
 
-  // Don't render the post content until the data matches the selected post ID
+  // Show loading screen if post data doesn't match selected post ID
   if (post?.id !== selectedPostId) {
     return (
       <div
@@ -234,7 +277,8 @@ function ViewPost({
     );
   }
 
-  if (isPostLoading || isCommentsLoading || isReplyingLoading) {
+  // Show loading screen while post or comments are loading
+  if (isPostLoading || isCommentsLoading) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -250,6 +294,7 @@ function ViewPost({
     );
   }
 
+  // Show loading screen while post is being deleted
   if (isPostDeleting) {
     return (
       <div
@@ -266,7 +311,8 @@ function ViewPost({
     );
   }
 
-  if (isPostError || isCommentsError || isReplyingError) {
+  // Show error screen if there are errors loading post or comments
+  if (isPostError || isCommentsError) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -307,7 +353,7 @@ function ViewPost({
         className="flex flex-row w-3/4 max-w-4xl h-[80vh] overflow-hidden bg-white dark:bg-gray-800 rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image section - Left side */}
+        {/* Left Side - Image Display */}
         <div className="w-1/2 flex-shrink-0">
           <CardDescription className="h-full w-full">
             <div className="h-full w-full">
@@ -322,9 +368,9 @@ function ViewPost({
           </CardDescription>
         </div>
 
-        {/* Comment section - Right side */}
+        {/* Right Side - Content */}
         <div className="w-1/2 flex flex-col">
-          {/* Poster - Fixed at top */}
+          {/* Top Header - Contains poster info and actions */}
           <div className="flex items-center justify-between p-3 border-b flex-shrink-0">
             <div className="flex items-center gap-2">
               <img
@@ -336,46 +382,50 @@ function ViewPost({
               />
               <h1 className="font-bold">{post?.username}</h1>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <MoreHorizontal className="h-6 w-6 cursor-pointer" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="min-w-fit dark:bg-gray-900"
-                align="center"
-              >
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuGroup>
-                  <div className="flex items-center justify-start gap-7 cursor-pointer ">
-                    <DropdownMenuItem
-                      className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                      onClick={() =>
-                        navigate(
-                          `/userprofile/${post?.username}/post/edit/${post.id}`,
-                        )
-                      }
+            {/* Dropdown menu for post owner actions (edit/delete) */}
+            {loggedInUser && loggedInUser.username === post?.username && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="min-w-fit dark:bg-gray-900"
+                  align="center"
+                >
+                  {/* Dropdown Content - Edit and Delete */}
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <div className="flex items-center justify-start gap-7 cursor-pointer">
+                      <DropdownMenuItem
+                        className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                        onClick={() =>
+                          navigate(
+                            `/userprofile/${post?.username}/post/edit/${post.id}`,
+                          )
+                        }
+                      >
+                        Edit
+                      </DropdownMenuItem>
+                      <Edit className="size-4 text-blue-200" />
+                    </div>
+                    <div
+                      className="flex items-center justify-start cursor-pointer"
+                      onClick={handleDeletePost}
                     >
-                      Edit
-                    </DropdownMenuItem>
-                    <Edit className="size-4 text-blue-200" />
-                  </div>
-                  <div
-                    className="flex items-center justify-start cursor-pointer"
-                    onClick={handleDeletePost}
-                  >
-                    <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
-                      Delete
-                    </DropdownMenuItem>
-                    <Trash2 className="size-4 text-red-200" />
-                  </div>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                      <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+                        Delete
+                      </DropdownMenuItem>
+                      <Trash2 className="size-4 text-red-200" />
+                    </div>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* Post description */}
+          {/* Scrollable Content Area - Contains post description and comments */}
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
+            {/* Post Description Section */}
             <div className="mb-2 flex items-start gap-1 flex-shrink-0">
               <div className="flex-shrink-0">
                 <img
@@ -396,7 +446,7 @@ function ViewPost({
 
             <hr className="border-gray-300 dark:border-gray-700" />
 
-            {/* Comments */}
+            {/* Comments List */}
             <div>
               {comments?.map((comment) => (
                 <CommentCard
@@ -405,13 +455,12 @@ function ViewPost({
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
-                  // REMOVED: showReplies and setShowReplies props
                 />
               ))}
             </div>
           </div>
 
-          {/* Like/Comment/Share icons - Fixed above input */}
+          {/* Action Bar - Contains like, comment, share, and save buttons */}
           <div className="flex items-center gap-4 px-4 py-3 border-t flex-shrink-0">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-1">
@@ -452,7 +501,7 @@ function ViewPost({
             </div>
           </div>
 
-          {/* Comment input - Fixed at bottom */}
+          {/* Comment Input Section - Contains input field and submit button */}
           <div className="p-4 border-t flex-shrink-0">
             {/* Reply indicator - shows who you're replying to */}
             {replyMode.isReplying && (
@@ -470,6 +519,7 @@ function ViewPost({
               </div>
             )}
 
+            {/* Comment/Reply Form */}
             <form className="flex w-full gap-2" onSubmit={handleAddComment}>
               <img
                 src={loggedInUser?.profilePictureUrl}

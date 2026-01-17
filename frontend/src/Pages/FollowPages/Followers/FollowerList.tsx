@@ -39,8 +39,6 @@ function FollowerList({ profileUsername }: FollowerListProps) {
     skip: !profileUser?.id,
   });
 
-  console.log(followers);
-
   if (isFollowersLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen ">

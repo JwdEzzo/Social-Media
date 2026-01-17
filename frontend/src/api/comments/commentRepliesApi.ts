@@ -14,7 +14,12 @@ export const commentRepliesApi = createApi({
         body: requestDto,
         method: "POST",
       }),
-      invalidatesTags: [{ type: "CommentReply", id: "LIST" }, "CommentReply"],
+      // FIXED: Only invalidate the specific comment's reply count and list
+      // Don't invalidate the generic "CommentReply" tag
+      invalidatesTags: (result, error, arg) => [
+        { type: "CommentReply", id: `COMMENT_${arg.commentId}` },
+        { type: "CommentReply", id: `COUNT_${arg.commentId}` },
+      ],
     }),
     getRepliesByCommentId: builder.query<
       GetReplyResponseDto[],
@@ -24,23 +29,27 @@ export const commentRepliesApi = createApi({
         url: `/comment-replies/comment/${commentId}`,
         method: "GET",
       }),
-      providesTags: (result) =>
+      // FIXED: Tag with the specific comment ID
+      providesTags: (result, error, { commentId }) =>
         result
           ? [
               ...result.map(({ id }) => ({
                 type: "CommentReply" as const,
                 id,
               })),
-              { type: "CommentReply", id: "LIST" },
+              { type: "CommentReply", id: `COMMENT_${commentId}` },
             ]
-          : [{ type: "CommentReply", id: "LIST" }],
+          : [{ type: "CommentReply", id: `COMMENT_${commentId}` }],
     }),
     getCommentReplyCount: builder.query<number, number>({
       query: (commentId) => ({
         url: `/comment-replies/comment/${commentId}/reply-count`,
         method: "GET",
       }),
-      providesTags: [{ type: "CommentReply", id: "LIST" }],
+      // FIXED: Tag with the specific comment ID
+      providesTags: (result, error, commentId) => [
+        { type: "CommentReply", id: `COUNT_${commentId}` },
+      ],
     }),
   }),
 });
