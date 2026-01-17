@@ -1,41 +1,37 @@
 import {
-  postApi,
   useGetFollowingPostsByUserIdQuery,
   useGetPostsExcludingCurrentUserQuery,
 } from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
-import ViewPost from "../PostPages/ViewPost";
+import ViewPost from "../Pages/PostPages/ViewPost";
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import AppSidebar from "./AppSidebar";
+import AppSidebar from "../Pages/HomePage/AppSidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { CardTitle } from "@/components/ui/card";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
-import RenderedPosts from "./react-virtuoso/RenderedPosts";
+import RenderedPosts from "../Pages/HomePage/react-virtuoso/RenderedPosts";
 
 function HomePage() {
-  //
   const [viewMode, setViewMode] = useState<"For You" | "Following">("For You");
   const dispatch = useDispatch();
 
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
     (state: RootState) => state.viewPostModal,
   );
-  // Get logged-in username (string)
-  const { username: loggedInUsername } = useAuth();
 
-  // Get logged-in USER object
+  const { username: loggedInUsername } = useAuth();
   const { data: loggedInUser } = useGetUserByUsernameQuery(
     loggedInUsername || "",
   );
@@ -59,43 +55,29 @@ function HomePage() {
   const [toggleSave, { isLoading: isTogglingSavePost }] =
     useTogglePostSaveMutation();
 
-  // Toggle post like
+  // Wrap in useCallback : to keep reference stable
   const handleTogglePostLike = useCallback(
     async (postId: number) => {
       try {
-        await togglePostLike(postId)
-          .unwrap()
-          .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
-          });
+        await togglePostLike(postId).unwrap();
       } catch (error) {
         console.log("Error: ", error);
       }
     },
-    [togglePostLike, dispatch],
+    [togglePostLike],
   );
 
-  // Toggle post save
   const handleToggleSavePost = useCallback(
     async (postId: number) => {
       try {
-        await toggleSave(postId)
-          .unwrap()
-          .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
-          });
+        await toggleSave(postId).unwrap();
       } catch (error) {
         console.log("Error: ", error);
       }
     },
-    [toggleSave, dispatch],
+    [toggleSave],
   );
 
-  // Open modal for selected post
   const handleViewModal = useCallback(
     (postId: number) => {
       dispatch(openPostModal(postId));
@@ -103,7 +85,6 @@ function HomePage() {
     [dispatch],
   );
 
-  // Close modal
   const handleCloseViewModal = useCallback(() => {
     dispatch(closePostModal());
   }, [dispatch]);
@@ -192,7 +173,6 @@ function HomePage() {
         {/* Main Content */}
         <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
-            {/* Map over posts - now using HomePagePostCard component */}
             {viewMode === "For You" ? (
               <RenderedPosts
                 posts={apiPosts!}
@@ -214,10 +194,6 @@ function HomePage() {
             )}
           </div>
 
-          {/* View Post Modal */}
-          {/* // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
-          // We call the state from Redux store in both components
-          // We then pass them as props to the ViewPost component */}
           <ViewPost
             isOpen={isViewModalOpen}
             handleCloseViewModal={handleCloseViewModal}
@@ -235,15 +211,3 @@ function HomePage() {
 }
 
 export default HomePage;
-
-//  onClick={() =>
-//                     toggleFollow(post.username)
-//                       .unwrap()
-//                       .then(() => {
-//                         dispatch(
-//                           postApi.util.invalidateTags([
-//                             { type: "Post", id: "LIST" },
-//                           ])
-//                         );
-//                       })
-//                   }

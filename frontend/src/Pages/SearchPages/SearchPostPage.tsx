@@ -13,12 +13,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import HomePagePostCard from "@/Pages/HomePage/HomePagePostCard";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import ViewPost from "@/Pages/PostPages/ViewPost";
 import { postApi } from "@/api/posts/postApi";
 import AppSidebar from "@/Pages/HomePage/AppSidebar";
+import RenderedPosts from "../HomePage/react-virtuoso/RenderedPosts";
 
 function SearchPostPage() {
   const [searchParams] = useSearchParams();
@@ -27,13 +27,13 @@ function SearchPostPage() {
   const dispatch = useDispatch();
 
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal
+    (state: RootState) => state.viewPostModal,
   );
 
   const { username: loggedInUsername } = useAuth();
 
   const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || ""
+    loggedInUsername || "",
   );
 
   // This will now only run when searchQuery is provided
@@ -164,17 +164,14 @@ function SearchPostPage() {
 
             {/* Search Results */}
             {searchedPosts && searchedPosts.length > 0 ? (
-              searchedPosts.map((post) => (
-                <HomePagePostCard
-                  key={post.id}
-                  post={post}
-                  onViewComments={handleViewModal}
-                  handleTogglePostLike={handleTogglePostLike}
-                  isTogglingPostLike={isTogglingPostLike}
-                  handleToggleSavePost={handleToggleSavePost}
-                  isTogglingSavePost={isTogglingSavePost}
-                />
-              ))
+              <RenderedPosts
+                posts={searchedPosts}
+                onViewComments={handleViewModal}
+                handleTogglePostLike={handleTogglePostLike}
+                isTogglingPostLike={isTogglingPostLike}
+                handleToggleSavePost={handleToggleSavePost}
+                isTogglingSavePost={isTogglingSavePost}
+              />
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400 text-lg">

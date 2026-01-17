@@ -1,5 +1,4 @@
 import {
-  postApi,
   useDeletePostByPostIdMutation,
   useGetPostByIdQuery,
 } from "@/api/posts/postApi";
@@ -21,7 +20,7 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, useCallback, type FormEvent } from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
@@ -52,7 +51,6 @@ interface ViewPostProps {
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponseDto | undefined;
-
   handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
   handleToggleSavePost: (postId: number) => void;
@@ -122,7 +120,7 @@ function ViewPost({
     post?.id ?? 0,
     {
       skip: !post?.id || post.id === 0,
-    }
+    },
   );
 
   const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
@@ -136,84 +134,91 @@ function ViewPost({
   const [deletePostById, { isLoading: isPostDeleting }] =
     useDeletePostByPostIdMutation();
 
-  async function handleToggleCommentLike(commentId: number) {
-    try {
-      await toggleCommentLike(commentId).unwrap();
-    } catch (error) {
-      console.log("Error: ", error);
-    }
-  }
-
-  async function handleAddComment(e: FormEvent) {
-    e.preventDefault();
-    if (!newComment.trim() || !selectedPostId) return;
-
-    try {
-      if (replyMode.isReplying && replyMode.commentId) {
-        // Create a reply
-        await createReply({
-          content: newComment,
-          commentId: replyMode.commentId,
-        }).unwrap();
-
-        // Reset reply mode
-        setReplyMode({
-          isReplying: false,
-          commentId: null,
-          username: null,
-        });
-        setShowReplies(true);
-      } else {
-        // Create a comment
-        await createComment({
-          content: newComment,
-          postId: selectedPostId,
-        }).unwrap();
+  // Wrap handleToggleCommentLike in useCallback
+  const handleToggleCommentLike = useCallback(
+    async (commentId: number) => {
+      try {
+        await toggleCommentLike(commentId).unwrap();
+      } catch (error) {
+        console.log("Error: ", error);
       }
+    },
+    [toggleCommentLike],
+  );
 
+  // Wrap handleAddComment in useCallback
+  const handleAddComment = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      if (!newComment.trim() || !selectedPostId) return;
+
+      try {
+        if (replyMode.isReplying && replyMode.commentId) {
+          // Create a reply
+          await createReply({
+            content: newComment,
+            commentId: replyMode.commentId,
+          }).unwrap();
+
+          // Reset reply mode
+          setReplyMode({
+            isReplying: false,
+            commentId: null,
+            username: null,
+          });
+          setShowReplies(true);
+        } else {
+          // Create a comment
+          await createComment({
+            content: newComment,
+            postId: selectedPostId,
+          }).unwrap();
+        }
+
+        setNewComment("");
+      } catch (error) {
+        console.error("Failed to add comment/reply:", error);
+      }
+    },
+    [newComment, selectedPostId, replyMode, createReply, createComment],
+  );
+
+  // Wrap in useCallback
+  const handleReplyToComment = useCallback(
+    (commentId: number, username: string) => {
+      setReplyMode({
+        isReplying: true,
+        commentId,
+        username,
+      });
       setNewComment("");
-    } catch (error) {
-      console.error("Failed to add comment/reply:", error);
-    }
-  }
+    },
+    [],
+  );
 
-  // Function to activate reply mode
-  function handleReplyToComment(commentId: number, username: string) {
-    setReplyMode({
-      isReplying: true,
-      commentId,
-      username,
-    });
-    setNewComment(""); // Clear the input, placeholder still here.
-  }
-
-  // Function to cancel reply mode
-  function cancelReplyMode() {
+  const cancelReplyMode = useCallback(() => {
     setReplyMode({
       isReplying: false,
       commentId: null,
       username: null,
     });
     setNewComment("");
-  }
+  }, []);
 
-  async function handleDeletePost() {
+  const handleDeletePost = useCallback(async () => {
     if (post?.id) {
       try {
-        await deletePostById(post.id).unwrap(); // unwrap() helps catch errors
-        // Close the modal only after successful deletion
-        dispatch(closePostModal()); // Dispatrch tghe closePostModal action
+        await deletePostById(post.id).unwrap();
+        dispatch(closePostModal());
       } catch (error) {
         console.error("Failed to delete post:", error);
       }
     }
-  }
+  }, [post?.id, deletePostById, dispatch]);
 
   if (!isOpen) return null;
 
   // Don't render the post content until the data matches the selected post ID
-  // Since we are changing views between posts, the old post data from the cache is still present in POST and COMMENTS variables , all whilst the new query is being fetched.
-  // By doing this, we stop the rendering of the post until the data has been properly fetched and replaced the old one.
   if (post?.id !== selectedPostId) {
     return (
       <div
@@ -303,7 +308,7 @@ function ViewPost({
         className="flex flex-row w-3/4 max-w-4xl h-[80vh] overflow-hidden bg-white dark:bg-gray-800 rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image section - Left side*/}
+        {/* Image section - Left side with lazy loading */}
         <div className="w-1/2 flex-shrink-0">
           <CardDescription className="h-full w-full">
             <div className="h-full w-full">
@@ -311,6 +316,8 @@ function ViewPost({
                 src={post?.imageUrl}
                 alt={post?.description}
                 className="w-full h-full object-contain"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           </CardDescription>
@@ -325,6 +332,8 @@ function ViewPost({
                 src={post?.profilePictureUrl}
                 alt={post?.description}
                 className="w-10 h-10 rounded-full"
+                loading="lazy"
+                decoding="async"
               />
               <h1 className="font-bold">{post?.username}</h1>
             </div>
@@ -343,7 +352,7 @@ function ViewPost({
                       className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
                       onClick={() =>
                         navigate(
-                          `/userprofile/${post?.username}/post/edit/${post.id}`
+                          `/userprofile/${post?.username}/post/edit/${post.id}`,
                         )
                       }
                     >
@@ -353,7 +362,7 @@ function ViewPost({
                   </div>
                   <div
                     className="flex items-center justify-start cursor-pointer"
-                    onClick={() => handleDeletePost()}
+                    onClick={handleDeletePost}
                   >
                     <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
                       Delete
@@ -370,12 +379,12 @@ function ViewPost({
             {/* Post description */}
             <div className="mb-2 flex items-start gap-1 flex-shrink-0">
               <div className="flex-shrink-0">
-                {" "}
-                {/* Add this class */}
                 <img
                   src={post?.profilePictureUrl}
                   alt={post?.description}
                   className="w-8 h-8 rounded-full object-fill"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <div>
@@ -416,14 +425,7 @@ function ViewPost({
                   } ${
                     isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""
                   }`}
-                  onClick={() => {
-                    handleTogglePostLike(post?.id ?? 0);
-                    dispatch(
-                      postApi.util.invalidateTags([
-                        { type: "Post", id: "LIST" },
-                      ])
-                    );
-                  }}
+                  onClick={() => handleTogglePostLike(post?.id ?? 0)}
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {postLikeCount}
@@ -475,6 +477,8 @@ function ViewPost({
                 src={loggedInUser?.profilePictureUrl}
                 alt="Your profile"
                 className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                loading="lazy"
+                decoding="async"
               />
               <Input
                 value={newComment}
