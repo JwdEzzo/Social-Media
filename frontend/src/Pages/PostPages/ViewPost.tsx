@@ -68,7 +68,7 @@ function ViewPost({
   isTogglingSavePost,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
-  const [showReplies, setShowReplies] = useState(false);
+  // We removed showReplies state , now each CommentCard now manages its own
   const [replyMode, setReplyMode] = useState<{
     isReplying: boolean;
     commentId: number | null;
@@ -166,7 +166,6 @@ function ViewPost({
             commentId: null,
             username: null,
           });
-          setShowReplies(true);
         } else {
           // Create a comment
           await createComment({
@@ -308,7 +307,7 @@ function ViewPost({
         className="flex flex-row w-3/4 max-w-4xl h-[80vh] overflow-hidden bg-white dark:bg-gray-800 rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image section - Left side with lazy loading */}
+        {/* Image section - Left side */}
         <div className="w-1/2 flex-shrink-0">
           <CardDescription className="h-full w-full">
             <div className="h-full w-full">
@@ -406,8 +405,7 @@ function ViewPost({
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
-                  showReplies={showReplies}
-                  setShowReplies={setShowReplies}
+                  // REMOVED: showReplies and setShowReplies props
                 />
               ))}
             </div>
