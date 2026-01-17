@@ -10,6 +10,10 @@ import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
 import { memo, useState } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { closePostModal } from "@/slices/viewPostSlice";
+import { useAuth } from "@/auth/useAuth";
 
 interface CommentCardProps {
   comment: GetCommentResponseDto;
@@ -27,6 +31,7 @@ const CommentCard = memo(
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
+    const dispatch = useDispatch();
 
     const { data: commentLikeCount } = useGetCommentLikeCountQuery(
       comment?.id ?? 0,
@@ -52,6 +57,19 @@ const CommentCard = memo(
         { skip: !showReplies },
       );
 
+    const { username: loggedInUsername } = useAuth();
+    const navigate = useNavigate();
+
+    function navigateToSelectedUserProfile(username: string): void {
+      if (loggedInUsername === username) {
+        navigate(`/userprofile/${username}`);
+        dispatch(closePostModal());
+      } else {
+        navigate(`/searcheduserprofile/${username}`);
+        dispatch(closePostModal());
+      }
+    }
+
     return (
       <div className="py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
         <div className="flex items-start gap-3">
@@ -62,12 +80,20 @@ const CommentCard = memo(
             className="w-8 h-8 rounded-full object-cover"
             loading="lazy"
             decoding="async"
+            onClick={() => {
+              navigateToSelectedUserProfile(comment.appUser.username);
+            }}
           />
 
           {/* Comment Content */}
           <div className="flex-1 min-w-0 pr-4">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-[12px] dark:text-white font-sans">
+              <span
+                className="font-bold text-[12px] dark:text-white font-sans"
+                onClick={() => {
+                  navigateToSelectedUserProfile(comment.appUser.username);
+                }}
+              >
                 {comment.appUser.username}
               </span>
               <span className="text-[10px] pt-1 text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block">

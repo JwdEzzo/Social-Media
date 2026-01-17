@@ -142,6 +142,7 @@ const HomePagePostCard = memo(
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full aspect-auto object-fit"
+                  onDoubleClick={() => handleTogglePostLike(post.id)}
                 />
               </div>
             </CardDescription>

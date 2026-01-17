@@ -4,7 +4,13 @@ import {
 } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
 import { ModeToggle } from "@/components/ModeToggle";
 
@@ -83,7 +89,15 @@ function FollowerList({ profileUsername }: FollowerListProps) {
             <CardTitle className="text-xl">
               {profileUsername}'s Followers
             </CardTitle>
-            <ModeToggle />
+            <div className="flex items-center justify-center gap-1">
+              <Button
+                className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
+                onClick={() => window.history.back()}
+              >
+                Back
+              </Button>
+              <ModeToggle />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -96,6 +110,9 @@ function FollowerList({ profileUsername }: FollowerListProps) {
             />
           ))}
         </CardContent>
+        {followers?.length === 0 && (
+          <CardFooter>{<p>You have no followers.</p>}</CardFooter>
+        )}
       </Card>
     </div>
   );

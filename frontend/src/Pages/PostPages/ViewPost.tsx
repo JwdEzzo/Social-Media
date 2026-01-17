@@ -51,6 +51,7 @@ import {
   useGetPostSaveCountQuery,
   useIsPostSavedQuery,
 } from "@/api/posts/postSavesApi";
+import { useAuth } from "@/auth/useAuth";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -90,6 +91,7 @@ function ViewPost({
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { username: loggedInUsername } = useAuth();
 
   const [
     createComment,
@@ -145,6 +147,16 @@ function ViewPost({
   // Mutation for deleting the post
   const [deletePostById, { isLoading: isPostDeleting }] =
     useDeletePostByPostIdMutation();
+
+  function navigateToSelectedUserProfile(username: string): void {
+    if (loggedInUsername === username) {
+      navigate(`/userprofile/${username}`);
+      dispatch(closePostModal());
+    } else {
+      navigate(`/searcheduserprofile/${username}`);
+      dispatch(closePostModal());
+    }
+  }
 
   // Effect to save scroll position when user scrolls
   useEffect(() => {
@@ -363,6 +375,7 @@ function ViewPost({
                 className="w-full h-full object-contain"
                 loading="lazy"
                 decoding="async"
+                onDoubleClick={() => handleTogglePostLike(post.id)}
               />
             </div>
           </CardDescription>
@@ -376,11 +389,12 @@ function ViewPost({
               <img
                 src={post?.profilePictureUrl}
                 alt={post?.description}
-                className="w-10 h-10 rounded-full"
+                className="w-10 h-10 rounded-full cursor-pointer"
                 loading="lazy"
                 decoding="async"
+                onClick={() => navigateToSelectedUserProfile(post?.username)}
               />
-              <h1 className="font-bold">{post?.username}</h1>
+              <h1 className="font-bold cursor-pointer">{post?.username}</h1>
             </div>
             {/* Dropdown menu for post owner actions (edit/delete) */}
             {loggedInUser && loggedInUser.username === post?.username && (
@@ -431,9 +445,10 @@ function ViewPost({
                 <img
                   src={post?.profilePictureUrl}
                   alt={post?.description}
-                  className="w-8 h-8 rounded-full object-fill"
+                  className="w-8 h-8 rounded-full object-fill cursor-pointer"
                   loading="lazy"
                   decoding="async"
+                  onClick={() => navigateToSelectedUserProfile(post?.username)}
                 />
               </div>
               <div>
