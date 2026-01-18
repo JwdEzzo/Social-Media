@@ -10,16 +10,13 @@ import type { GetCommentResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
 import { memo, useState } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { closePostModal } from "@/slices/viewPostSlice";
-import { useAuth } from "@/auth/useAuth";
 
 interface CommentCardProps {
   comment: GetCommentResponseDto;
   handleToggleCommentLike: (commentId: number) => void;
   isTogglingCommentLike: boolean;
   onReply: (commentId: number, username: string) => void;
+  navigateToSelectedUserProfile: (username: string) => void;
 }
 
 const CommentCard = memo(
@@ -28,10 +25,10 @@ const CommentCard = memo(
     handleToggleCommentLike,
     isTogglingCommentLike,
     onReply,
+    navigateToSelectedUserProfile,
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
-    const dispatch = useDispatch();
 
     const { data: commentLikeCount } = useGetCommentLikeCountQuery(
       comment?.id ?? 0,
@@ -56,19 +53,6 @@ const CommentCard = memo(
         { commentId: comment.id },
         { skip: !showReplies },
       );
-
-    const { username: loggedInUsername } = useAuth();
-    const navigate = useNavigate();
-
-    function navigateToSelectedUserProfile(username: string): void {
-      if (loggedInUsername === username) {
-        navigate(`/userprofile/${username}`);
-        dispatch(closePostModal());
-      } else {
-        navigate(`/searcheduserprofile/${username}`);
-        dispatch(closePostModal());
-      }
-    }
 
     return (
       <div className="py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
@@ -161,7 +145,14 @@ const CommentCard = memo(
                   </div>
                 ) : replies && replies.length > 0 ? (
                   replies.map((reply) => (
-                    <ReplyCard key={reply.id} reply={reply} />
+                    <ReplyCard
+                      key={reply.id}
+                      reply={reply}
+                      navigateToSelectedUserProfile={
+                        navigateToSelectedUserProfile
+                      }
+                      //
+                    />
                   ))
                 ) : (
                   <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">

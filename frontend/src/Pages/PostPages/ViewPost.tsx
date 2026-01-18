@@ -150,11 +150,17 @@ function ViewPost({
 
   function navigateToSelectedUserProfile(username: string): void {
     if (loggedInUsername === username) {
-      navigate(`/userprofile/${username}`);
-      dispatch(closePostModal());
+      navigate(`/userprofile/${username}`, {
+        state: { fromModal: true, previousPostId: selectedPostId },
+      });
+      dispatch(closePostModal()); // This will now store the scroll position
+      window.scrollTo(0, 0);
     } else {
-      navigate(`/searcheduserprofile/${username}`);
-      dispatch(closePostModal());
+      navigate(`/searcheduserprofile/${username}`, {
+        state: { fromModal: true, previousPostId: selectedPostId },
+      });
+      dispatch(closePostModal()); // This will now store the scroll position
+      window.scrollTo(0, 0);
     }
   }
 
@@ -470,6 +476,7 @@ function ViewPost({
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
+                  navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                 />
               ))}
             </div>

@@ -3,20 +3,17 @@ import {
   useIsReplyLikedQuery,
   useToggleReplyLikeMutation,
 } from "@/api/comments/commentReplyLikesApi";
-import { useAuth } from "@/auth/useAuth";
-import { closePostModal } from "@/slices/viewPostSlice";
 import type { GetReplyResponseDto } from "@/types/responseTypes";
 import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 interface ReplyCardProps {
   reply: GetReplyResponseDto;
+  navigateToSelectedUserProfile: (username: string) => void;
 }
 
 const ReplyCard = memo(
-  ({ reply }: ReplyCardProps) => {
+  ({ reply, navigateToSelectedUserProfile }: ReplyCardProps) => {
     const [toggleReplyLike, { isLoading: isLikeToggling }] =
       useToggleReplyLikeMutation();
 
@@ -31,20 +28,6 @@ const ReplyCard = memo(
     const handleToggleLike = useCallback(() => {
       toggleReplyLike(reply.id);
     }, [toggleReplyLike, reply.id]);
-
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const { username: loggedInUsername } = useAuth();
-
-    function navigateToSelectedUserProfile(username: string): void {
-      if (loggedInUsername === username) {
-        navigate(`/userprofile/${username}`);
-        dispatch(closePostModal());
-      } else {
-        navigate(`/searcheduserprofile/${username}`);
-        dispatch(closePostModal());
-      }
-    }
 
     return (
       <div className="pt-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
