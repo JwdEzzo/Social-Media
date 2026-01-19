@@ -22,13 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { GetPostResponseDto } from "@/types/responseTypes";
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  MoreHorizontal,
-  Send,
-} from "lucide-react";
+import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
 import { memo } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -84,7 +78,7 @@ const HomePagePostCard = memo(
 
     return (
       <div className="w-6/7 mx-auto">
-        <Card className="w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 ">
           <CardHeader>
             <CardTitle>
               <div className="flex items-center gap-3 justify-between">
@@ -120,7 +114,7 @@ const HomePagePostCard = memo(
                         .then(() => {
                           dispatch(
                             postApi.util.invalidateTags([
-                              { type: "Post", id: post.id },
+                              { type: "Post", id: "FOLLOWING_POSTS" },
                             ]),
                           );
                         })
@@ -130,7 +124,7 @@ const HomePagePostCard = memo(
                     {isFollowed ? "Following" : "Follow"}
                   </Button>
                 </div>
-                <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+                {/* <MoreHorizontal className="h-6 w-6 cursor-pointer" /> */}
               </div>
             </CardTitle>
             <CardDescription>
