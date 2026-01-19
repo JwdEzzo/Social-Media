@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface ViewPostModalState {
   isOpen: boolean;
@@ -18,11 +18,14 @@ export const viewPostModalSlice = createSlice({
   name: "viewPostModal",
   initialState: ViewPostModalInitialState,
   reducers: {
-    openPostModal: (state, action: { payload: number }) => {
+    openPostModal: (state, action: PayloadAction<number>) => {
       state.isOpen = true;
       state.selectedPostId = action.payload;
     },
-    closePostModal: (state, action) => {
+    closePostModal: (
+      state,
+      action: PayloadAction<{ preserveState?: boolean } | undefined>,
+    ) => {
       state.isOpen = false;
       if (!action.payload?.preserveState) {
         state.selectedPostId = null;
@@ -30,10 +33,10 @@ export const viewPostModalSlice = createSlice({
         state.homePageScrollPosition = 0;
       }
     },
-    saveModalScrollPosition: (state, action: { payload: number }) => {
+    saveModalScrollPosition: (state, action: PayloadAction<number>) => {
       state.modalScrollPosition = action.payload;
     },
-    saveHomePageScrollPosition: (state, action: { payload: number }) => {
+    saveHomePageScrollPosition: (state, action: PayloadAction<number>) => {
       state.homePageScrollPosition = action.payload;
     },
   },

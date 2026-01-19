@@ -115,8 +115,8 @@ function HomePage() {
 
   // Close modal
   const handleCloseViewModal = useCallback(() => {
-    dispatch(closePostModal(selectedPostId));
-  }, [dispatch, selectedPostId]);
+    dispatch(closePostModal({ preserveState: false }));
+  }, [dispatch]);
 
   // Restore HomePage scroll when returning from profile
   useEffect(() => {
@@ -138,6 +138,19 @@ function HomePage() {
       return () => clearTimeout(timer);
     }
   }, [selectedPostId, isViewModalOpen, dispatch]);
+
+  useEffect(() => {
+    if (isViewModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    // Cleanup function to ensure scrolling is restored
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isViewModalOpen]);
 
   // Loading state
   if (isPostsLoading || isFollowingPostsLoading) {
@@ -265,15 +278,3 @@ function HomePage() {
 }
 
 export default HomePage;
-
-//  onClick={() =>
-//                     toggleFollow(post.username)
-//                       .unwrap()
-//                       .then(() => {
-//                         dispatch(
-//                           postApi.util.invalidateTags([
-//                             { type: "Post", id: "LIST" },
-//                           ])
-//                         );
-//                       })
-//                   }
