@@ -23,8 +23,8 @@ import {
   Edit3,
   LogOut,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
@@ -42,7 +42,7 @@ import {
 import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
 import ViewPost from "@/Pages/PostPages/ViewPost";
 import type { RootState } from "@/store/store";
-import { closePostModal } from "@/slices/viewPostSlice";
+import { closePostModal, openPostModal } from "@/slices/viewPostSlice";
 import { useSelector } from "react-redux";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 
@@ -52,11 +52,12 @@ interface ProfilePageProps {
 
 function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { username: loggedInUsername } = useAuth();
   const { searchedUsername } = useParams<{ searchedUsername: string }>();
   const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
-    "posts"
+    "posts",
   );
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
@@ -65,7 +66,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   // We call the state from Redux store in both components
   // We then pass them as props to the ViewPost component
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal
+    (state: RootState) => state.viewPostModal,
   );
 
   // Determine which username to use
@@ -84,7 +85,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     loggedInUsername!,
     {
       skip: !loggedInUsername,
-    }
+    },
   );
 
   const [toggleFollow] = useToggleFollowMutation();
@@ -105,14 +106,14 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     profileUsername!,
     {
       skip: !profileUsername,
-    }
+    },
   );
 
   const { data: getFollowingCount } = useGetFollowingCountQuery(
     profileUsername!,
     {
       skip: !profileUsername,
-    }
+    },
   );
 
   const { data: postCount } = useGetPostsCountQuery(profileUsername!, {
@@ -130,21 +131,21 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const sortedPosts = posts
     ? [...posts].sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
     : [];
 
   const sortedLikedPosts = likedPosts
     ? [...likedPosts].sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
     : [];
 
   const sortedSavedPosts = savedPosts
     ? [...savedPosts].sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
     : [];
 
@@ -186,8 +187,25 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   function handleCloseViewModal() {
-    dispatch(closePostModal());
+    dispatch(closePostModal(selectedPostId));
   }
+
+  useEffect(() => {
+    // Check if we came from the modal
+    if (location.state?.fromModal && location.state?.previousPostId) {
+      // Set up a listener for when user navigates back
+      const handlePopState = () => {
+        // Re-open the modal when user goes back
+        dispatch(openPostModal(location.state.previousPostId));
+      };
+
+      window.addEventListener("popstate", handlePopState);
+
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    }
+  }, [location.state, dispatch]);
 
   // Loading state
   if (!profileUsername || isUserLoading) {
@@ -307,7 +325,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
                     onClick={() =>
                       navigate(
-                        `/userprofile/${profileUser?.username}/edit-profile`
+                        `/userprofile/${profileUser?.username}/edit-profile`,
                       )
                     }
                   >
@@ -316,7 +334,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   <DropdownMenuItem
                     onClick={() =>
                       navigate(
-                        `/userprofile/${profileUser?.username}/edit-credentials`
+                        `/userprofile/${profileUser?.username}/edit-credentials`,
                       )
                     }
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"

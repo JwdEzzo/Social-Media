@@ -15,12 +15,16 @@ import {
 import { Button } from "@/components/ui/button";
 import AppSidebar from "./AppSidebar";
 import { useDispatch, useSelector } from "react-redux";
-import { openPostModal, closePostModal } from "@/slices/viewPostSlice";
+import {
+  openPostModal,
+  closePostModal,
+  saveHomePageScrollPosition,
+} from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { CardTitle } from "@/components/ui/card";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import RenderedPosts from "./react-virtuoso/RenderedPosts";
 
@@ -28,10 +32,13 @@ function HomePage() {
   //
   const [viewMode, setViewMode] = useState<"For You" | "Following">("For You");
   const dispatch = useDispatch();
+  const mainRef = useRef<HTMLDivElement>(null);
 
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal,
-  );
+  const {
+    isOpen: isViewModalOpen,
+    selectedPostId,
+    homePageScrollPosition,
+  } = useSelector((state: RootState) => state.viewPostModal);
   // Get logged-in username (string)
   const { username: loggedInUsername } = useAuth();
 
@@ -98,6 +105,9 @@ function HomePage() {
   // Open modal for selected post
   const handleViewModal = useCallback(
     (postId: number) => {
+      if (mainRef.current) {
+        dispatch(saveHomePageScrollPosition(window.scrollY));
+      }
       dispatch(openPostModal(postId));
     },
     [dispatch],
@@ -105,12 +115,29 @@ function HomePage() {
 
   // Close modal
   const handleCloseViewModal = useCallback(() => {
-    dispatch(closePostModal());
-  }, [dispatch]);
+    dispatch(closePostModal(selectedPostId));
+  }, [dispatch, selectedPostId]);
 
+  // Restore HomePage scroll when returning from profile
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [viewMode]);
+    if (selectedPostId && isViewModalOpen && homePageScrollPosition > 0) {
+      // Small delay to ensure modal has rendered
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: homePageScrollPosition, behavior: "instant" });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedPostId, isViewModalOpen, homePageScrollPosition]);
+
+  // Re-open modal if returning from profile page
+  useEffect(() => {
+    if (selectedPostId && !isViewModalOpen) {
+      const timer = setTimeout(() => {
+        dispatch(openPostModal(selectedPostId));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedPostId, isViewModalOpen, dispatch]);
 
   // Loading state
   if (isPostsLoading || isFollowingPostsLoading) {
@@ -190,7 +217,10 @@ function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
+        <main
+          ref={mainRef}
+          className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center"
+        >
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
             {/* Map over posts - now using HomePagePostCard component */}
             {viewMode === "For You" ? (

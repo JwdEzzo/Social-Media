@@ -35,8 +35,11 @@ import {
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
 import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
-import { useDispatch } from "react-redux";
-import { closePostModal } from "@/slices/viewPostSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  closePostModal,
+  saveModalScrollPosition,
+} from "@/slices/viewPostSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +55,7 @@ import {
   useIsPostSavedQuery,
 } from "@/api/posts/postSavesApi";
 import { useAuth } from "@/auth/useAuth";
+import type { RootState } from "@/store/store";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -87,11 +91,15 @@ function ViewPost({
 
   // Ref to track scroll position in the comments area
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollPositionRef = useRef<number>(0);
+  const modalScrollPosition = useSelector(
+    (state: RootState) => state.viewPostModal.modalScrollPosition,
+  );
 
+  // Redux actions
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { username: loggedInUsername } = useAuth();
+  const scrollPositionRef = useRef<number>(0);
 
   const [
     createComment,
@@ -149,44 +157,38 @@ function ViewPost({
     useDeletePostByPostIdMutation();
 
   function navigateToSelectedUserProfile(username: string): void {
+    // Save current modal scroll position before navigating
+    if (scrollContainerRef.current) {
+      dispatch(saveModalScrollPosition(scrollContainerRef.current.scrollTop));
+    }
+
     if (loggedInUsername === username) {
       navigate(`/userprofile/${username}`, {
         state: { fromModal: true, previousPostId: selectedPostId },
       });
-      dispatch(closePostModal()); // This will now store the scroll position
+      dispatch(closePostModal({ preserveState: true }));
       window.scrollTo(0, 0);
     } else {
       navigate(`/searcheduserprofile/${username}`, {
         state: { fromModal: true, previousPostId: selectedPostId },
       });
-      dispatch(closePostModal()); // This will now store the scroll position
+      dispatch(closePostModal({ preserveState: true }));
       window.scrollTo(0, 0);
     }
   }
 
-  // Effect to save scroll position when user scrolls
+  // Restore modal scroll position when it opens
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      scrollPositionRef.current = container.scrollTop;
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Effect to restore scroll position after comments update
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container && scrollPositionRef.current > 0) {
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        container.scrollTop = scrollPositionRef.current;
-      });
+    if (isOpen && scrollContainerRef.current && modalScrollPosition > 0) {
+      //  longer delay could be useful to ensure comments have rendered
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = modalScrollPosition;
+        }
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [comments]);
+  }, [isOpen, modalScrollPosition, comments]);
 
   // Callback to toggle comment like status
   const handleToggleCommentLike = useCallback(
@@ -269,7 +271,7 @@ function ViewPost({
     if (post?.id) {
       try {
         await deletePostById(post.id).unwrap();
-        dispatch(closePostModal());
+        dispatch(closePostModal(post.id));
       } catch (error) {
         console.error("Failed to delete post:", error);
       }
