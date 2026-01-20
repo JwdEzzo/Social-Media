@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,11 +72,15 @@ public class CommentController {
    }
 
    // Update Comment
-   @PostMapping("/edit-comment/{commentId:\\d+}")
+   @PutMapping("/edit-comment/{commentId:\\d+}")
    public ResponseEntity<Void> editComment(@PathVariable Long commentId, @RequestBody String content,
          Authentication authentication) {
       String username = authentication.getName();
+      log.info("The username is: {}", username);
+      log.info("The commentId is: {}", commentId);
+      log.info("The content is: {}", content);
       commentService.editComment(commentId, content, username);
+      log.info("Comment edited successfully");
       return ResponseEntity.status(HttpStatus.OK).build();
    }
 

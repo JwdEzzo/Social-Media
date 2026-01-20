@@ -37,6 +37,7 @@ interface CommentCardProps {
   navigateToSelectedUserProfile: (username: string) => void;
   loggedInUser: GetUserResponseDto | undefined;
   postUsername: string;
+  onEdit: (commentId: number) => void;
 }
 
 const CommentCard = memo(
@@ -48,6 +49,7 @@ const CommentCard = memo(
     navigateToSelectedUserProfile,
     loggedInUser,
     postUsername,
+    onEdit,
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
@@ -136,11 +138,7 @@ const CommentCard = memo(
                       <div className="flex items-center justify-start gap-7 cursor-pointer">
                         <DropdownMenuItem
                           className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                          // onClick={() =>
-                          //   navigate(
-                          //     `/userprofile/${post?.username}/post/edit/${post.id}`,
-                          //   )
-                          // }
+                          onClick={() => onEdit(comment.id)}
                         >
                           Edit
                         </DropdownMenuItem>

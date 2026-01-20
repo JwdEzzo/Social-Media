@@ -4,6 +4,7 @@ import {
 } from "@/api/posts/postApi";
 import {
   useCreateCommentMutation,
+  useEditCommentMutation,
   useGetCommentsByPostIdQuery,
   useGetPostCommentCountQuery,
 } from "@/api/comments/commentApi";
@@ -89,6 +90,14 @@ function ViewPost({
     username: null,
   });
 
+  const [editMode, setEditMode] = useState<{
+    isEditing: boolean;
+    commentId: number | null;
+  }>({
+    isEditing: false,
+    commentId: null,
+  });
+
   // Ref to track scroll position in the comments area
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const modalScrollPosition = useSelector(
@@ -110,6 +119,7 @@ function ViewPost({
     useToggleCommentLikeMutation();
 
   const [createReply] = useCreateReplyMutation();
+  const [editComment] = useEditCommentMutation();
 
   // Fetch comments for the current post
   const {
@@ -227,33 +237,92 @@ function ViewPost({
             commentId: null,
             username: null,
           });
-        } else {
+        } else if (
+          !replyMode.isReplying &&
+          !editMode.isEditing &&
+          selectedPostId
+        ) {
           // Create a new comment
           await createComment({
             content: newComment,
             postId: selectedPostId,
           }).unwrap();
+        } else if (editMode.isEditing && editMode.commentId) {
+          // Edit an existing comment
+          await editComment({
+            content: newComment,
+            commentId: editMode.commentId,
+          }).unwrap();
+          // Reset edit mode after successful edit
+          setEditMode({
+            isEditing: false,
+            commentId: null,
+          });
         }
-
         setNewComment("");
       } catch (error) {
         console.error("Failed to add comment/reply:", error);
       }
     },
-    [newComment, selectedPostId, replyMode, createReply, createComment],
+    [
+      newComment,
+      selectedPostId,
+      replyMode.isReplying,
+      replyMode.commentId,
+      editMode.isEditing,
+      editMode.commentId,
+      createReply,
+      createComment,
+      editComment,
+    ],
   );
 
   // Callback to enter reply mode for a specific comment
   const handleReplyToComment = useCallback(
     (commentId: number, username: string) => {
+      // Always clear edit mode when entering reply mode
+      if (editMode.isEditing) {
+        setEditMode({
+          isEditing: false,
+          commentId: null,
+        });
+      }
+
+      // Enter reply mode for the specified comment
       setReplyMode({
         isReplying: true,
         commentId,
         username,
       });
+
+      // Clear the comment text field
       setNewComment("");
     },
-    [],
+    [editMode],
+  );
+
+  // Callback to enter edit mode for a specific comment
+  const handleEditComment = useCallback(
+    (commentId: number) => {
+      // clear reply mode when entering edit mode
+      if (replyMode.isReplying) {
+        setReplyMode({
+          isReplying: false,
+          commentId: null,
+          username: null,
+        });
+      }
+
+      // Enter edit mode for the specified comment
+      setEditMode({
+        isEditing: true,
+        commentId,
+      });
+
+      // clear the comment text field
+      setNewComment("");
+    },
+    [replyMode],
   );
 
   // Callback to cancel reply mode
@@ -265,6 +334,19 @@ function ViewPost({
     });
     setNewComment("");
   }, []);
+
+  // callback to cancel edit mode
+  const cancelEditMode = useCallback(() => {
+    setEditMode({
+      isEditing: false,
+      commentId: null,
+    });
+    setNewComment("");
+  }, []);
+
+  useEffect(() => {
+    console.log("Comments updated:", comments);
+  }, [comments]);
 
   // Callback to handle post deletion
   const handleDeletePost = useCallback(async () => {
@@ -468,19 +550,19 @@ function ViewPost({
             </div>
 
             <hr className="border-gray-300 dark:border-gray-700" />
-
             {/* Comments List */}
             <div>
               {comments?.map((comment) => (
                 <CommentCard
                   postUsername={post.username}
-                  key={comment.id}
+                  key={`${comment.id}-${comment.content}`}
                   comment={comment}
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                   loggedInUser={loggedInUser}
+                  onEdit={handleEditComment}
                 />
               ))}
             </div>
@@ -530,7 +612,7 @@ function ViewPost({
           {/* Comment Input Section - Contains input field and submit button */}
           <div className="p-4 border-t flex-shrink-0">
             {/* Reply indicator - shows who you're replying to */}
-            {replyMode.isReplying && (
+            {replyMode.isReplying && !editMode.isEditing && (
               <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   Replying to{" "}
@@ -545,7 +627,22 @@ function ViewPost({
               </div>
             )}
 
-            {/* Comment/Reply Form */}
+            {/* Edit indicator - shows that youre editing the highlighted comment */}
+            {editMode.isEditing && !replyMode.isReplying && (
+              <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Editing...
+                </span>
+                <button
+                  onClick={cancelEditMode}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Comment/Reply/Edit Form */}
             <form className="flex w-full gap-2" onSubmit={handleAddComment}>
               <img
                 src={loggedInUser?.profilePictureUrl}
@@ -558,9 +655,11 @@ function ViewPost({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={
-                  replyMode.isReplying
-                    ? `Reply to ${replyMode.username}...`
-                    : "Add a comment..."
+                  editMode.isEditing
+                    ? "Edit your comment..."
+                    : replyMode.isReplying
+                      ? `Reply to ${replyMode.username}...`
+                      : "Add a comment..."
                 }
                 className="flex-1"
               />
@@ -570,7 +669,17 @@ function ViewPost({
                 disabled={isCreateLoading}
                 size="sm"
               >
-                {isCreateLoading ? "Posting..." : "Post"}
+                {isCreateLoading
+                  ? editMode.isEditing
+                    ? "Saving..."
+                    : replyMode.isReplying
+                      ? "Replying..."
+                      : "Posting..."
+                  : editMode.isEditing
+                    ? "Save"
+                    : replyMode.isReplying
+                      ? "Reply"
+                      : "Post"}
               </Button>
             </form>
             {isCreateError && (
