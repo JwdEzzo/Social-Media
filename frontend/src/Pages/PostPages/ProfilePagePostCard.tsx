@@ -1,9 +1,11 @@
 import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import { useGetPostLikeCountQuery } from "@/api/posts/postLikesApi";
 import { openPostModal } from "@/slices/viewPostSlice";
+import type { RootState } from "@/store/store";
 import type { GetPostResponseDto } from "@/types/responseTypes";
 import { Heart, MessageCircle } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 interface ProfilePagePostCardProps {
   post: GetPostResponseDto;
@@ -18,14 +20,31 @@ function ProfilePagePostCard({ post }: ProfilePagePostCardProps) {
     post?.id ?? 0,
     {
       skip: !post?.id || post.id === 0,
-    }
+    },
   );
 
   const dispatch = useDispatch();
 
+  const isViewModalOpen = useSelector(
+    (state: RootState) => state.viewPostModal.isOpen,
+  );
+
   function handleOpenModalClick() {
     dispatch(openPostModal(post.id));
   }
+
+  useEffect(() => {
+    if (isViewModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    // Cleanup function to ensure scrolling is restored
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isViewModalOpen]);
 
   return (
     <div

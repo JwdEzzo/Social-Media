@@ -42,6 +42,17 @@ export const commentApi = createApi({
       }),
       providesTags: [{ type: "Comment", id: "LIST" }],
     }),
+
+    editComment: builder.mutation<void, { commentId: number; content: string }>(
+      {
+        query: (commentId) => ({
+          url: `/comments/edit-comment/${commentId}`,
+          method: "PUT",
+        }),
+        invalidatesTags: [{ type: "Comment", id: "LIST" }, "Comment"],
+      },
+    ),
+
     deleteComment: builder.mutation<void, number>({
       query: (commentId) => ({
         url: `/comments/${commentId}`,
@@ -56,5 +67,6 @@ export const {
   useCreateCommentMutation,
   useGetCommentsByPostIdQuery,
   useGetPostCommentCountQuery,
+  useEditCommentMutation,
   useDeleteCommentMutation,
 } = commentApi;

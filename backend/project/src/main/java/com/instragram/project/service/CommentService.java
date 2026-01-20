@@ -44,6 +44,16 @@ public class CommentService {
       return commentRepository.findByPostId(postId);
    }
 
+   // Update a comment
+   public void editComment(Long commentId, String content, String username) {
+      Comment comment = commentRepository.findById(commentId).get();
+      if (!comment.getAppUser().getUsername().equals(username)) {
+         throw new RuntimeException("You do not have permission to update this comment");
+      }
+      comment.setContent(content);
+      commentRepository.save(comment);
+   }
+
    // Delete the comment
    @Transactional
    public void deleteComment(Long commentId, String username) {

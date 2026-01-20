@@ -70,6 +70,15 @@ public class CommentController {
       return ResponseEntity.status(HttpStatus.OK).body(commentResponseDtos);
    }
 
+   // Update Comment
+   @PostMapping("/edit-comment/{commentId:\\d+}")
+   public ResponseEntity<Void> editComment(@PathVariable Long commentId, @RequestBody String content,
+         Authentication authentication) {
+      String username = authentication.getName();
+      commentService.editComment(commentId, content, username);
+      return ResponseEntity.status(HttpStatus.OK).build();
+   }
+
    // Delete Comment by Post Owner or Comment Owner
    @DeleteMapping("/{commentId:\\d+}")
    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Authentication authentication) {
