@@ -3,6 +3,7 @@ package com.instragram.project.model;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,7 +31,14 @@ public class CommentLike {
    private AppUser appUser;
 
    @ManyToOne
-   @JoinColumn(name = "comment_id", nullable = false)
+   @JoinColumn(//
+         name = "comment_id", //
+         nullable = false, //
+         foreignKey = @ForeignKey(//
+               name = "fk_comment_like_comment", //
+               foreignKeyDefinition = "FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE"//
+         )//
+   )
    private Comment comment;
 
    private LocalDateTime createdAt;

@@ -271,7 +271,7 @@ function ViewPost({
     if (post?.id) {
       try {
         await deletePostById(post.id).unwrap();
-        dispatch(closePostModal(post.id));
+        dispatch(closePostModal());
       } catch (error) {
         console.error("Failed to delete post:", error);
       }
@@ -473,12 +473,14 @@ function ViewPost({
             <div>
               {comments?.map((comment) => (
                 <CommentCard
+                  postUsername={post.username}
                   key={comment.id}
                   comment={comment}
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
+                  loggedInUser={loggedInUser}
                 />
               ))}
             </div>

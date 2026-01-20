@@ -2,7 +2,9 @@ package com.instragram.project.model;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,8 +35,14 @@ public class CommentReply {
    @JoinColumn(name = "app_user_id", nullable = false)
    private AppUser appUser;
 
-   @ManyToOne
-   @JoinColumn(name = "comment_id", nullable = false)
+   @ManyToOne(cascade = CascadeType.ALL)
+   @JoinColumn( //
+         name = "comment_id", //
+         nullable = false, //
+         foreignKey = @ForeignKey(//
+               name = "fk_comment_reply_comment", //
+               foreignKeyDefinition = "FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE"//
+         ))
    private Comment comment;
 
    private LocalDateTime createdAt;
