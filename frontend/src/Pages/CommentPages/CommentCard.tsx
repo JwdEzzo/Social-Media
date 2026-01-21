@@ -37,6 +37,7 @@ interface CommentCardProps {
   navigateToSelectedUserProfile: (username: string) => void;
   loggedInUser: GetUserResponseDto | undefined;
   postUsername: string;
+  focusRef: React.RefObject<HTMLInputElement | null>;
   onEdit: (commentId: number) => void;
 }
 
@@ -50,6 +51,7 @@ const CommentCard = memo(
     loggedInUser,
     postUsername,
     onEdit,
+    focusRef,
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
@@ -191,6 +193,7 @@ const CommentCard = memo(
                 onClick={() => {
                   onReply(comment.id, comment.appUser.username);
                   setShowReplies(true);
+                  focusRef.current?.focus();
                 }}
               />
               <span className="text-gray-700 dark:text-gray-300 text-sm pl-1">

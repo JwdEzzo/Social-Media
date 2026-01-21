@@ -82,23 +82,7 @@ function ViewPost({
   isTogglingSavePost,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
-  // const [replyMode, setReplyMode] = useState<{
-  //   isReplying: boolean;
-  //   commentId: number | null;
-  //   username: string | null;
-  // }>({
-  //   isReplying: false,
-  //   commentId: null,
-  //   username: null,
-  // });
-
-  // const [editMode, setEditMode] = useState<{
-  //   isEditing: boolean;
-  //   commentId: number | null;
-  // }>({
-  //   isEditing: false,
-  //   commentId: null,
-  // });
+  const focusRef = useRef<HTMLInputElement>(null);
 
   const { isEditing, commentId: editCommentId } = useSelector(
     (state: RootState) => state.editModeSlice,
@@ -325,10 +309,6 @@ function ViewPost({
     setNewComment("");
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("Comments updated:", comments);
-  }, [comments]);
-
   // Callback to handle post deletion
   const handleDeletePost = useCallback(async () => {
     if (post?.id) {
@@ -544,6 +524,7 @@ function ViewPost({
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                   loggedInUser={loggedInUser}
                   onEdit={handleEditComment}
+                  focusRef={focusRef}
                 />
               ))}
             </div>
@@ -566,7 +547,12 @@ function ViewPost({
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {postLikeCount}
                 </span>
-                <MessageCircle className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors" />
+                <MessageCircle
+                  className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                  onClick={() => {
+                    focusRef.current?.focus();
+                  }}
+                />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {postCommentCount}
                 </span>
@@ -632,6 +618,7 @@ function ViewPost({
                 decoding="async"
               />
               <Input
+                ref={focusRef}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={
