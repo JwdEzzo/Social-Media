@@ -563,6 +563,7 @@ function ViewPost({
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                   loggedInUser={loggedInUser}
                   onEdit={handleEditComment}
+                  editMode={editMode}
                 />
               ))}
             </div>

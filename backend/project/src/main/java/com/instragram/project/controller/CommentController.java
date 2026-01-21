@@ -76,11 +76,7 @@ public class CommentController {
    public ResponseEntity<Void> editComment(@PathVariable Long commentId, @RequestBody String content,
          Authentication authentication) {
       String username = authentication.getName();
-      log.info("The username is: {}", username);
-      log.info("The commentId is: {}", commentId);
-      log.info("The content is: {}", content);
       commentService.editComment(commentId, content, username);
-      log.info("Comment edited successfully");
       return ResponseEntity.status(HttpStatus.OK).build();
    }
 

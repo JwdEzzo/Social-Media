@@ -38,6 +38,7 @@ interface CommentCardProps {
   loggedInUser: GetUserResponseDto | undefined;
   postUsername: string;
   onEdit: (commentId: number) => void;
+  editMode: { isEditing: boolean; commentId: number | null };
 }
 
 const CommentCard = memo(
@@ -50,6 +51,7 @@ const CommentCard = memo(
     loggedInUser,
     postUsername,
     onEdit,
+    editMode,
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
@@ -73,6 +75,10 @@ const CommentCard = memo(
 
     const [deleteComment] = useDeleteCommentMutation();
 
+    // highlight the comment being edited
+    const isCommentBeingEdited =
+      editMode.isEditing && editMode.commentId === comment.id;
+
     const handleDeleteComment = useCallback(async () => {
       try {
         await deleteComment(comment.id).unwrap();
@@ -93,7 +99,9 @@ const CommentCard = memo(
       loggedInUser?.username === postUsername;
 
     return (
-      <div className="py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0  transition-all">
+      <div
+        className={`py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0  transition-all ${isCommentBeingEdited ? "bg-red-100 dark:bg-gray-700" : ""} `}
+      >
         <div className="flex items-start gap-3">
           {/* Profile Picture */}
           <img
