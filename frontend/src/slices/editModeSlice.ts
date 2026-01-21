@@ -2,29 +2,29 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface EditModeState {
   isEditing: boolean;
-  commendId: number | null;
+  commentId: number | null;
 }
 
 const EditModeInitialState: EditModeState = {
   isEditing: false,
-  commendId: null,
+  commentId: null,
 };
 
 export const editModeSlice = createSlice({
   name: "editMode",
   initialState: EditModeInitialState,
   reducers: {
-    openEditMode: (state, action: PayloadAction<number>) => {
+    enterEditMode: (state, action: PayloadAction<number>) => {
       state.isEditing = true;
-      state.commendId = action.payload;
+      state.commentId = action.payload;
     },
     closeEditMode: (state) => {
       state.isEditing = false;
-      state.commendId = null;
+      state.commentId = null;
     },
   },
 });
 
-export const { openEditMode, closeEditMode } = editModeSlice.actions;
+export const { enterEditMode, closeEditMode } = editModeSlice.actions;
 
 export default editModeSlice.reducer;

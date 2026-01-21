@@ -16,17 +16,27 @@ export const replyModeSlice = createSlice({
   name: "replyMode",
   initialState: ReplyModeInitialState,
   reducers: {
-    openReplyMode: (state, action: PayloadAction<number>) => {
+    enterReplyMode: (
+      state,
+      action: PayloadAction<{ commentId: number; username: string }>,
+    ) => {
       state.isReplying = true;
-      state.commentId = action.payload;
+      state.commentId = action.payload.commentId;
+      state.username = action.payload.username;
     },
     closeReplyMode: (state) => {
       state.isReplying = false;
       state.commentId = null;
     },
+    resetReplyMode: (state) => {
+      state.isReplying = false;
+      state.commentId = null;
+      state.username = null;
+    },
   },
 });
 
-export const { openReplyMode, closeReplyMode } = replyModeSlice.actions;
+export const { enterReplyMode, closeReplyMode, resetReplyMode } =
+  replyModeSlice.actions;
 
 export default replyModeSlice.reducer;

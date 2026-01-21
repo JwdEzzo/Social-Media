@@ -57,6 +57,8 @@ import {
 } from "@/api/posts/postSavesApi";
 import { useAuth } from "@/auth/useAuth";
 import type { RootState } from "@/store/store";
+import { enterReplyMode, resetReplyMode } from "@/slices/replyModeSlice";
+import { closeEditMode, enterEditMode } from "@/slices/editModeSlice";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -80,23 +82,33 @@ function ViewPost({
   isTogglingSavePost,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
-  const [replyMode, setReplyMode] = useState<{
-    isReplying: boolean;
-    commentId: number | null;
-    username: string | null;
-  }>({
-    isReplying: false,
-    commentId: null,
-    username: null,
-  });
+  // const [replyMode, setReplyMode] = useState<{
+  //   isReplying: boolean;
+  //   commentId: number | null;
+  //   username: string | null;
+  // }>({
+  //   isReplying: false,
+  //   commentId: null,
+  //   username: null,
+  // });
 
-  const [editMode, setEditMode] = useState<{
-    isEditing: boolean;
-    commentId: number | null;
-  }>({
-    isEditing: false,
-    commentId: null,
-  });
+  // const [editMode, setEditMode] = useState<{
+  //   isEditing: boolean;
+  //   commentId: number | null;
+  // }>({
+  //   isEditing: false,
+  //   commentId: null,
+  // });
+
+  const { isEditing, commentId: editCommentId } = useSelector(
+    (state: RootState) => state.editModeSlice,
+  );
+
+  const {
+    isReplying,
+    commentId: replyCommentId,
+    username: replyUsername,
+  } = useSelector((state: RootState) => state.replyModeSlice);
 
   // Ref to track scroll position in the comments area
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -224,40 +236,29 @@ function ViewPost({
       }
 
       try {
-        if (replyMode.isReplying && replyMode.commentId) {
+        if (isReplying && replyCommentId) {
           // Create a reply to a comment
           await createReply({
             content: newComment,
-            commentId: replyMode.commentId,
+            commentId: replyCommentId,
           }).unwrap();
 
           // Reset reply mode after successful creation
-          setReplyMode({
-            isReplying: false,
-            commentId: null,
-            username: null,
-          });
-        } else if (
-          !replyMode.isReplying &&
-          !editMode.isEditing &&
-          selectedPostId
-        ) {
+          dispatch(resetReplyMode());
+        } else if (!isReplying && !isEditing && selectedPostId) {
           // Create a new comment
           await createComment({
             content: newComment,
             postId: selectedPostId,
           }).unwrap();
-        } else if (editMode.isEditing && editMode.commentId) {
+        } else if (isEditing && editCommentId) {
           // Edit an existing comment
           await editComment({
             content: newComment,
-            commentId: editMode.commentId,
+            commentId: editCommentId,
           }).unwrap();
           // Reset edit mode after successful edit
-          setEditMode({
-            isEditing: false,
-            commentId: null,
-          });
+          dispatch(closeEditMode());
         }
         setNewComment("");
       } catch (error) {
@@ -267,11 +268,12 @@ function ViewPost({
     [
       newComment,
       selectedPostId,
-      replyMode.isReplying,
-      replyMode.commentId,
-      editMode.isEditing,
-      editMode.commentId,
+      isReplying,
+      replyCommentId,
+      isEditing,
+      editCommentId,
       createReply,
+      dispatch,
       createComment,
       editComment,
     ],
@@ -281,68 +283,47 @@ function ViewPost({
   const handleReplyToComment = useCallback(
     (commentId: number, username: string) => {
       // Always clear edit mode when entering reply mode
-      if (editMode.isEditing) {
-        setEditMode({
-          isEditing: false,
-          commentId: null,
-        });
+      if (isEditing) {
+        dispatch(closeEditMode());
       }
 
       // Enter reply mode for the specified comment
-      setReplyMode({
-        isReplying: true,
-        commentId,
-        username,
-      });
+      dispatch(enterReplyMode({ commentId, username }));
 
       // Clear the comment text field
       setNewComment("");
     },
-    [editMode],
+    [dispatch, isEditing],
   );
 
   // Callback to enter edit mode for a specific comment
   const handleEditComment = useCallback(
     (commentId: number) => {
       // clear reply mode when entering edit mode
-      if (replyMode.isReplying) {
-        setReplyMode({
-          isReplying: false,
-          commentId: null,
-          username: null,
-        });
+      if (isReplying) {
+        dispatch(resetReplyMode());
       }
 
       // Enter edit mode for the specified comment
-      setEditMode({
-        isEditing: true,
-        commentId,
-      });
+      dispatch(enterEditMode(commentId));
 
       // clear the comment text field
       setNewComment("");
     },
-    [replyMode],
+    [dispatch, isReplying],
   );
 
   // Callback to cancel reply mode
   const cancelReplyMode = useCallback(() => {
-    setReplyMode({
-      isReplying: false,
-      commentId: null,
-      username: null,
-    });
+    dispatch(resetReplyMode());
     setNewComment("");
-  }, []);
+  }, [dispatch]);
 
   // callback to cancel edit mode
   const cancelEditMode = useCallback(() => {
-    setEditMode({
-      isEditing: false,
-      commentId: null,
-    });
+    dispatch(closeEditMode());
     setNewComment("");
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     console.log("Comments updated:", comments);
@@ -563,7 +544,6 @@ function ViewPost({
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                   loggedInUser={loggedInUser}
                   onEdit={handleEditComment}
-                  editMode={editMode}
                 />
               ))}
             </div>
@@ -613,11 +593,10 @@ function ViewPost({
           {/* Comment Input Section - Contains input field and submit button */}
           <div className="p-4 border-t flex-shrink-0">
             {/* Reply indicator - shows who you're replying to */}
-            {replyMode.isReplying && !editMode.isEditing && (
+            {isReplying && !isEditing && (
               <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  Replying to{" "}
-                  <span className="font-bold">{replyMode.username}</span>
+                  Replying to <span className="font-bold">{replyUsername}</span>
                 </span>
                 <button
                   onClick={cancelReplyMode}
@@ -629,7 +608,7 @@ function ViewPost({
             )}
 
             {/* Edit indicator - shows that youre editing the highlighted comment */}
-            {editMode.isEditing && !replyMode.isReplying && (
+            {isEditing && !isReplying && (
               <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   Editing...
@@ -656,10 +635,10 @@ function ViewPost({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={
-                  editMode.isEditing
+                  isEditing
                     ? "Edit your comment..."
-                    : replyMode.isReplying
-                      ? `Reply to ${replyMode.username}...`
+                    : isReplying
+                      ? `Reply to ${replyUsername}...`
                       : "Add a comment..."
                 }
                 className="flex-1"
@@ -671,14 +650,14 @@ function ViewPost({
                 size="sm"
               >
                 {isCreateLoading
-                  ? editMode.isEditing
+                  ? isEditing
                     ? "Saving..."
-                    : replyMode.isReplying
+                    : isReplying
                       ? "Replying..."
                       : "Posting..."
-                  : editMode.isEditing
+                  : isEditing
                     ? "Save"
-                    : replyMode.isReplying
+                    : isReplying
                       ? "Reply"
                       : "Post"}
               </Button>
