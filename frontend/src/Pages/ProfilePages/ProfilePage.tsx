@@ -153,7 +153,11 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   async function handleTogglePostLike(postId: number) {
     if (!isOwnProfile) return;
     try {
-      await togglePostLike(postId).unwrap();
+      await togglePostLike(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+        });
     } catch (error) {
       console.log("Error: ", error);
     }
@@ -187,7 +191,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   function handleCloseViewModal() {
-    dispatch(closePostModal(selectedPostId));
+    dispatch(closePostModal());
   }
 
   useEffect(() => {
