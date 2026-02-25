@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,8 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-   private final String secretKey = "oOH5jWkeT6vxI1BOz3CH6pM4xyWNjfs6hsCFSveApo8=";
+   @Value("${jwt.secret.key}")
+   private String secretKey;
 
    public String generateToken(String username) {
       Map<String, Object> claims = new HashMap<>();
@@ -57,6 +59,15 @@ public class JwtService {
             .build()
             .parseSignedClaims(token)
             .getPayload();
+   }
+
+   public String generateRefreshToken(String username) {
+      return Jwts.builder()
+            .subject(username)
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
+            .signWith(getKey())
+            .compact();
    }
 
    public Boolean validateToken(String token, UserDetails userDetails) {

@@ -43,6 +43,9 @@ public class AppUser {
    @Size(min = 8, message = "Username must be at least 8 characters long")
    private String username;
 
+   @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
+   private List<RefreshToken> refreshTokens;
+
    @NotBlank(message = "Password is required")
    @Size(min = 8, message = "Username must be at least 8 characters long")
    private String password;

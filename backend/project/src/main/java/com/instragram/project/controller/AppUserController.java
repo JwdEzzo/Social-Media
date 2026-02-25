@@ -1,6 +1,7 @@
 package com.instragram.project.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -8,10 +9,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,15 +28,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.instragram.exception.TokenRefreshException;
 import com.instragram.project.dto.request.LoginRequestDto;
+import com.instragram.project.dto.request.RefreshTokenRequestDto;
 import com.instragram.project.dto.request.SignUpRequestDto;
 import com.instragram.project.dto.request.UpdateCredentialsRequestDto;
 import com.instragram.project.dto.request.UpdateProfileRequestDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
 import com.instragram.project.dto.response.LoginResponseDto;
+import com.instragram.project.dto.response.RefreshTokenResponseDto;
 import com.instragram.project.dto.response.SearchUserResponseDto;
+import com.instragram.project.model.AppUser;
+import com.instragram.project.model.RefreshToken;
+import com.instragram.project.repository.AppUserRepository;
+import com.instragram.project.security.jwt.JwtService;
 import com.instragram.project.service.AppUserService;
+import com.instragram.project.service.RefreshTokenService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,26 +58,47 @@ public class AppUserController {
    @Autowired
    private AppUserService appUserService;
 
+   @Autowired
+   private AppUserRepository appUserRepository;
+
+   @Autowired
+   private RefreshTokenService refreshTokenService;
+
+   @Autowired
+   private JwtService jwtService;
+
    // Login
    @PostMapping("/login")
-   public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
+   public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto,
+         HttpServletResponse response) {
       try {
-         LoginResponseDto response = appUserService.verify(loginRequestDto);
-         return ResponseEntity.ok(response);
+         LoginResponseDto responseDto = appUserService.verify(loginRequestDto);
+         String accessToken = responseDto.getAccessToken();
+         ResponseCookie cookie = ResponseCookie.from("accessToken", accessToken)
+               .httpOnly(true)
+               .secure(true)
+               .sameSite("Strict")
+               .path("/")
+               .maxAge(3600)
+               .build();
+         return ResponseEntity.ok()
+               .header(HttpHeaders.SET_COOKIE, cookie.toString())
+               .body(responseDto);
       } catch (Exception e) {
+         log.error("Login failed: {}", e.getMessage());
          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-               .body(new LoginResponseDto(null, null, "Invalid credentials"));
+               .body(new LoginResponseDto(null, null, null, "Invalid credentials"));
       }
    }
 
    // Sign Up
    @PostMapping("/sign-up")
    public ResponseEntity<Void> register(@Valid @RequestBody SignUpRequestDto requestDto) {
-
       try {
          appUserService.signUp(requestDto);
          return ResponseEntity.status(HttpStatus.CREATED).build();
       } catch (Exception e) {
+         log.error("Sign up failed: {}", e.getMessage());
          return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
       }
    }
@@ -242,4 +276,114 @@ public class AppUserController {
       return auth.getName();
    }
 
+   @PostMapping("/refresh")
+   public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequestDto request) {
+      try {
+         String requestRefreshToken = request.getRefreshToken();
+
+         return refreshTokenService.findByToken(requestRefreshToken)
+               .map(refreshToken -> {
+                  // Verify token is valid and belongs to a user
+                  RefreshToken verifiedToken = refreshTokenService.verifyExpiration(refreshToken);
+                  AppUser user = verifiedToken.getAppUser();
+
+                  // Generate new access token
+                  String newAccessToken = jwtService.generateToken(user.getUsername());
+
+                  // Rotate refresh token (revoke old, issue new)
+                  RefreshToken newRefreshToken = refreshTokenService.rotateToken(
+                        requestRefreshToken,
+                        user);
+
+                  return ResponseEntity.ok(
+                        new RefreshTokenResponseDto(
+                              newAccessToken,
+                              newRefreshToken.getToken()));
+               })
+               .orElseThrow(() -> new TokenRefreshException("Refresh token not found"));
+
+      } catch (TokenRefreshException e) {
+         log.error("Token refresh failed: {}", e.getMessage());
+         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+               .body(new LoginResponseDto(null, null, null, e.getMessage()));
+      } catch (Exception e) {
+         log.error("Unexpected error during token refresh: {}", e.getMessage(), e);
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+               .body(new LoginResponseDto(null, null, null, "Token refresh failed"));
+      }
+   }
+
+   //  Logout endpoint
+   @PostMapping("/logout")
+   public ResponseEntity<?> logout(
+         @Valid @RequestBody RefreshTokenRequestDto request,
+         @AuthenticationPrincipal UserDetails userDetails) {
+      try {
+         // Verify the refresh token belongs to the authenticated user
+         RefreshToken refreshToken = refreshTokenService.findByToken(request.getRefreshToken())
+               .orElseThrow(() -> new TokenRefreshException("Refresh token not found"));
+
+         // Get the authenticated user
+         AppUser currentUser = appUserRepository.findByUsername(userDetails.getUsername());
+
+         // Check if the refresh token belongs to this user
+         if (!refreshToken.getAppUser().getId().equals(currentUser.getId())) {
+            log.warn("User {} attempted to revoke token belonging to user {}",
+                  currentUser.getId(), refreshToken.getAppUser().getId());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("message", "You can only logout your own sessions"));
+         }
+
+         // Now safe to revoke
+         refreshTokenService.revokeToken(request.getRefreshToken());
+         return ResponseEntity.ok().body(Map.of("message", "Logged out successfully"));
+
+      } catch (TokenRefreshException e) {
+         log.error("Logout failed: {}", e.getMessage());
+         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+               .body(Map.of("message", e.getMessage()));
+      } catch (Exception e) {
+         log.error("Logout failed: {}", e.getMessage());
+         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+               .body(Map.of("message", "Logout failed"));
+      }
+   }
+
+   //  Logout from all devices
+   @PostMapping("/logout-all")
+   public ResponseEntity<?> logoutAll(@AuthenticationPrincipal UserDetails userDetails) {
+      try {
+         AppUser appUser = appUserRepository.findByUsername(userDetails.getUsername());
+         refreshTokenService.revokeAllAppUserTokens(appUser.getId());
+         return ResponseEntity.ok().body(Map.of("message", "Logged out from all devices"));
+      } catch (Exception e) {
+         log.error("Logout all failed: {}", e.getMessage());
+         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+               .body(Map.of("message", "Logout failed"));
+      }
+   }
 }
+
+// // Login
+// @PostMapping("/login")
+// public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto,
+//       HttpServletResponse response) {
+//    try {
+//       LoginResponseDto responseDto = appUserService.verify(loginRequestDto);
+//       String accessToken = responseDto.getAccessToken();
+//       ResponseCookie cookie = ResponseCookie.from("accessToken", accessToken)
+//             .httpOnly(true)
+//             .secure(true)
+//             .sameSite("Strict")
+//             .path("/")
+//             .maxAge(3600)
+//             .build();
+//       return ResponseEntity.ok()
+//             .header(HttpHeaders.SET_COOKIE, cookie.toString())
+//             .body(responseDto);
+//    } catch (Exception e) {
+//       log.error("Login failed: {}", e.getMessage());
+//       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//             .body(new LoginResponseDto(null, null, null, "Invalid credentials"));
+//    }
+// }

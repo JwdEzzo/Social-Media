@@ -25,6 +25,7 @@ import com.instragram.project.dto.response.LoginResponseDto;
 import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
+import com.instragram.project.model.RefreshToken;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
 import com.instragram.project.security.jwt.JwtService;
@@ -52,6 +53,9 @@ public class AppUserService {
 
    @Autowired
    private final MappingMethods mappingMethods = new MappingMethods();
+
+   @Autowired
+   private RefreshTokenService refreshTokenService;
 
    // Sign Up User
    public void signUp(SignUpRequestDto requestDto) {
@@ -264,25 +268,31 @@ public class AppUserService {
 
    // Verify Login
    public LoginResponseDto verify(LoginRequestDto loginRequestDto) {
-      try {
-         AppUser appUser = appUserRepository.findByUsername(loginRequestDto.getUsername());
-         if (appUser == null) {
-            throw new RuntimeException("User not found with username: " + loginRequestDto.getUsername());
-         }
+      Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                  loginRequestDto.getUsername(),
+                  loginRequestDto.getPassword()));
 
-         Authentication authentication = authenticationManager.authenticate(
-               new UsernamePasswordAuthenticationToken(loginRequestDto.getUsername(), loginRequestDto.getPassword()));
+      if (authentication.isAuthenticated()) {
+         String username = loginRequestDto.getUsername();
+         String accessToken = jwtService.generateToken(username);
 
-         if (authentication.isAuthenticated()) {
-            String token = jwtService.generateToken(loginRequestDto.getUsername());
-            return new LoginResponseDto(token, loginRequestDto.getUsername(), "Login successful");
+         // Get user ID
+         AppUser user = appUserRepository.findByUsername(username);
+         if (user == null) {
+            throw new RuntimeException("User not found with username: " + username);
          }
-      } catch (RuntimeException e) {
-         log.error("Authentication failed for user: " + loginRequestDto.getUsername(), e);
-         throw new RuntimeException("Invalid credentials");
+         // Create refresh token
+         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+         return new LoginResponseDto(
+               accessToken,
+               refreshToken.getToken(),
+               username,
+               "Login successful");
       }
 
-      return null;
+      throw new RuntimeException("Invalid credentials");
    }
 
    // Delete User

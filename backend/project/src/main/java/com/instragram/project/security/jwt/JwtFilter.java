@@ -57,6 +57,8 @@ public class JwtFilter extends OncePerRequestFilter {
    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
       String path = request.getRequestURI();
       // Allow login/register endpoints to bypass JWT
-      return path.startsWith("/api/instagram/users/login") || path.startsWith("/api/instagram/users/signup");
+      return path.startsWith("/api/instagram/users/login")
+            || path.startsWith("/api/instagram/users/sign-up")
+            || path.startsWith("/api/instagram/users/refresh");
    }
 }
