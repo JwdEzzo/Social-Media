@@ -4,10 +4,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.instragram.project.enums.AccountStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -69,6 +72,10 @@ public class AppUser {
 
    private LocalDateTime updatedAt;
 
+   @Column(name = "account_status")
+   @Enumerated(EnumType.STRING)
+   private AccountStatus accountStatus;
+
    @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
    private List<Post> posts;
 
@@ -81,5 +88,6 @@ public class AppUser {
    @PrePersist
    public void onCreate() {
       createdAt = LocalDateTime.now();
+      accountStatus = AccountStatus.PUBLIC;
    }
 }

@@ -3,7 +3,6 @@ package com.instragram.project.mapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -30,14 +29,17 @@ public class MappingMethods {
    @SuppressWarnings("unused")
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private PostRepository postRepository;
+   private final PostRepository postRepository;
 
-   @Autowired
-   private CommentRepository commentRepository;
+   private final CommentRepository commentRepository;
+
+   public MappingMethods(AppUserRepository appUserRepository, PostRepository postRepository, CommentRepository commentRepository) {
+      this.appUserRepository = appUserRepository;
+      this.postRepository = postRepository;
+      this.commentRepository = commentRepository;
+   }
 
    // Convert SignUpRequestDto to AppUser Entity
    public AppUser convertSignUpRequestToAppUserEntity(SignUpRequestDto requestDto) {
@@ -85,6 +87,7 @@ public class MappingMethods {
       responseDto.setProfilePictureUrl(appUser.getProfilePictureUrl());
       responseDto.setCreatedAt(appUser.getCreatedAt());
       responseDto.setUpdatedAt(appUser.getUpdatedAt());
+      responseDto.setAccountStatus(appUser.getAccountStatus());
       responseDto.setPosts(convertListPostEntityToListGetPostResponseDto(appUser.getPosts()));
       return responseDto;
    }

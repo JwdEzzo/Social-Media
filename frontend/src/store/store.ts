@@ -1,17 +1,17 @@
-import { authApi } from "@/auth/authApi";
-import { postApi } from "@/api/posts/postApi";
-import { userApi } from "@/api/users/userApi";
-import authSlice, { logout } from "@/auth/authSlice";
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import { setupListeners } from "@reduxjs/toolkit/query";
-import { commentApi } from "@/api/comments/commentApi";
-import viewPostModalReducer from "@/slices/viewPostSlice";
-import { postLikesApi } from "@/api/posts/postLikesApi";
-import { commentLikesApi } from "@/api/comments/commentLikesApi";
-import { followApi } from "@/api/followers/followApi";
-import { commentRepliesApi } from "@/api/comments/commentRepliesApi";
-import { commentReplyLikesApi } from "@/api/comments/commentReplyLikesApi";
-import { postSavesApi } from "@/api/posts/postSavesApi";
+import { authApi } from '@/auth/authApi';
+import { postApi } from '@/api/posts/postApi';
+import { userApi } from '@/api/users/userApi';
+import authSlice, { logout } from '@/auth/authSlice';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
+import { commentApi } from '@/api/comments/commentApi';
+import viewPostModalReducer from '@/slices/viewPostSlice';
+import { postLikesApi } from '@/api/posts/postLikesApi';
+import { commentLikesApi } from '@/api/comments/commentLikesApi';
+import { followApi } from '@/api/followers/followApi';
+import { commentRepliesApi } from '@/api/comments/commentRepliesApi';
+import { commentReplyLikesApi } from '@/api/comments/commentReplyLikesApi';
+import { postSavesApi } from '@/api/posts/postSavesApi';
 
 // Combine all reducers
 const appReducer = combineReducers({

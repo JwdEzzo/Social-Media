@@ -1,3 +1,5 @@
+import type { AccountStatus } from './enums';
+
 export interface LoginResponse {
   token: string;
   username: string;
@@ -12,6 +14,7 @@ export interface GetUserResponseDto {
   profilePictureUrl: string;
   createdAt: string;
   updatedAt: string;
+  accountStatus: AccountStatus;
   posts: GetPostResponseDto[];
 }
 

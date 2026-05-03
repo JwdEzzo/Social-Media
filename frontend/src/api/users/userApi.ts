@@ -1,162 +1,145 @@
-import type {
-  SignUpRequestDto,
-  UpdateCredentialsRequestDto,
-  UpdateProfileRequestDto,
-} from "@/types/requestTypes";
-import type {
-  GetUserResponseDto,
-  SearchUserResponseDto,
-} from "@/types/responseTypes";
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../public/baseApi";
+import type { SignUpRequestDto, UpdateCredentialsRequestDto, UpdateProfileRequestDto } from '@/types/requestTypes';
+import type { GetUserResponseDto, SearchUserResponseDto } from '@/types/responseTypes';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from '../public/baseApi';
 
 export const userApi = createApi({
-  reducerPath: "userApi",
+  reducerPath: 'userApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "UserList", "Followers", "Followings"],
+  tagTypes: ['User', 'UserList', 'Followers', 'Followings'],
   endpoints: (builder) => ({
     signUp: builder.mutation<void, SignUpRequestDto>({
       query: (newUser) => ({
-        url: "/users/sign-up",
-        method: "POST",
+        url: '/users/sign-up',
+        method: 'POST',
         body: newUser,
       }),
-      invalidatesTags: [{ type: "UserList", id: "ALL" }],
+      invalidatesTags: [{ type: 'UserList', id: 'ALL' }],
     }),
     getUsers: builder.query<GetUserResponseDto[], void>({
       query: () => ({
-        url: "/users",
-        method: "GET",
+        url: '/users',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "ALL" },
-            ]
-          : [{ type: "UserList", id: "ALL" }],
+          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'UserList', id: 'ALL' }]
+          : [{ type: 'UserList', id: 'ALL' }],
     }),
     getUserByUsername: builder.query<GetUserResponseDto, string>({
       query: (username) => ({
         url: `/users/${username}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
           ? [
-              { type: "User", id: result.id },
-              { type: "User", id: result.username },
+              { type: 'User', id: result.id },
+              { type: 'User', id: result.username },
             ]
           : [],
     }),
     getUsersExcludingCurrentUser: builder.query<GetUserResponseDto[], void>({
       query: () => ({
-        url: "/users/excluded",
-        method: "GET",
+        url: '/users/excluded',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "EXCLUDED" },
-            ]
-          : [{ type: "UserList", id: "EXCLUDED" }],
+          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'UserList', id: 'EXCLUDED' }]
+          : [{ type: 'UserList', id: 'EXCLUDED' }],
     }),
     getFollowersByUserId: builder.query<GetUserResponseDto[], number>({
       query: (userId) => ({
         url: `/users/followers/${userId}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (_result, _error, userId) => [
-        { type: "Followers", id: userId },
-        { type: "User", id: "LIST" },
+        { type: 'Followers', id: userId },
+        { type: 'User', id: 'LIST' },
       ],
     }),
     getFollowingsByUserId: builder.query<GetUserResponseDto[], number>({
       query: (userId) => ({
         url: `/users/followings/${userId}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
           ? [
               ...result.map(({ id }) => ({
-                type: "User" as const,
+                type: 'User' as const,
                 id,
               })),
-              { type: "User", id: "LIST" },
+              { type: 'User', id: 'LIST' },
             ]
-          : [{ type: "User", id: "LIST" }],
+          : [{ type: 'User', id: 'LIST' }],
     }),
 
     searchUsersByUsername: builder.query<SearchUserResponseDto[], string>({
       query: (username) => ({
         url: `/users/search/${username}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "ALL" },
-            ]
-          : [{ type: "UserList", id: "ALL" }],
+          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'UserList', id: 'ALL' }]
+          : [{ type: 'UserList', id: 'ALL' }],
     }),
 
-    updateUserCredentials: builder.mutation<
-      void,
-      { currentUsername: string } & UpdateCredentialsRequestDto
-    >({
+    updateUserCredentials: builder.mutation<void, { currentUsername: string } & UpdateCredentialsRequestDto>({
       query: ({ currentUsername, ...newCredentials }) => ({
         url: `/users/${currentUsername}/update-credentials`,
-        method: "PUT",
+        method: 'PUT',
         body: newCredentials,
       }),
       invalidatesTags: (_result, _error, { currentUsername }) => [
-        { type: "User", id: currentUsername },
-        { type: "UserList", id: "ALL" },
-        { type: "UserList", id: "EXCLUDED" },
+        { type: 'User', id: currentUsername },
+        { type: 'UserList', id: 'ALL' },
+        { type: 'UserList', id: 'EXCLUDED' },
       ],
     }),
 
+    toggleAccountStatus: builder.mutation<void, { targetUserId: number }>({
+      query: ({ targetUserId }) => ({
+        url: `/users/toggle-account-status/${targetUserId}`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_result, _error, { targetUserId }) => [{ type: 'User', id: targetUserId }],
+    }),
+
     // URL-based profile update
-    updateUserProfileWithUrl: builder.mutation<
-      void,
-      { username: string } & UpdateProfileRequestDto
-    >({
+    updateUserProfileWithUrl: builder.mutation<void, { username: string } & UpdateProfileRequestDto>({
       query: ({ username, ...updateData }) => ({
         url: `/users/${username}/update-profile-url`,
-        method: "PUT",
+        method: 'PUT',
         body: updateData,
       }),
       invalidatesTags: (_result, _error, { username }) => [
-        { type: "User", id: username },
-        { type: "UserList", id: "ALL" },
-        { type: "UserList", id: "EXCLUDED" },
+        { type: 'User', id: username },
+        { type: 'UserList', id: 'ALL' },
+        { type: 'UserList', id: 'EXCLUDED' },
       ],
     }),
 
     // File upload profile update
-    updateUserProfileWithUpload: builder.mutation<
-      void,
-      { username: string; bioText?: string; profileImage: File }
-    >({
+    updateUserProfileWithUpload: builder.mutation<void, { username: string; bioText?: string; profileImage: File }>({
       query: ({ username, bioText, profileImage }) => {
         const formData = new FormData();
         if (bioText) {
-          formData.append("bioText", bioText);
+          formData.append('bioText', bioText);
         }
-        formData.append("profileImage", profileImage);
+        formData.append('profileImage', profileImage);
         return {
           url: `/users/${username}/update-profile-upload`,
-          method: "PUT",
+          method: 'PUT',
           body: formData,
         };
       },
       invalidatesTags: (_result, _error, { username }) => [
-        { type: "User", id: username },
-        { type: "UserList", id: "ALL" },
-        { type: "UserList", id: "EXCLUDED" },
+        { type: 'User', id: username },
+        { type: 'UserList', id: 'ALL' },
+        { type: 'UserList', id: 'EXCLUDED' },
       ],
     }),
   }),
@@ -173,6 +156,7 @@ export const {
   useUpdateUserCredentialsMutation,
   useUpdateUserProfileWithUrlMutation,
   useUpdateUserProfileWithUploadMutation,
+  useToggleAccountStatusMutation,
 } = userApi;
 
 export const { util: userApiUtil } = userApi;
