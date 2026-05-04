@@ -10,6 +10,7 @@ import com.instragram.project.dto.request.CreatePostRequestDto;
 import com.instragram.project.dto.request.SignUpRequestDto;
 import com.instragram.project.dto.request.WriteCommentRequestDto;
 import com.instragram.project.dto.request.WriteReplyRequestDto;
+import com.instragram.project.dto.response.FollowRequestResponseDto;
 import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
 import com.instragram.project.dto.response.GetReplyResponseDto;
@@ -18,6 +19,7 @@ import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentReply;
+import com.instragram.project.model.FollowRequest;
 import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
@@ -183,5 +185,16 @@ public class MappingMethods {
             .map(this::convertCommentReplyEntityToGetCommentReplyResponseDto)
             .collect(Collectors.toList());
    }
+
+   // Convert FollowRequest To FollowRequestResponseDto
+public FollowRequestResponseDto convertFollowRequestToResponseDto(FollowRequest followRequest) {
+    FollowRequestResponseDto dto = new FollowRequestResponseDto();
+    dto.setRequestId(followRequest.getId());
+    dto.setRequesterUsername(followRequest.getRequester().getUsername());
+    dto.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
+    dto.setStatus(followRequest.getStatus().name());
+    dto.setCreatedAt(followRequest.getCreatedAt());
+    return dto;
+}
 
 }
