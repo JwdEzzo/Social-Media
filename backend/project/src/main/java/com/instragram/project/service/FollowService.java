@@ -206,4 +206,16 @@ public class FollowService {
       return isFollowed;
    }
 
+   public Long getPendingRequestId(String requesterUsername, String targetUsername) {
+      AppUser requester = appUserRepository.findByUsername(requesterUsername);
+      AppUser target = appUserRepository.findByUsername(targetUsername);
+      if (requester == null || target == null) return null;
+
+      return followRequestRepository
+               .findByRequesterIdAndTargetId(requester.getId(), target.getId())
+               .filter(req -> req.getStatus() == FollowRequestStatus.PENDING)
+               .map(FollowRequest::getId)
+               .orElse(null);
+   }
+
 }

@@ -1,9 +1,4 @@
-import {
-  useGetFollowerCountQuery,
-  useGetFollowingCountQuery,
-  useIsFollowedQuery,
-  useToggleFollowMutation,
-} from '@/api/followers/followApi';
+import { useGetFollowerCountQuery, useGetFollowingCountQuery } from '@/api/followers/followApi';
 import {
   postApi,
   useGetPostsByUsernameQuery,
@@ -11,7 +6,7 @@ import {
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
 } from '@/api/posts/postApi';
-import { useGetUserByUsernameQuery, userApi, useToggleAccountStatusMutation } from '@/api/users/userApi';
+import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
 import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Edit3, LogOut, Unlock, Lock } from 'lucide-react';
@@ -37,6 +32,7 @@ import type { RootState } from '@/store/store';
 import { closePostModal } from '@/slices/viewPostSlice';
 import { useSelector } from 'react-redux';
 import ProfilePagePostCard from '@/Pages/PostPages/ProfilePagePostCard';
+import FollowButton from '@/components/custom/follow-button';
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -71,12 +67,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     skip: !loggedInUsername,
   });
 
-  const [toggleFollow] = useToggleFollowMutation();
   const [toggleAccountStatus] = useToggleAccountStatusMutation();
-
-  const { data: isFollowed } = useIsFollowedQuery(profileUsername!, {
-    skip: !profileUsername,
-  });
 
   const {
     data: posts,
@@ -141,14 +132,14 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     }
   }
 
-  async function handleFollow() {
-    try {
-      await toggleFollow(profileUser!.username).unwrap();
-      dispatch(userApi.util.invalidateTags([{ type: 'User', id: 'LIST' }]));
-    } catch (error) {
-      console.log('Error: ', error);
-    }
-  }
+  // async function handleFollow() {
+  //   try {
+  //     await toggleFollow(profileUser!.username).unwrap();
+  //     dispatch(userApi.util.invalidateTags([{ type: 'User', id: 'LIST' }]));
+  //   } catch (error) {
+  //     console.log('Error: ', error);
+  //   }
+  // }
 
   function handleLogout() {
     dispatch(logout());
@@ -422,17 +413,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   <div className="md:flex gap-2 ">
                     <h1 className="text-2xl font-bold md:text-center">{profileUser.username}</h1>
                     {!isOwnProfile ? (
-                      <Button
-                        className={`${
-                          isFollowed
-                            ? 'fill-current text-white-500 text-white dark:text-white-500 bg-gray-700 dark:bg-gray-900 dark:hover:bg-gray-900 '
-                            : ''
-                        }`}
-                        onClick={handleFollow}
-                        //
-                      >
-                        {isFollowed ? 'Following' : 'Follow'}
-                      </Button>
+                      <FollowButton
+                        username={profileUser.username}
+                        onFollowToggled={() => dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]))}
+                      />
                     ) : null}
                   </div>
                   {renderBio()}

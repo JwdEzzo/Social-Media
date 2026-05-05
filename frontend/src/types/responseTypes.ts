@@ -49,3 +49,11 @@ export interface SearchUserResponseDto {
   bioText: string;
   profilePictureUrl: string;
 }
+
+export interface FollowRequestResponseDto {
+  requestId: number;
+  requesterUsername: string;
+  requesterProfilePictureUrl: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  createdAt: string;
+}

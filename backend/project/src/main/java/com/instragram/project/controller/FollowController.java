@@ -55,4 +55,15 @@ public class FollowController {
       return ResponseEntity.ok(status);
    }
 
+   @GetMapping("/pending-request/{targetUsername}")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Long> getPendingRequestId(
+         @PathVariable String targetUsername,
+         Authentication authentication) {
+
+      Long requestId = followService.getPendingRequestId(
+               authentication.getName(), targetUsername);
+
+      return ResponseEntity.ok(requestId != null ? requestId : 0L);
+   }
 }

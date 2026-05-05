@@ -1,19 +1,18 @@
-import { useSearchUsersByUsernameQuery } from "@/api/users/userApi";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import AppSidebar from "@/Pages/HomePage/AppSidebar";
+import { useSearchUsersByUsernameQuery } from '@/api/users/userApi';
+import { ModeToggle } from '@/components/ModeToggle';
+import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import AppSidebar from '@/Pages/HomePage/AppSidebar';
+import FollowButton from '@/components/custom/follow-button';
+import { useAuth } from '@/auth/useAuth';
 
 function SearchUsersPage() {
   const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get("q") || "";
+  const searchQuery = searchParams.get('q') || '';
   const navigate = useNavigate();
+  const { username: loggedInUsername } = useAuth();
 
   const {
     data: users,
@@ -25,7 +24,11 @@ function SearchUsersPage() {
   });
 
   function handleUserClick(username: string) {
-    navigate(`/searcheduserprofile/${username}`);
+    if (username === loggedInUsername) {
+      navigate(`/userprofile/${username}`);
+    } else {
+      navigate(`/searcheduserprofile/${username}`);
+    }
   }
   // Loading state
   if (isSearchedUserLoading) {
@@ -36,9 +39,7 @@ function SearchUsersPage() {
           <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">
-                Searching for "{searchQuery}"...
-              </p>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Searching for "{searchQuery}"...</p>
             </div>
           </div>
         </SidebarInset>
@@ -54,12 +55,8 @@ function SearchUsersPage() {
         <SidebarInset>
           <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
             <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-              <h2 className="text-xl font-bold text-red-500 mb-4">
-                Error Loading Search Results
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Failed to search for "{searchQuery}"
-              </p>
+              <h2 className="text-xl font-bold text-red-500 mb-4">Error Loading Search Results</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">Failed to search for "{searchQuery}"</p>
               <Button onClick={() => refetchUsers()}>
                 <RotateCcw className="mr-2 h-4 w-4" /> Try Again
               </Button>
@@ -91,7 +88,7 @@ function SearchUsersPage() {
             {/* Search Header */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Search Results
+                Search Results for "{searchQuery}"
               </h2>
             </div>
 
@@ -111,34 +108,26 @@ function SearchUsersPage() {
                           className="w-12 h-12 rounded-full object-cover"
                         />
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">
-                            {user.username}
-                          </p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
                           {user.bioText && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
-                              {user.bioText}
-                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{user.bioText}</p>
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleUserClick(user.username)}
-                      >
-                        View Profile
-                      </Button>
+                      <div className="flex items-center gap-3">
+                        {loggedInUsername !== user.username && <FollowButton username={user.username} />}
+                        <Button variant="outline" onClick={() => handleUserClick(user.username)}>
+                          View Profile
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-                <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  No users found matching "{searchQuery}"
-                </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
-                  Try searching with a different username
-                </p>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">No users found matching "{searchQuery}"</p>
+                <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Try searching with a different username</p>
               </div>
             )}
           </div>

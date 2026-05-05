@@ -1,12 +1,11 @@
-import {
-  useGetFollowersByUserIdQuery,
-  useGetUserByUsernameQuery,
-} from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
-import { ModeToggle } from "@/components/ModeToggle";
+import { useGetFollowersByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
+import { useAuth } from '@/auth/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
+import { ModeToggle } from '@/components/ModeToggle';
+import { useGetFollowerCountQuery } from '@/api/followers/followApi';
+import { Undo } from 'lucide-react';
 
 interface FollowerListProps {
   profileUsername: string;
@@ -39,7 +38,9 @@ function FollowerList({ profileUsername }: FollowerListProps) {
     skip: !profileUser?.id,
   });
 
-  console.log(followers);
+  const { data: followerCount } = useGetFollowerCountQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
   if (isFollowersLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
@@ -83,20 +84,32 @@ function FollowerList({ profileUsername }: FollowerListProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
-              {profileUsername}'s Followers
+              {loggedInUsername === profileUsername ? 'Your Followers' : `${profileUsername}'s Followers`}
             </CardTitle>
-            <ModeToggle />
+            <div className="flex gap-1 items-center">
+              <Button
+                onClick={() => history.back()}
+                size="icon"
+                //
+              >
+                <Undo />
+              </Button>
+              <ModeToggle />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {followers?.map((follower) => (
-            <FollowerCard
-              key={follower.id}
-              follower={follower}
-              loggedInUsername={loggedInUsername!}
-              //
-            />
-          ))}
+          {followerCount === 0 && profileUsername === loggedInUsername ? (
+            <div>You have no followers yet.</div>
+          ) : followerCount === 0 ? (
+            <div>No one is following {profileUsername}</div>
+          ) : (
+            <div>
+              {followers?.map((follower) => (
+                <FollowerCard key={follower.id} follower={follower} loggedInUsername={loggedInUsername!} />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

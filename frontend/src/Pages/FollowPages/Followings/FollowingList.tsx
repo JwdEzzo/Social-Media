@@ -1,20 +1,18 @@
-import {
-  useGetFollowingsByUserIdQuery,
-  useGetUserByUsernameQuery,
-} from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import FollowingCard from "@/Pages/FollowPages/Followings/FollowingCard";
-import { ModeToggle } from "@/components/ModeToggle";
-
+import { useGetFollowingsByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
+import { useAuth } from '@/auth/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import FollowingCard from '@/Pages/FollowPages/Followings/FollowingCard';
+import { ModeToggle } from '@/components/ModeToggle';
+import { useGetFollowingCountQuery } from '@/api/followers/followApi';
+import { Undo } from 'lucide-react';
 interface FollowingListProps {
   profileUsername: string;
 }
 
 function FollowingList({ profileUsername }: FollowingListProps) {
   const { username: loggedInUsername } = useAuth();
-
+  // Get logged in user
   const {
     data: loggedInUser,
     isLoading: isLoggedInUserLoading,
@@ -23,6 +21,7 @@ function FollowingList({ profileUsername }: FollowingListProps) {
     skip: !loggedInUsername,
   });
 
+  // Get profile user
   const {
     data: profileUser,
     isLoading: isProfileUserLoading,
@@ -31,6 +30,7 @@ function FollowingList({ profileUsername }: FollowingListProps) {
     skip: !profileUsername,
   });
 
+  // Get users that the logged in user is following
   const {
     data: followings,
     isLoading: isFollowingsLoading,
@@ -39,8 +39,12 @@ function FollowingList({ profileUsername }: FollowingListProps) {
     skip: !profileUser?.id,
   });
 
-  console.log(followings);
+  // Get follower count
+  const { data: followingCount } = useGetFollowingCountQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
+  // Loading state
   if (isFollowingsLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen ">
@@ -52,6 +56,7 @@ function FollowingList({ profileUsername }: FollowingListProps) {
     );
   }
 
+  // User not found
   if (!loggedInUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -63,6 +68,7 @@ function FollowingList({ profileUsername }: FollowingListProps) {
     );
   }
 
+  // Error state
   if (isFollowingsError || isLoggedInUserError || isProfileUserError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -80,22 +86,41 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   return (
     <div className="w-full h-screen dark:bg-gray-900 bg-white pt-10">
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+        {/* Header with username and mode toggle */}
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
-              {profileUsername}'s Following
+              {loggedInUsername === profileUsername ? 'Your Following' : `${profileUsername}'s Followings`}
             </CardTitle>
-            <ModeToggle />
+            <div>
+              <div className="flex gap-1 items-center">
+                <Button
+                  onClick={() => history.back()}
+                  size="icon"
+                  //
+                >
+                  <Undo />
+                </Button>
+                <ModeToggle />
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {followings?.map((following) => (
-            <FollowingCard
-              key={following.id}
-              following={following}
-              loggedInUsername={loggedInUsername!}
-            />
-          ))}
+          {followingCount === 0 && profileUsername === loggedInUsername ? (
+            <div>You are not following anyone.</div>
+          ) : followingCount === 0 ? (
+            <div>No one is following {profileUsername}</div>
+          ) : (
+            followings?.map((following) => (
+              <FollowingCard
+                key={following.id}
+                following={following}
+                loggedInUsername={loggedInUsername!}
+                //
+              />
+            ))
+          )}
         </CardContent>
       </Card>
     </div>
