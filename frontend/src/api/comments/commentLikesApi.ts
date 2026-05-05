@@ -11,21 +11,27 @@ export const commentLikesApi = createApi({
         url: `/comment-likes/comment/${commentId}`,
         method: "POST",
       }),
-      invalidatesTags: ["CommentLike"],
+      invalidatesTags: (result, error, commentId) => [
+        { type: "CommentLike", id: commentId },
+      ],
     }),
     getCommentLikeCount: builder.query<number, number>({
       query: (commentId) => ({
         url: `/comment-likes/comment/${commentId}/like-count`,
         method: "GET",
       }),
-      providesTags: ["CommentLike"],
+      providesTags: (result, error, commentId) => [
+        { type: "CommentLike", id: commentId },
+      ],
     }),
     isCommentLiked: builder.query<boolean, number>({
       query: (commentId) => ({
         url: `/comment-likes/comment/${commentId}/is-liked`,
         method: "GET",
       }),
-      providesTags: ["CommentLike"],
+      providesTags: (result, error, commentId) => [
+        { type: "CommentLike", id: commentId },
+      ],
     }),
   }),
 });

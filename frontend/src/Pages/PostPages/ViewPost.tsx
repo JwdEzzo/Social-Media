@@ -1,10 +1,10 @@
 import {
-  postApi,
   useDeletePostByPostIdMutation,
   useGetPostByIdQuery,
 } from "@/api/posts/postApi";
 import {
   useCreateCommentMutation,
+  useEditCommentMutation,
   useGetCommentsByPostIdQuery,
   useGetPostCommentCountQuery,
 } from "@/api/comments/commentApi";
@@ -21,7 +21,13 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type FormEvent,
+} from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponseDto } from "@/types/responseTypes";
@@ -30,8 +36,11 @@ import {
   useIsPostLikedQuery,
 } from "@/api/posts/postLikesApi";
 import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
-import { useDispatch } from "react-redux";
-import { closePostModal } from "@/slices/viewPostSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  closePostModal,
+  saveModalScrollPosition,
+} from "@/slices/viewPostSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,13 +55,16 @@ import {
   useGetPostSaveCountQuery,
   useIsPostSavedQuery,
 } from "@/api/posts/postSavesApi";
+import { useAuth } from "@/auth/useAuth";
+import type { RootState } from "@/store/store";
+import { enterReplyMode, resetReplyMode } from "@/slices/replyModeSlice";
+import { closeEditMode, enterEditMode } from "@/slices/editModeSlice";
 
 interface ViewPostProps {
   isOpen: boolean;
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponseDto | undefined;
-
   handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
   handleToggleSavePost: (postId: number) => void;
@@ -70,19 +82,29 @@ function ViewPost({
   isTogglingSavePost,
 }: ViewPostProps) {
   const [newComment, setNewComment] = useState<string>("");
-  const [showReplies, setShowReplies] = useState(false);
-  const [replyMode, setReplyMode] = useState<{
-    isReplying: boolean;
-    commentId: number | null;
-    username: string | null;
-  }>({
-    isReplying: false,
-    commentId: null,
-    username: null,
-  });
+  const focusRef = useRef<HTMLInputElement>(null);
 
+  const { isEditing, commentId: editCommentId } = useSelector(
+    (state: RootState) => state.editModeSlice,
+  );
+
+  const {
+    isReplying,
+    commentId: replyCommentId,
+    username: replyUsername,
+  } = useSelector((state: RootState) => state.replyModeSlice);
+
+  // Ref to track scroll position in the comments area
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const modalScrollPosition = useSelector(
+    (state: RootState) => state.viewPostModal.modalScrollPosition,
+  );
+
+  // Redux actions
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { username: loggedInUsername } = useAuth();
+  const scrollPositionRef = useRef<number>(0);
 
   const [
     createComment,
@@ -92,11 +114,10 @@ function ViewPost({
   const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
     useToggleCommentLikeMutation();
 
-  const [
-    createReply,
-    { isLoading: isReplyingLoading, isError: isReplyingError },
-  ] = useCreateReplyMutation();
+  const [createReply] = useCreateReplyMutation();
+  const [editComment] = useEditCommentMutation();
 
+  // Fetch comments for the current post
   const {
     data: comments,
     isLoading: isCommentsLoading,
@@ -104,6 +125,7 @@ function ViewPost({
     refetch: refetchComments,
   } = useGetCommentsByPostIdQuery({ postId: selectedPostId! });
 
+  // Fetch post details
   const {
     data: post,
     isLoading: isPostLoading,
@@ -111,6 +133,7 @@ function ViewPost({
     refetch: refetchPost,
   } = useGetPostByIdQuery(selectedPostId!);
 
+  // Fetch post like status and count
   const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -118,13 +141,15 @@ function ViewPost({
     skip: !post?.id || post.id === 0,
   });
 
+  // Fetch comment count for the post
   const { data: postCommentCount } = useGetPostCommentCountQuery(
     post?.id ?? 0,
     {
       skip: !post?.id || post.id === 0,
-    }
+    },
   );
 
+  // Fetch save count and status for the post
   const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
     skip: !post?.id || post.id === 0,
   });
@@ -133,87 +158,172 @@ function ViewPost({
     skip: !post?.id || post.id === 0,
   });
 
+  // Mutation for deleting the post
   const [deletePostById, { isLoading: isPostDeleting }] =
     useDeletePostByPostIdMutation();
 
-  async function handleToggleCommentLike(commentId: number) {
-    try {
-      await toggleCommentLike(commentId).unwrap();
-    } catch (error) {
-      console.log("Error: ", error);
+  function navigateToSelectedUserProfile(username: string): void {
+    // Save current modal scroll position before navigating
+    if (scrollContainerRef.current) {
+      dispatch(saveModalScrollPosition(scrollContainerRef.current.scrollTop));
+    }
+
+    if (loggedInUsername === username) {
+      navigate(`/userprofile/${username}`, {
+        state: { fromModal: true, previousPostId: selectedPostId },
+      });
+      dispatch(closePostModal({ preserveState: true }));
+      window.scrollTo(0, 0);
+    } else {
+      navigate(`/searcheduserprofile/${username}`, {
+        state: { fromModal: true, previousPostId: selectedPostId },
+      });
+      dispatch(closePostModal({ preserveState: true }));
+      window.scrollTo(0, 0);
     }
   }
 
-  async function handleAddComment(e: FormEvent) {
-    e.preventDefault();
-    if (!newComment.trim() || !selectedPostId) return;
+  // Restore modal scroll position when it opens
+  useEffect(() => {
+    if (isOpen && scrollContainerRef.current && modalScrollPosition > 0) {
+      //  longer delay could be useful to ensure comments have rendered
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = modalScrollPosition;
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, modalScrollPosition, comments]);
 
-    try {
-      if (replyMode.isReplying && replyMode.commentId) {
-        // Create a reply
-        await createReply({
-          content: newComment,
-          commentId: replyMode.commentId,
-        }).unwrap();
+  // Callback to toggle comment like status
+  const handleToggleCommentLike = useCallback(
+    async (commentId: number) => {
+      try {
+        await toggleCommentLike(commentId).unwrap();
+      } catch (error) {
+        console.log("Error: ", error);
+      }
+    },
+    [toggleCommentLike],
+  );
 
-        // Reset reply mode
-        setReplyMode({
-          isReplying: false,
-          commentId: null,
-          username: null,
-        });
-        setShowReplies(true);
-      } else {
-        // Create a comment
-        await createComment({
-          content: newComment,
-          postId: selectedPostId,
-        }).unwrap();
+  // Callback to handle adding a new comment or reply
+  const handleAddComment = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      if (!newComment.trim() || !selectedPostId) return;
+
+      // Save current scroll position
+      if (scrollContainerRef.current) {
+        scrollPositionRef.current = scrollContainerRef.current.scrollTop;
       }
 
+      try {
+        if (isReplying && replyCommentId) {
+          // Create a reply to a comment
+          await createReply({
+            content: newComment,
+            commentId: replyCommentId,
+          }).unwrap();
+
+          // Reset reply mode after successful creation
+          dispatch(resetReplyMode());
+        } else if (!isReplying && !isEditing && selectedPostId) {
+          // Create a new comment
+          await createComment({
+            content: newComment,
+            postId: selectedPostId,
+          }).unwrap();
+        } else if (isEditing && editCommentId) {
+          // Edit an existing comment
+          await editComment({
+            content: newComment,
+            commentId: editCommentId,
+          }).unwrap();
+          // Reset edit mode after successful edit
+          dispatch(closeEditMode());
+        }
+        setNewComment("");
+      } catch (error) {
+        console.error("Failed to add comment/reply:", error);
+      }
+    },
+    [
+      newComment,
+      selectedPostId,
+      isReplying,
+      replyCommentId,
+      isEditing,
+      editCommentId,
+      createReply,
+      dispatch,
+      createComment,
+      editComment,
+    ],
+  );
+
+  // Callback to enter reply mode for a specific comment
+  const handleReplyToComment = useCallback(
+    (commentId: number, username: string) => {
+      // Always clear edit mode when entering reply mode
+      if (isEditing) {
+        dispatch(closeEditMode());
+      }
+
+      // Enter reply mode for the specified comment
+      dispatch(enterReplyMode({ commentId, username }));
+
+      // Clear the comment text field
       setNewComment("");
-    } catch (error) {
-      console.error("Failed to add comment/reply:", error);
-    }
-  }
+    },
+    [dispatch, isEditing],
+  );
 
-  // Function to activate reply mode
-  function handleReplyToComment(commentId: number, username: string) {
-    setReplyMode({
-      isReplying: true,
-      commentId,
-      username,
-    });
-    setNewComment(""); // Clear the input, placeholder still here.
-  }
+  // Callback to enter edit mode for a specific comment
+  const handleEditComment = useCallback(
+    (commentId: number) => {
+      // clear reply mode when entering edit mode
+      if (isReplying) {
+        dispatch(resetReplyMode());
+      }
 
-  // Function to cancel reply mode
-  function cancelReplyMode() {
-    setReplyMode({
-      isReplying: false,
-      commentId: null,
-      username: null,
-    });
+      // Enter edit mode for the specified comment
+      dispatch(enterEditMode(commentId));
+
+      // clear the comment text field
+      setNewComment("");
+    },
+    [dispatch, isReplying],
+  );
+
+  // Callback to cancel reply mode
+  const cancelReplyMode = useCallback(() => {
+    dispatch(resetReplyMode());
     setNewComment("");
-  }
+  }, [dispatch]);
 
-  async function handleDeletePost() {
+  // callback to cancel edit mode
+  const cancelEditMode = useCallback(() => {
+    dispatch(closeEditMode());
+    setNewComment("");
+  }, [dispatch]);
+
+  // Callback to handle post deletion
+  const handleDeletePost = useCallback(async () => {
     if (post?.id) {
       try {
-        await deletePostById(post.id).unwrap(); // unwrap() helps catch errors
-        // Close the modal only after successful deletion
-        dispatch(closePostModal()); // Dispatrch tghe closePostModal action
+        await deletePostById(post.id).unwrap();
+        dispatch(closePostModal());
       } catch (error) {
         console.error("Failed to delete post:", error);
       }
     }
-  }
+  }, [post?.id, deletePostById, dispatch]);
 
   if (!isOpen) return null;
 
-  // Don't render the post content until the data matches the selected post ID
-  // Since we are changing views between posts, the old post data from the cache is still present in POST and COMMENTS variables , all whilst the new query is being fetched.
-  // By doing this, we stop the rendering of the post until the data has been properly fetched and replaced the old one.
+  // Show loading screen if post data doesn't match selected post ID
   if (post?.id !== selectedPostId) {
     return (
       <div
@@ -230,7 +340,8 @@ function ViewPost({
     );
   }
 
-  if (isPostLoading || isCommentsLoading || isReplyingLoading) {
+  // Show loading screen while post or comments are loading
+  if (isPostLoading || isCommentsLoading) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -246,6 +357,7 @@ function ViewPost({
     );
   }
 
+  // Show loading screen while post is being deleted
   if (isPostDeleting) {
     return (
       <div
@@ -262,7 +374,8 @@ function ViewPost({
     );
   }
 
-  if (isPostError || isCommentsError || isReplyingError) {
+  // Show error screen if there are errors loading post or comments
+  if (isPostError || isCommentsError) {
     return (
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -303,7 +416,7 @@ function ViewPost({
         className="flex flex-row w-3/4 max-w-4xl h-[80vh] overflow-hidden bg-white dark:bg-gray-800 rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image section - Left side*/}
+        {/* Left Side - Image Display */}
         <div className="w-1/2 flex-shrink-0">
           <CardDescription className="h-full w-full">
             <div className="h-full w-full">
@@ -311,71 +424,82 @@ function ViewPost({
                 src={post?.imageUrl}
                 alt={post?.description}
                 className="w-full h-full object-contain"
+                loading="lazy"
+                decoding="async"
+                onDoubleClick={() => handleTogglePostLike(post.id)}
               />
             </div>
           </CardDescription>
         </div>
 
-        {/* Comment section - Right side */}
+        {/* Right Side - Content */}
         <div className="w-1/2 flex flex-col">
-          {/* Poster - Fixed at top */}
+          {/* Top Header - Contains poster info and actions */}
           <div className="flex items-center justify-between p-3 border-b flex-shrink-0">
             <div className="flex items-center gap-2">
               <img
                 src={post?.profilePictureUrl}
                 alt={post?.description}
-                className="w-10 h-10 rounded-full"
+                className="w-10 h-10 rounded-full cursor-pointer"
+                loading="lazy"
+                decoding="async"
+                onClick={() => navigateToSelectedUserProfile(post?.username)}
               />
-              <h1 className="font-bold">{post?.username}</h1>
+              <h1 className="font-bold cursor-pointer">{post?.username}</h1>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <MoreHorizontal className="h-6 w-6 cursor-pointer" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="min-w-fit dark:bg-gray-900"
-                align="center"
-              >
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuGroup>
-                  <div className="flex items-center justify-start gap-7 cursor-pointer ">
-                    <DropdownMenuItem
-                      className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                      onClick={() =>
-                        navigate(
-                          `/userprofile/${post?.username}/post/edit/${post.id}`
-                        )
-                      }
+            {/* Dropdown menu for post owner actions (edit/delete) */}
+            {loggedInUser && loggedInUser.username === post?.username && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="min-w-fit dark:bg-gray-900"
+                  align="center"
+                >
+                  {/* Dropdown Content - Edit and Delete */}
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <div className="flex items-center justify-start gap-7 cursor-pointer">
+                      <DropdownMenuItem
+                        className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                        onClick={() =>
+                          navigate(
+                            `/userprofile/${post?.username}/post/edit/${post.id}`,
+                          )
+                        }
+                      >
+                        Edit
+                      </DropdownMenuItem>
+                      <Edit className="size-4 text-blue-200" />
+                    </div>
+                    <div
+                      className="flex items-center justify-start cursor-pointer"
+                      onClick={handleDeletePost}
                     >
-                      Edit
-                    </DropdownMenuItem>
-                    <Edit className="size-4 text-blue-200" />
-                  </div>
-                  <div
-                    className="flex items-center justify-start cursor-pointer"
-                    onClick={() => handleDeletePost()}
-                  >
-                    <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
-                      Delete
-                    </DropdownMenuItem>
-                    <Trash2 className="size-4 text-red-200" />
-                  </div>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                      <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+                        Delete
+                      </DropdownMenuItem>
+                      <Trash2 className="size-4 text-red-200" />
+                    </div>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* Post description */}
+          {/* Scrollable Content Area - Contains post description and comments */}
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
+            {/* Post Description Section */}
             <div className="mb-2 flex items-start gap-1 flex-shrink-0">
               <div className="flex-shrink-0">
-                {" "}
-                {/* Add this class */}
                 <img
                   src={post?.profilePictureUrl}
                   alt={post?.description}
-                  className="w-8 h-8 rounded-full object-fill"
+                  className="w-8 h-8 rounded-full object-fill cursor-pointer"
+                  loading="lazy"
+                  decoding="async"
+                  onClick={() => navigateToSelectedUserProfile(post?.username)}
                 />
               </div>
               <div>
@@ -387,24 +511,26 @@ function ViewPost({
             </div>
 
             <hr className="border-gray-300 dark:border-gray-700" />
-
-            {/* Comments */}
+            {/* Comments List */}
             <div>
               {comments?.map((comment) => (
                 <CommentCard
-                  key={comment.id}
+                  postUsername={post.username}
+                  key={`${comment.id}-${comment.content}`}
                   comment={comment}
                   handleToggleCommentLike={handleToggleCommentLike}
                   isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
-                  showReplies={showReplies}
-                  setShowReplies={setShowReplies}
+                  navigateToSelectedUserProfile={navigateToSelectedUserProfile}
+                  loggedInUser={loggedInUser}
+                  onEdit={handleEditComment}
+                  focusRef={focusRef}
                 />
               ))}
             </div>
           </div>
 
-          {/* Like/Comment/Share icons - Fixed above input */}
+          {/* Action Bar - Contains like, comment, share, and save buttons */}
           <div className="flex items-center gap-4 px-4 py-3 border-t flex-shrink-0">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-1">
@@ -416,19 +542,17 @@ function ViewPost({
                   } ${
                     isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""
                   }`}
-                  onClick={() => {
-                    handleTogglePostLike(post?.id ?? 0);
-                    dispatch(
-                      postApi.util.invalidateTags([
-                        { type: "Post", id: "LIST" },
-                      ])
-                    );
-                  }}
+                  onClick={() => handleTogglePostLike(post?.id ?? 0)}
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {postLikeCount}
                 </span>
-                <MessageCircle className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors" />
+                <MessageCircle
+                  className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                  onClick={() => {
+                    focusRef.current?.focus();
+                  }}
+                />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {postCommentCount}
                 </span>
@@ -452,14 +576,13 @@ function ViewPost({
             </div>
           </div>
 
-          {/* Comment input - Fixed at bottom */}
+          {/* Comment Input Section - Contains input field and submit button */}
           <div className="p-4 border-t flex-shrink-0">
             {/* Reply indicator - shows who you're replying to */}
-            {replyMode.isReplying && (
+            {isReplying && !isEditing && (
               <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  Replying to{" "}
-                  <span className="font-bold">{replyMode.username}</span>
+                  Replying to <span className="font-bold">{replyUsername}</span>
                 </span>
                 <button
                   onClick={cancelReplyMode}
@@ -470,19 +593,40 @@ function ViewPost({
               </div>
             )}
 
+            {/* Edit indicator - shows that youre editing the highlighted comment */}
+            {isEditing && !isReplying && (
+              <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Editing...
+                </span>
+                <button
+                  onClick={cancelEditMode}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Comment/Reply/Edit Form */}
             <form className="flex w-full gap-2" onSubmit={handleAddComment}>
               <img
                 src={loggedInUser?.profilePictureUrl}
                 alt="Your profile"
                 className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                loading="lazy"
+                decoding="async"
               />
               <Input
+                ref={focusRef}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={
-                  replyMode.isReplying
-                    ? `Reply to ${replyMode.username}...`
-                    : "Add a comment..."
+                  isEditing
+                    ? "Edit your comment..."
+                    : isReplying
+                      ? `Reply to ${replyUsername}...`
+                      : "Add a comment..."
                 }
                 className="flex-1"
               />
@@ -492,7 +636,17 @@ function ViewPost({
                 disabled={isCreateLoading}
                 size="sm"
               >
-                {isCreateLoading ? "Posting..." : "Post"}
+                {isCreateLoading
+                  ? isEditing
+                    ? "Saving..."
+                    : isReplying
+                      ? "Replying..."
+                      : "Posting..."
+                  : isEditing
+                    ? "Save"
+                    : isReplying
+                      ? "Reply"
+                      : "Post"}
               </Button>
             </form>
             {isCreateError && (

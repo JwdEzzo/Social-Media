@@ -14,7 +14,10 @@ export const commentApi = createApi({
         body: requestDto,
         method: "POST",
       }),
-      invalidatesTags: [{ type: "Comment", id: "LIST" }, "Comment"],
+      invalidatesTags: (result, error, arg) => [
+        { type: "Comment", id: "LIST" },
+        { type: "Comment", id: arg.postId },
+      ],
     }),
     getCommentsByPostId: builder.query<
       GetCommentResponseDto[],
@@ -24,7 +27,7 @@ export const commentApi = createApi({
         url: `/comments/${postId}`,
         method: "GET",
       }),
-      providesTags: (result) =>
+      providesTags: (result, error, { postId }) =>
         result
           ? [
               ...result.map(({ id }) => ({
@@ -32,6 +35,7 @@ export const commentApi = createApi({
                 id,
               })),
               { type: "Comment", id: "LIST" },
+              { type: "Comment", id: postId },
             ]
           : [{ type: "Comment", id: "LIST" }],
     }),
@@ -40,7 +44,32 @@ export const commentApi = createApi({
         url: `/comments/post/${postId}/comment-count`,
         method: "GET",
       }),
-      providesTags: [{ type: "Comment", id: "LIST" }],
+      providesTags: (result, error, postId) => [
+        { type: "Comment", id: "LIST" },
+        { type: "Comment", id: postId },
+      ],
+    }),
+
+    editComment: builder.mutation<void, { commentId: number; content: string }>(
+      {
+        query: ({ commentId, content }) => ({
+          url: `/comments/edit-comment/${commentId}`,
+          method: "PUT",
+          body: content,
+        }),
+        invalidatesTags: (result, error, { commentId }) => [
+          { type: "Comment", id: commentId },
+          { type: "Comment", id: "LIST" },
+        ],
+      },
+    ),
+
+    deleteComment: builder.mutation<void, number>({
+      query: (commentId) => ({
+        url: `/comments/${commentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Comment", id: "LIST" }, "Comment"],
     }),
   }),
 });
@@ -49,4 +78,8 @@ export const {
   useCreateCommentMutation,
   useGetCommentsByPostIdQuery,
   useGetPostCommentCountQuery,
+  useEditCommentMutation,
+  useDeleteCommentMutation,
 } = commentApi;
+
+export const { util: commentApiUtil } = commentApi;

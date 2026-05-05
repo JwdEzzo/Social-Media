@@ -12,11 +12,15 @@ import { followApi } from '@/api/followers/followApi';
 import { commentRepliesApi } from '@/api/comments/commentRepliesApi';
 import { commentReplyLikesApi } from '@/api/comments/commentReplyLikesApi';
 import { postSavesApi } from '@/api/posts/postSavesApi';
+import { replyModeSlice } from '@/slices/replyModeSlice';
+import { editModeSlice } from '@/slices/editModeSlice';
 
 // Combine all reducers
 const appReducer = combineReducers({
   auth: authSlice,
   viewPostModal: viewPostModalReducer,
+  replyModeSlice: replyModeSlice.reducer,
+  editModeSlice: editModeSlice.reducer,
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [postApi.reducerPath]: postApi.reducer,

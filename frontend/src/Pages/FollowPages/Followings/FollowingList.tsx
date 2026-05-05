@@ -1,11 +1,12 @@
 import { useGetFollowingsByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import FollowingCard from '@/Pages/FollowPages/Followings/FollowingCard';
 import { ModeToggle } from '@/components/ModeToggle';
 import { useGetFollowingCountQuery } from '@/api/followers/followApi';
 import { Undo } from 'lucide-react';
+
 interface FollowingListProps {
   profileUsername: string;
 }
@@ -122,6 +123,7 @@ function FollowingList({ profileUsername }: FollowingListProps) {
             ))
           )}
         </CardContent>
+        {followings?.length === 0 && <CardFooter>{<p>You are not following anyone.</p>}</CardFooter>}
       </Card>
     </div>
   );

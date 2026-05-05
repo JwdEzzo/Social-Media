@@ -6,12 +6,12 @@ import {
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
 } from '@/api/posts/postApi';
-import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
+import { useGetUserByUsernameQuery } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Edit3, LogOut, Unlock, Lock } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Edit3, LogOut } from 'lucide-react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { ModeToggle } from '@/components/ModeToggle';
 import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
 import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
@@ -29,7 +29,7 @@ import {
 import CreatePostModal from '@/Pages/PostPages/CreatePostModal';
 import ViewPost from '@/Pages/PostPages/ViewPost';
 import type { RootState } from '@/store/store';
-import { closePostModal } from '@/slices/viewPostSlice';
+import { closePostModal, openPostModal } from '@/slices/viewPostSlice';
 import { useSelector } from 'react-redux';
 import ProfilePagePostCard from '@/Pages/PostPages/ProfilePagePostCard';
 import FollowButton from '@/components/custom/follow-button';
@@ -40,6 +40,7 @@ interface ProfilePageProps {
 
 function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { username: loggedInUsername } = useAuth();
   const { searchedUsername } = useParams<{ searchedUsername: string }>();
@@ -66,8 +67,6 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const { data: loggedInUserData } = useGetUserByUsernameQuery(loggedInUsername!, {
     skip: !loggedInUsername,
   });
-
-  const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
   const {
     data: posts,
@@ -113,7 +112,11 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   async function handleTogglePostLike(postId: number) {
     if (!isOwnProfile) return;
     try {
-      await togglePostLike(postId).unwrap();
+      await togglePostLike(postId)
+        .unwrap()
+        .then(() => {
+          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
+        });
     } catch (error) {
       console.log('Error: ', error);
     }
@@ -149,6 +152,23 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   function handleCloseViewModal() {
     dispatch(closePostModal());
   }
+
+  useEffect(() => {
+    // Check if we came from the modal
+    if (location.state?.fromModal && location.state?.previousPostId) {
+      // Set up a listener for when user navigates back
+      const handlePopState = () => {
+        // Re-open the modal when user goes back
+        dispatch(openPostModal(location.state.previousPostId));
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [location.state, dispatch]);
 
   // Loading state
   if (!profileUsername || isUserLoading) {
@@ -273,21 +293,21 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   >
                     Edit Credentials
                   </DropdownMenuItem>
-                  <DropdownMenuItem
+                  {/* <DropdownMenuItem
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
                     onClick={() => {
                       if (profileUser?.id) {
-                        toggleAccountStatus({ targetUserId: profileUser.id });
+                        // toggleAccountStatus({ targetUserId: profileUser.id });
                       }
                     }}
                   >
-                    {profileUser?.accountStatus === 'PRIVATE' ? 'Set Account to Public' : 'Set Account to Private'}
-                    {profileUser?.accountStatus === 'PRIVATE' ? (
+                    {profileUser?.accountStatus === "PRIVATE" ? "Set Account to Public" : "Set Account to Private"}
+                    {profileUser?.accountStatus === "PRIVATE" ? (
                       <Unlock className="ml-2 text-green-400" />
                     ) : (
                       <Lock className="ml-2 text-red-400" />
                     )}
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                 <DropdownMenuItem

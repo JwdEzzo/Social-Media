@@ -7,22 +7,27 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import AppSidebar from './AppSidebar';
 import { useDispatch, useSelector } from 'react-redux';
-import { openPostModal, closePostModal } from '@/slices/viewPostSlice';
+import { openPostModal, closePostModal, saveHomePageScrollPosition } from '@/slices/viewPostSlice';
 import type { RootState } from '@/store/store';
 import { useGetUserByUsernameQuery } from '@/api/users/userApi';
-import HomePagePostCard from '@/Pages/HomePage/HomePagePostCard';
 import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
 import { CardTitle } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
+import RenderedPosts from './react-virtuoso/RenderedPosts';
 import NotificationButton from '@/components/custom/notification-button';
 
 function HomePage() {
   //
   const [viewMode, setViewMode] = useState<'For You' | 'Following'>('For You');
   const dispatch = useDispatch();
+  const mainRef = useRef<HTMLDivElement>(null);
 
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector((state: RootState) => state.viewPostModal);
+  const {
+    isOpen: isViewModalOpen,
+    selectedPostId,
+    homePageScrollPosition,
+  } = useSelector((state: RootState) => state.viewPostModal);
   // Get logged-in username (string)
   const { username: loggedInUsername } = useAuth();
 
@@ -46,43 +51,87 @@ function HomePage() {
 
   const [toggleSave, { isLoading: isTogglingSavePost }] = useTogglePostSaveMutation();
 
-  async function handleTogglePostLike(postId: number) {
-    try {
-      await togglePostLike(postId)
-        .unwrap()
-        .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
-        });
-    } catch (error) {
-      console.log('Error: ', error);
-    }
-  }
+  // Toggle post like
+  const handleTogglePostLike = useCallback(
+    async (postId: number) => {
+      try {
+        await togglePostLike(postId)
+          .unwrap()
+          .then(() => {
+            dispatch(postApi.util.invalidateTags([{ type: 'Post', id: postId }]));
+          });
+      } catch (error) {
+        console.log('Error: ', error);
+      }
+    },
+    [togglePostLike, dispatch],
+  );
 
-  async function handleToggleSavePost(postId: number) {
-    try {
-      await toggleSave(postId)
-        .unwrap()
-        .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
-        });
-    } catch (error) {
-      console.log('Error: ', error);
-    }
-  }
+  // Toggle post save
+  const handleToggleSavePost = useCallback(
+    async (postId: number) => {
+      try {
+        await toggleSave(postId)
+          .unwrap()
+          .then(() => {
+            dispatch(postApi.util.invalidateTags([{ type: 'Post', id: postId }]));
+          });
+      } catch (error) {
+        console.log('Error: ', error);
+      }
+    },
+    [toggleSave, dispatch],
+  );
 
   // Open modal for selected post
-  function handleViewModal(postId: number) {
-    dispatch(openPostModal(postId));
-  }
+  const handleViewModal = useCallback(
+    (postId: number) => {
+      if (mainRef.current) {
+        dispatch(saveHomePageScrollPosition(window.scrollY));
+      }
+      dispatch(openPostModal(postId));
+    },
+    [dispatch],
+  );
 
   // Close modal
-  function handleCloseViewModal() {
-    dispatch(closePostModal());
-  }
+  const handleCloseViewModal = useCallback(() => {
+    dispatch(closePostModal({ preserveState: false }));
+  }, [dispatch]);
+
+  // Restore HomePage scroll when returning from profile
+  useEffect(() => {
+    if (selectedPostId && isViewModalOpen && homePageScrollPosition > 0) {
+      // Small delay to ensure modal has rendered
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: homePageScrollPosition, behavior: 'instant' });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedPostId, isViewModalOpen, homePageScrollPosition]);
+
+  // Re-open modal if returning from profile page
+  useEffect(() => {
+    if (selectedPostId && !isViewModalOpen) {
+      const timer = setTimeout(() => {
+        dispatch(openPostModal(selectedPostId));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedPostId, isViewModalOpen, dispatch]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [viewMode]);
+    if (isViewModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to ensure scrolling is restored
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isViewModalOpen]);
 
   // Loading state
   if (isPostsLoading || isFollowingPostsLoading) {
@@ -157,34 +206,31 @@ function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
+        <main
+          ref={mainRef}
+          className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center"
+        >
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
             {/* Map over posts - now using HomePagePostCard component */}
-            {viewMode === 'For You'
-              ? apiPosts?.map((post) => (
-                  <HomePagePostCard
-                    // refetchPosts={refetchPosts}
-                    key={post.id}
-                    post={post}
-                    onViewComments={handleViewModal}
-                    handleTogglePostLike={handleTogglePostLike}
-                    isTogglingPostLike={isTogglingPostLike}
-                    handleToggleSavePost={handleToggleSavePost}
-                    isTogglingSavePost={isTogglingSavePost}
-                  />
-                ))
-              : followingPosts?.map((post) => (
-                  <HomePagePostCard
-                    // refetchPosts={refetchPosts}
-                    key={post.id}
-                    post={post}
-                    onViewComments={handleViewModal}
-                    handleTogglePostLike={handleTogglePostLike}
-                    isTogglingPostLike={isTogglingPostLike}
-                    handleToggleSavePost={handleToggleSavePost}
-                    isTogglingSavePost={isTogglingSavePost}
-                  />
-                ))}
+            {viewMode === 'For You' ? (
+              <RenderedPosts
+                posts={apiPosts!}
+                onViewComments={handleViewModal}
+                handleTogglePostLike={handleTogglePostLike}
+                isTogglingPostLike={isTogglingPostLike}
+                handleToggleSavePost={handleToggleSavePost}
+                isTogglingSavePost={isTogglingSavePost}
+              />
+            ) : (
+              <RenderedPosts
+                posts={followingPosts!}
+                onViewComments={handleViewModal}
+                handleTogglePostLike={handleTogglePostLike}
+                isTogglingPostLike={isTogglingPostLike}
+                handleToggleSavePost={handleToggleSavePost}
+                isTogglingSavePost={isTogglingSavePost}
+              />
+            )}
           </div>
 
           {/* View Post Modal */}
@@ -208,15 +254,3 @@ function HomePage() {
 }
 
 export default HomePage;
-
-//  onClick={() =>
-//                     toggleFollow(post.username)
-//                       .unwrap()
-//                       .then(() => {
-//                         dispatch(
-//                           postApi.util.invalidateTags([
-//                             { type: "Post", id: "LIST" },
-//                           ])
-//                         );
-//                       })
-//                   }

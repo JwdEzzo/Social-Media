@@ -1,11 +1,11 @@
 import { useGetFollowersByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
 import { ModeToggle } from '@/components/ModeToggle';
-import { useGetFollowerCountQuery } from '@/api/followers/followApi';
 import { Undo } from 'lucide-react';
+import { useGetFollowerCountQuery } from '@/api/followers/followApi';
 
 interface FollowerListProps {
   profileUsername: string;
@@ -111,6 +111,7 @@ function FollowerList({ profileUsername }: FollowerListProps) {
             </div>
           )}
         </CardContent>
+        {followers?.length === 0 && <CardFooter>{<p>You have no followers.</p>}</CardFooter>}
       </Card>
     </div>
   );

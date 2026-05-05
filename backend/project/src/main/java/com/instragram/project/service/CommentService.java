@@ -12,6 +12,7 @@ import com.instragram.project.model.Comment;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -43,11 +44,26 @@ public class CommentService {
       return commentRepository.findByPostId(postId);
    }
 
-   // Delete the comment
-   public void deleteComment(Long commentId) {
+   // Update a comment
+   public void editComment(Long commentId, String content, String username) {
+      Comment comment = commentRepository.findById(commentId).get();
+      if (!comment.getAppUser().getUsername().equals(username)) {
+         throw new RuntimeException("You do not have permission to update this comment");
+      }
+      comment.setContent(content);
+      commentRepository.save(comment);
+   }
 
+   // Delete the comment
+   @Transactional
+   public void deleteComment(Long commentId, String username) {
+      AppUser appUser = appUserRepository.findByUsername(username);
       Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+
+      if (appUser != comment.getAppUser() && appUser != comment.getPost().getAppUser()) {
+         throw new RuntimeException("You do not have permission to delete this comment");
+      }
 
       commentRepository.delete(comment);
    }
