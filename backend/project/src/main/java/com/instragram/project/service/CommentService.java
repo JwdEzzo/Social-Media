@@ -45,6 +45,7 @@ public class CommentService {
    }
 
    // Update a comment
+   @Transactional
    public void editComment(Long commentId, String content, String username) {
       Comment comment = commentRepository.findById(commentId).get();
       if (!comment.getAppUser().getUsername().equals(username)) {
