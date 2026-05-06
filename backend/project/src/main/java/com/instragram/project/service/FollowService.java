@@ -192,6 +192,8 @@ public class FollowService {
       return count;
    }
 
+
+
    // Check if a user already follows the other
    public boolean isFollowed(String followerUsername, String followingUsername) {
       AppUser follower = appUserRepository.findByUsername(followerUsername);
@@ -206,16 +208,51 @@ public class FollowService {
       return isFollowed;
    }
 
+   // ONLY LOOK FOR PENDING REQUESTS, maybe we declined a previous one, it shouldnt be the target of our response
    public Long getPendingRequestId(String requesterUsername, String targetUsername) {
       AppUser requester = appUserRepository.findByUsername(requesterUsername);
       AppUser target = appUserRepository.findByUsername(targetUsername);
       if (requester == null || target == null) return null;
 
-      return followRequestRepository
-               .findByRequesterIdAndTargetId(requester.getId(), target.getId())
-               .filter(req -> req.getStatus() == FollowRequestStatus.PENDING)
-               .map(FollowRequest::getId)
-               .orElse(null);
+    return followRequestRepository
+            .findByRequesterIdAndTargetIdAndStatus(
+                    requester.getId(), target.getId(), FollowRequestStatus.PENDING)
+            .map(FollowRequest::getId)
+            .orElse(null);
    }
 
+   // Get count of follow requests for an account
+   public long getFollowRequestsCount(String targetUsername) {
+      AppUser user = appUserRepository.findByUsername(targetUsername);
+      if (user == null) {
+         throw new RuntimeException("User not found: " + targetUsername);
+      }
+      long count = followRequestRepository.countByTargetIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
+      return count;
+   }
+
+   // Get all outgoing requests for a user
+   public List<FollowRequestResponseDto> getAllOutgoingRequests(String requesterUsername) {
+
+      AppUser user = appUserRepository.findByUsername(requesterUsername);
+      if (user == null) {
+         throw new RuntimeException("User not found: " + requesterUsername);
+      }
+      List<FollowRequestResponseDto> responseDtos = followRequestRepository
+                .findAllByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING)
+                .stream()
+                .map(mappingMethods::convertFollowRequestToResponseDto)
+                .collect(Collectors.toList());
+      return responseDtos;
+   }
+
+   // Get count of the requests that the user sent
+   public long getOutgoingRequestsCount(String requesterUsername) {
+      AppUser user = appUserRepository.findByUsername(requesterUsername);
+      if (user == null) {
+         throw new RuntimeException("User not found: " + requesterUsername);
+      }
+      long count = followRequestRepository.countByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
+      return count;
+   }
 }

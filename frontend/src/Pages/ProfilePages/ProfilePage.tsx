@@ -6,10 +6,10 @@ import {
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
 } from '@/api/posts/postApi';
-import { useGetUserByUsernameQuery } from '@/api/users/userApi';
+import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Edit3, LogOut } from 'lucide-react';
+import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Lock, Edit3, LogOut, Unlock } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ModeToggle } from '@/components/ModeToggle';
@@ -88,12 +88,11 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     skip: !profileUsername,
   });
 
-  console.log(`Status: ${profileUser?.accountStatus}`);
-
   const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
   const { data: savedPosts } = useGetPostsSavedByCurrentUserQuery();
   const [togglePostLike, { isLoading: isTogglingPostLike }] = useTogglePostLikeMutation();
   const [toggleSave, { isLoading: isTogglingSavePost }] = useTogglePostSaveMutation();
+  const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
   // Sorting logic
   const sortedPosts = posts
@@ -134,15 +133,6 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       console.log('Error: ', error);
     }
   }
-
-  // async function handleFollow() {
-  //   try {
-  //     await toggleFollow(profileUser!.username).unwrap();
-  //     dispatch(userApi.util.invalidateTags([{ type: 'User', id: 'LIST' }]));
-  //   } catch (error) {
-  //     console.log('Error: ', error);
-  //   }
-  // }
 
   function handleLogout() {
     dispatch(logout());
@@ -293,21 +283,21 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   >
                     Edit Credentials
                   </DropdownMenuItem>
-                  {/* <DropdownMenuItem
+                  <DropdownMenuItem
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
                     onClick={() => {
                       if (profileUser?.id) {
-                        // toggleAccountStatus({ targetUserId: profileUser.id });
+                        toggleAccountStatus({ targetUserId: profileUser.id });
                       }
                     }}
                   >
-                    {profileUser?.accountStatus === "PRIVATE" ? "Set Account to Public" : "Set Account to Private"}
-                    {profileUser?.accountStatus === "PRIVATE" ? (
+                    {profileUser?.accountStatus === 'PRIVATE' ? 'Set Account to Public' : 'Set Account to Private'}
+                    {profileUser?.accountStatus === 'PRIVATE' ? (
                       <Unlock className="ml-2 text-green-400" />
                     ) : (
                       <Lock className="ml-2 text-red-400" />
                     )}
-                  </DropdownMenuItem> */}
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                 <DropdownMenuItem

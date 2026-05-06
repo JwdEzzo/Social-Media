@@ -26,6 +26,23 @@ public class FollowRequestController {
     @Autowired
     private FollowService followService;
 
+    // GET: Get all outgoing follow requests (the notification list)
+    @GetMapping("/outgoing")
+    public ResponseEntity<List<FollowRequestResponseDto>> getOutgoingRequests(
+            Authentication authentication) {
+
+        List<FollowRequestResponseDto> requests =
+                followService.getAllOutgoingRequests(authentication.getName());
+        return ResponseEntity.ok(requests);
+    }
+
+    // GET: Get count of outgoing follow requests
+    @GetMapping("/outgoing/count")
+    public ResponseEntity<Long> getOutgoingRequestsCount(Authentication authentication) {
+        long count = followService.getOutgoingRequestsCount(authentication.getName());
+        return ResponseEntity.ok(count);
+    }
+
     // GET: Get all pending incoming follow requests (the notification list)
     @GetMapping("/incoming")
     public ResponseEntity<List<FollowRequestResponseDto>> getIncomingRequests(
@@ -34,6 +51,13 @@ public class FollowRequestController {
         List<FollowRequestResponseDto> requests =
                 followService.getAllPendingIncomingRequests(authentication.getName());
         return ResponseEntity.ok(requests);
+    }
+
+    // GET: Get count of follow requests for an account
+    @GetMapping("/count")
+    public ResponseEntity<Long> getFollowRequestsCount(Authentication authentication) {
+        long count = followService.getFollowRequestsCount(authentication.getName());
+        return ResponseEntity.ok(count);
     }
 
     // PUT: Accept a follow request
@@ -65,4 +89,6 @@ public class FollowRequestController {
         followService.cancelFollowRequest(requestId, authentication.getName());
         return ResponseEntity.noContent().build();
     }
+
+
 }

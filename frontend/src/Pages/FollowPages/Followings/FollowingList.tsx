@@ -1,11 +1,11 @@
 import { useGetFollowingsByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FollowingCard from '@/Pages/FollowPages/Followings/FollowingCard';
-import { ModeToggle } from '@/components/ModeToggle';
 import { useGetFollowingCountQuery } from '@/api/followers/followApi';
-import { Undo } from 'lucide-react';
+import NavigateBack from '@/components/custom/navigate-back';
+import CancellingRequestsCard from '@/components/custom/cancelling-requests-card';
 
 interface FollowingListProps {
   profileUsername: string;
@@ -86,32 +86,22 @@ function FollowingList({ profileUsername }: FollowingListProps) {
 
   return (
     <div className="w-full h-screen dark:bg-gray-900 bg-white pt-10">
+      <NavigateBack />
+      <CancellingRequestsCard />
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
-        {/* Header with username and mode toggle */}
+        {/* Header with username and back button */}
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
               {loggedInUsername === profileUsername ? 'Your Following' : `${profileUsername}'s Followings`}
             </CardTitle>
-            <div>
-              <div className="flex gap-1 items-center">
-                <Button
-                  onClick={() => history.back()}
-                  size="icon"
-                  //
-                >
-                  <Undo />
-                </Button>
-                <ModeToggle />
-              </div>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
           {followingCount === 0 && profileUsername === loggedInUsername ? (
             <div>You are not following anyone.</div>
           ) : followingCount === 0 ? (
-            <div>No one is following {profileUsername}</div>
+            <div>{profileUsername} is not following anyone.</div>
           ) : (
             followings?.map((following) => (
               <FollowingCard
@@ -123,7 +113,6 @@ function FollowingList({ profileUsername }: FollowingListProps) {
             ))
           )}
         </CardContent>
-        {followings?.length === 0 && <CardFooter>{<p>You are not following anyone.</p>}</CardFooter>}
       </Card>
     </div>
   );

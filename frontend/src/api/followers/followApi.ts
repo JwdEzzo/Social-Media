@@ -64,6 +64,7 @@ export const followApi = createApi({
         { type: 'Follow', id: 'REQUESTS' },
         { type: 'Follow', id: 'COUNT' },
         { type: 'Follow', id: `PENDING-${requesterUsername}` },
+        { type: 'User', id: 'LIST' },
       ],
     }),
 
@@ -78,14 +79,14 @@ export const followApi = createApi({
       ],
     }),
 
-    cancelFollowRequest: builder.mutation<void, { requestId: number; targetUsername: string }>({
+    cancelFollowRequest: builder.mutation<void, { requestId: number; requesterUsername: string }>({
       query: ({ requestId }) => ({
         url: `/follow-requests/${requestId}/cancel`,
         method: 'DELETE',
       }),
-      invalidatesTags: (_result, _error, { targetUsername }) => [
+      invalidatesTags: (_result, _error, { requesterUsername }) => [
         { type: 'Follow', id: 'REQUESTS' },
-        { type: 'Follow', id: `PENDING-${targetUsername}` }, // this knows which tag to bust
+        { type: 'Follow', id: `PENDING-${requesterUsername}` }, // this knows which tag to bust
       ],
     }),
 
@@ -95,6 +96,30 @@ export const followApi = createApi({
         method: 'GET',
       }),
       providesTags: (_result, _error, targetUsername) => [{ type: 'Follow', id: `PENDING-${targetUsername}` }],
+    }),
+
+    getIncomingFollowRequestsCount: builder.query<number, void>({
+      query: () => ({
+        url: `/follow-requests/incoming/count`,
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'Follow', id: 'REQUESTS' }],
+    }),
+
+    getAllOutgoingFollowRequests: builder.query<FollowRequestResponseDto[], void>({
+      query: () => ({
+        url: `/follow-requests/outgoing`,
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'Follow', id: 'REQUESTS' }],
+    }),
+
+    getOutgoingFollowRequestsCount: builder.query<number, void>({
+      query: () => ({
+        url: `/follow-requests/outgoing/count`,
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'Follow', id: 'REQUESTS' }],
     }),
   }),
 });
@@ -109,6 +134,9 @@ export const {
   useDeclineFollowRequestMutation,
   useCancelFollowRequestMutation,
   useHasPendingRequestQuery,
+  useGetIncomingFollowRequestsCountQuery,
+  useGetAllOutgoingFollowRequestsQuery,
+  useGetOutgoingFollowRequestsCountQuery,
 } = followApi;
 
 export const { util: followApiUtil } = followApi;

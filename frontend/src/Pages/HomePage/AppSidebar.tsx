@@ -1,4 +1,4 @@
-import { ChevronUp, LogOutIcon, Search, User, User2 } from "lucide-react";
+import { ChevronUp, LogOutIcon, Search, User, User2 } from 'lucide-react';
 
 import {
   Sidebar,
@@ -9,20 +9,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "@/auth/authSlice";
-import { useAuth } from "@/auth/useAuth";
+} from '@/components/ui/sidebar';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '@/auth/authSlice';
+import { useAuth } from '@/auth/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+} from '@/components/ui/dropdown-menu';
+import { useState } from 'react';
 
-type SearchType = "post" | "user";
+type SearchType = 'post' | 'user';
 
 function AppSidebar() {
   const dispatch = useDispatch();
@@ -32,11 +32,11 @@ function AppSidebar() {
   const [searchType, setSearchType] = useState<SearchType>();
   const [isPostSearchOpen, setIsPostSearchOpen] = useState<boolean>(false);
   const [isUserSearchOpen, setIsUserSearchOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   function handleLogout() {
     dispatch(logout());
-    navigate("/");
+    navigate('/');
   }
 
   function navigateBackToProfile() {
@@ -44,38 +44,38 @@ function AppSidebar() {
   }
 
   function handlePostSearch() {
-    if (searchType === "post" && searchQuery.trim()) {
+    if (searchType === 'post' && searchQuery.trim()) {
       navigate(`/search/posts?q=${encodeURIComponent(searchQuery)}`);
       setIsPostSearchOpen(false);
-      setSearchQuery("");
+      setSearchQuery('');
     }
   }
 
   function handleUserSearch() {
-    if (searchType === "user" && searchQuery.trim()) {
+    if (searchType === 'user' && searchQuery.trim()) {
       navigate(`/search/users?q=${encodeURIComponent(searchQuery)}`);
       setIsUserSearchOpen(false);
-      setSearchQuery("");
+      setSearchQuery('');
     }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      if (searchType === "post") {
+    if (e.key === 'Enter') {
+      if (searchType === 'post') {
         handlePostSearch();
-      } else if (searchType === "user") {
+      } else if (searchType === 'user') {
         handleUserSearch();
       }
     }
   }
 
   function handleSearchBlur(searchType: SearchType) {
-    if (searchType === "post") {
+    if (searchType === 'post') {
       setIsPostSearchOpen(false);
-    } else if (searchType === "user") {
+    } else if (searchType === 'user') {
       setIsUserSearchOpen(false);
     }
-    setSearchQuery("");
+    setSearchQuery('');
   }
 
   return (
@@ -85,16 +85,13 @@ function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem className="mt-3">
-                <SidebarMenuButton
-                  className="dark:hover:bg-gray-900 transition-colors"
-                  onClick={navigateBackToProfile}
-                >
-                  <User />
+                <SidebarMenuButton className="dark:hover:bg-gray-900 transition-colors" onClick={navigateBackToProfile}>
+                  <User className="dark:text-green-400 text-green-400" />
                   <span>Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={() => setSearchType("post")}>
+              <SidebarMenuItem onClick={() => setSearchType('post')}>
                 {isPostSearchOpen ? (
                   <div className="px-3 py-2">
                     <input
@@ -104,7 +101,7 @@ function AppSidebar() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
-                      onBlur={() => handleSearchBlur("post")}
+                      onBlur={() => handleSearchBlur('post')}
                       onKeyDown={handleKeyDown}
                     />
                   </div>
@@ -119,7 +116,7 @@ function AppSidebar() {
                 )}
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={() => setSearchType("user")}>
+              <SidebarMenuItem onClick={() => setSearchType('user')}>
                 {isUserSearchOpen ? (
                   <div className="px-3 py-2">
                     <input
@@ -129,7 +126,7 @@ function AppSidebar() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
-                      onBlur={() => handleSearchBlur("user")}
+                      onBlur={() => handleSearchBlur('user')}
                       onKeyDown={handleKeyDown}
                     />
                   </div>
@@ -145,10 +142,7 @@ function AppSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={handleLogout}
-                  className="dark:hover:bg-gray-900 transition-colors"
-                >
+                <SidebarMenuButton onClick={handleLogout} className="dark:hover:bg-gray-900 transition-colors">
                   <LogOutIcon className="text-red-500" />
                   <span className="text-red-500">Logout</span>
                 </SidebarMenuButton>
@@ -172,17 +166,11 @@ function AppSidebar() {
                 side="top"
                 className="w-[--radix-popper-anchor-width] dark:bg-gray-800 bg-white transition-colors"
               >
-                <DropdownMenuItem
-                  className="dark:hover:bg-gray-700 transition-colors"
-                  onClick={navigateBackToProfile}
-                >
+                <DropdownMenuItem className="dark:hover:bg-gray-700 transition-colors" onClick={navigateBackToProfile}>
                   <span>Profile</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  className="dark:hover:bg-gray-700 transition-colors"
-                  onClick={handleLogout}
-                >
+                <DropdownMenuItem className="dark:hover:bg-gray-700 transition-colors" onClick={handleLogout}>
                   <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -1,11 +1,11 @@
 import { useGetFollowersByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
 import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
-import { ModeToggle } from '@/components/ModeToggle';
-import { Undo } from 'lucide-react';
 import { useGetFollowerCountQuery } from '@/api/followers/followApi';
+import FollowRequestCard from '@/components/custom/follow-request-card';
+import NavigateBack from '@/components/custom/navigate-back';
 
 interface FollowerListProps {
   profileUsername: string;
@@ -79,23 +79,16 @@ function FollowerList({ profileUsername }: FollowerListProps) {
   }
 
   return (
-    <div className="w-full h-screen dark:bg-gray-900 bg-white pt-10">
+    <div className="w-full h-screen dark:bg-gray-900 bg-white pt-5">
+      <NavigateBack />
+      <FollowRequestCard />
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+        {/* Header with username and back button */}
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
               {loggedInUsername === profileUsername ? 'Your Followers' : `${profileUsername}'s Followers`}
             </CardTitle>
-            <div className="flex gap-1 items-center">
-              <Button
-                onClick={() => history.back()}
-                size="icon"
-                //
-              >
-                <Undo />
-              </Button>
-              <ModeToggle />
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -111,7 +104,6 @@ function FollowerList({ profileUsername }: FollowerListProps) {
             </div>
           )}
         </CardContent>
-        {followers?.length === 0 && <CardFooter>{<p>You have no followers.</p>}</CardFooter>}
       </Card>
     </div>
   );
