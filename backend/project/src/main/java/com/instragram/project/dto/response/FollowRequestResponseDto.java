@@ -14,6 +14,8 @@ public class FollowRequestResponseDto {
     private Long requestId;
     private String requesterUsername;
     private String requesterProfilePictureUrl;
+    private String targetUsername;
+    private String targetProfilePictureUrl;
     private String status;
     private LocalDateTime createdAt;
 }

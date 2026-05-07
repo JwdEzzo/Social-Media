@@ -54,6 +54,8 @@ export interface FollowRequestResponseDto {
   requestId: number;
   requesterUsername: string;
   requesterProfilePictureUrl: string | null;
+  targetUsername: string;
+  targetProfilePictureUrl: string | null;
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
   createdAt: string;
 }

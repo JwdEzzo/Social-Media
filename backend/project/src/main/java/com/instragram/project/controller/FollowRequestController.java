@@ -54,7 +54,7 @@ public class FollowRequestController {
     }
 
     // GET: Get count of follow requests for an account
-    @GetMapping("/count")
+    @GetMapping("/incoming/count")
     public ResponseEntity<Long> getFollowRequestsCount(Authentication authentication) {
         long count = followService.getFollowRequestsCount(authentication.getName());
         return ResponseEntity.ok(count);

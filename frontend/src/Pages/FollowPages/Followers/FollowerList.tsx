@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
 import { useGetFollowerCountQuery } from '@/api/followers/followApi';
-import FollowRequestCard from '@/components/custom/follow-request-card';
+import IncomingRequestsCard from '@/components/custom/incoming-request-card';
 import NavigateBack from '@/components/custom/navigate-back';
 
 interface FollowerListProps {
@@ -81,7 +81,7 @@ function FollowerList({ profileUsername }: FollowerListProps) {
   return (
     <div className="w-full h-screen dark:bg-gray-900 bg-white pt-5">
       <NavigateBack />
-      <FollowRequestCard />
+      <IncomingRequestsCard />
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
         {/* Header with username and back button */}
         <CardHeader>

@@ -192,6 +192,8 @@ public FollowRequestResponseDto convertFollowRequestToResponseDto(FollowRequest 
     dto.setRequestId(followRequest.getId());
     dto.setRequesterUsername(followRequest.getRequester().getUsername());
     dto.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
+    dto.setTargetUsername(followRequest.getTarget().getUsername());
+    dto.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
     dto.setStatus(followRequest.getStatus().name());
     dto.setCreatedAt(followRequest.getCreatedAt());
     return dto;
