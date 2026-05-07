@@ -1,3 +1,5 @@
+import type { AccountStatus } from './enums';
+
 export interface LoginResponse {
   token: string;
   username: string;
@@ -12,6 +14,7 @@ export interface GetUserResponseDto {
   profilePictureUrl: string;
   createdAt: string;
   updatedAt: string;
+  accountStatus: AccountStatus;
   posts: GetPostResponseDto[];
 }
 
@@ -45,4 +48,14 @@ export interface SearchUserResponseDto {
   username: string;
   bioText: string;
   profilePictureUrl: string;
+}
+
+export interface FollowRequestResponseDto {
+  requestId: number;
+  requesterUsername: string;
+  requesterProfilePictureUrl: string | null;
+  targetUsername: string;
+  targetProfilePictureUrl: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  createdAt: string;
 }

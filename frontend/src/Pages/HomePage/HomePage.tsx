@@ -1,36 +1,25 @@
-import {
-  postApi,
-  useGetFollowingPostsByUserIdQuery,
-  useGetPostsExcludingCurrentUserQuery,
-} from "@/api/posts/postApi";
-import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
-import { RotateCcw } from "lucide-react";
-import ViewPost from "../PostPages/ViewPost";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import AppSidebar from "./AppSidebar";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  openPostModal,
-  closePostModal,
-  saveHomePageScrollPosition,
-} from "@/slices/viewPostSlice";
-import type { RootState } from "@/store/store";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import { CardTitle } from "@/components/ui/card";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
-import RenderedPosts from "./react-virtuoso/RenderedPosts";
+import { postApi, useGetFollowingPostsByUserIdQuery, useGetPostsExcludingCurrentUserQuery } from '@/api/posts/postApi';
+import { useAuth } from '@/auth/useAuth';
+import { ModeToggle } from '@/components/ModeToggle';
+import { RotateCcw } from 'lucide-react';
+import ViewPost from '../PostPages/ViewPost';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import AppSidebar from './AppSidebar';
+import { useDispatch, useSelector } from 'react-redux';
+import { openPostModal, closePostModal, saveHomePageScrollPosition } from '@/slices/viewPostSlice';
+import type { RootState } from '@/store/store';
+import { useGetUserByUsernameQuery } from '@/api/users/userApi';
+import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
+import { CardTitle } from '@/components/ui/card';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
+import RenderedPosts from './react-virtuoso/RenderedPosts';
+import NotificationButton from '@/components/custom/notification-button';
 
 function HomePage() {
   //
-  const [viewMode, setViewMode] = useState<"For You" | "Following">("For You");
+  const [viewMode, setViewMode] = useState<'For You' | 'Following'>('For You');
   const dispatch = useDispatch();
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -43,9 +32,7 @@ function HomePage() {
   const { username: loggedInUsername } = useAuth();
 
   // Get logged-in USER object
-  const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || "",
-  );
+  const { data: loggedInUser } = useGetUserByUsernameQuery(loggedInUsername || '');
 
   const {
     data: apiPosts,
@@ -60,11 +47,9 @@ function HomePage() {
     isError: isFollowingPostsError,
   } = useGetFollowingPostsByUserIdQuery();
 
-  const [togglePostLike, { isLoading: isTogglingPostLike }] =
-    useTogglePostLikeMutation();
+  const [togglePostLike, { isLoading: isTogglingPostLike }] = useTogglePostLikeMutation();
 
-  const [toggleSave, { isLoading: isTogglingSavePost }] =
-    useTogglePostSaveMutation();
+  const [toggleSave, { isLoading: isTogglingSavePost }] = useTogglePostSaveMutation();
 
   // Toggle post like
   const handleTogglePostLike = useCallback(
@@ -73,12 +58,10 @@ function HomePage() {
         await togglePostLike(postId)
           .unwrap()
           .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
+            dispatch(postApi.util.invalidateTags([{ type: 'Post', id: postId }]));
           });
       } catch (error) {
-        console.log("Error: ", error);
+        console.log('Error: ', error);
       }
     },
     [togglePostLike, dispatch],
@@ -91,12 +74,10 @@ function HomePage() {
         await toggleSave(postId)
           .unwrap()
           .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
+            dispatch(postApi.util.invalidateTags([{ type: 'Post', id: postId }]));
           });
       } catch (error) {
-        console.log("Error: ", error);
+        console.log('Error: ', error);
       }
     },
     [toggleSave, dispatch],
@@ -123,7 +104,7 @@ function HomePage() {
     if (selectedPostId && isViewModalOpen && homePageScrollPosition > 0) {
       // Small delay to ensure modal has rendered
       const timer = setTimeout(() => {
-        window.scrollTo({ top: homePageScrollPosition, behavior: "instant" });
+        window.scrollTo({ top: homePageScrollPosition, behavior: 'instant' });
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -141,14 +122,14 @@ function HomePage() {
 
   useEffect(() => {
     if (isViewModalOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     }
 
     // Cleanup function to ensure scrolling is restored
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isViewModalOpen]);
 
@@ -169,12 +150,8 @@ function HomePage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold text-red-500 mb-4">
-            Error Loading Posts
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Failed to load posts
-          </p>
+          <h2 className="text-xl font-bold text-red-500 mb-4">Error Loading Posts</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Failed to load posts</p>
           <Button onClick={refetchPosts}>
             <RotateCcw className="mr-2 h-4 w-4" /> Try Again
           </Button>
@@ -194,36 +171,35 @@ function HomePage() {
             <h1 className="text-4xl tracking-tight font-[GreatVibes] bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
               Social Media
             </h1>
-            <ModeToggle />
+            <div className="flex items-center gap-1">
+              <NotificationButton />
+              <ModeToggle />
+            </div>
           </div>
           {/* FYP Or Following */}
           <div className="flex items-center justify-center text-center transition-colors cursor-pointer">
             <div
               className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
-                viewMode === "For You"
-                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black "
-                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
+                viewMode === 'For You'
+                  ? 'dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black '
+                  : 'dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white'
               }`}
-              onClick={() => setViewMode("For You")}
+              onClick={() => setViewMode('For You')}
             >
               <div className="flex mx-auto justify-center text-center gap-10 ">
-                <CardTitle className={`text-xl cursor-pointer`}>
-                  For You
-                </CardTitle>
+                <CardTitle className={`text-xl cursor-pointer`}>For You</CardTitle>
               </div>
             </div>
             <div
               className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
-                viewMode === "Following"
-                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black"
-                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
+                viewMode === 'Following'
+                  ? 'dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black'
+                  : 'dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white'
               }`}
-              onClick={() => setViewMode("Following")}
+              onClick={() => setViewMode('Following')}
             >
               <div className="flex mx-auto justify-center text-center gap-10">
-                <CardTitle className={`text-xl cursor-pointer flex-1`}>
-                  Following
-                </CardTitle>
+                <CardTitle className={`text-xl cursor-pointer flex-1`}>Following</CardTitle>
               </div>
             </div>
           </div>
@@ -236,7 +212,7 @@ function HomePage() {
         >
           <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
             {/* Map over posts - now using HomePagePostCard component */}
-            {viewMode === "For You" ? (
+            {viewMode === 'For You' ? (
               <RenderedPosts
                 posts={apiPosts!}
                 onViewComments={handleViewModal}

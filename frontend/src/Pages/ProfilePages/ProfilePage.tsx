@@ -1,35 +1,22 @@
-import {
-  useGetFollowerCountQuery,
-  useGetFollowingCountQuery,
-  useIsFollowedQuery,
-  useToggleFollowMutation,
-} from "@/api/followers/followApi";
+import { useGetFollowerCountQuery, useGetFollowingCountQuery } from '@/api/followers/followApi';
 import {
   postApi,
   useGetPostsByUsernameQuery,
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
-} from "@/api/posts/postApi";
-import { useGetUserByUsernameQuery, userApi } from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import {
-  Camera,
-  Grid3X3,
-  Heart,
-  MoveLeft,
-  Bookmark,
-  Edit3,
-  LogOut,
-} from "lucide-react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ModeToggle } from "@/components/ModeToggle";
-import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
-import { useDispatch } from "react-redux";
-import { logout } from "@/auth/authSlice";
+} from '@/api/posts/postApi';
+import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
+import { useAuth } from '@/auth/useAuth';
+import { Button } from '@/components/ui/button';
+import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Lock, Edit3, LogOut, Unlock } from 'lucide-react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { ModeToggle } from '@/components/ModeToggle';
+import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
+import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
+import { useDispatch } from 'react-redux';
+import { logout } from '@/auth/authSlice';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +25,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
-import ViewPost from "@/Pages/PostPages/ViewPost";
-import type { RootState } from "@/store/store";
-import { closePostModal, openPostModal } from "@/slices/viewPostSlice";
-import { useSelector } from "react-redux";
-import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
+} from '@/components/ui/dropdown-menu';
+import CreatePostModal from '@/Pages/PostPages/CreatePostModal';
+import ViewPost from '@/Pages/PostPages/ViewPost';
+import type { RootState } from '@/store/store';
+import { closePostModal, openPostModal } from '@/slices/viewPostSlice';
+import { useSelector } from 'react-redux';
+import ProfilePagePostCard from '@/Pages/PostPages/ProfilePagePostCard';
+import FollowButton from '@/components/custom/follow-button';
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -56,18 +44,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const dispatch = useDispatch();
   const { username: loggedInUsername } = useAuth();
   const { searchedUsername } = useParams<{ searchedUsername: string }>();
-  const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
-    "posts",
-  );
-  const [showCreatePostModal, setShowCreatePostModal] =
-    useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'posts' | 'liked' | 'saved'>('posts');
+  const [showCreatePostModal, setShowCreatePostModal] = useState<boolean>(false);
 
   // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
   // We call the state from Redux store in both components
   // We then pass them as props to the ViewPost component
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal,
-  );
+  const { isOpen: isViewModalOpen, selectedPostId } = useSelector((state: RootState) => state.viewPostModal);
 
   // Determine which username to use
   const profileUsername = isOwnProfile ? loggedInUsername : searchedUsername;
@@ -81,17 +64,8 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     skip: !profileUsername,
   });
 
-  const { data: loggedInUserData } = useGetUserByUsernameQuery(
-    loggedInUsername!,
-    {
-      skip: !loggedInUsername,
-    },
-  );
-
-  const [toggleFollow] = useToggleFollowMutation();
-
-  const { data: isFollowed } = useIsFollowedQuery(profileUsername!, {
-    skip: !profileUsername,
+  const { data: loggedInUserData } = useGetUserByUsernameQuery(loggedInUsername!, {
+    skip: !loggedInUsername,
   });
 
   const {
@@ -102,19 +76,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     skip: !profileUsername,
   });
 
-  const { data: getFollowerCount } = useGetFollowerCountQuery(
-    profileUsername!,
-    {
-      skip: !profileUsername,
-    },
-  );
+  const { data: getFollowerCount } = useGetFollowerCountQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
-  const { data: getFollowingCount } = useGetFollowingCountQuery(
-    profileUsername!,
-    {
-      skip: !profileUsername,
-    },
-  );
+  const { data: getFollowingCount } = useGetFollowingCountQuery(profileUsername!, {
+    skip: !profileUsername,
+  });
 
   const { data: postCount } = useGetPostsCountQuery(profileUsername!, {
     skip: !profileUsername,
@@ -122,31 +90,21 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
   const { data: savedPosts } = useGetPostsSavedByCurrentUserQuery();
-  const [togglePostLike, { isLoading: isTogglingPostLike }] =
-    useTogglePostLikeMutation();
-  const [toggleSave, { isLoading: isTogglingSavePost }] =
-    useTogglePostSaveMutation();
+  const [togglePostLike, { isLoading: isTogglingPostLike }] = useTogglePostLikeMutation();
+  const [toggleSave, { isLoading: isTogglingSavePost }] = useTogglePostSaveMutation();
+  const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
   // Sorting logic
   const sortedPosts = posts
-    ? [...posts].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
+    ? [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
   const sortedLikedPosts = likedPosts
-    ? [...likedPosts].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
+    ? [...likedPosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
   const sortedSavedPosts = savedPosts
-    ? [...savedPosts].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
+    ? [...savedPosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
   // Handlers
@@ -156,10 +114,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       await togglePostLike(postId)
         .unwrap()
         .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
         });
     } catch (error) {
-      console.log("Error: ", error);
+      console.log('Error: ', error);
     }
   }
 
@@ -169,25 +127,16 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       await toggleSave(postId)
         .unwrap()
         .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
+          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
         });
     } catch (error) {
-      console.log("Error: ", error);
-    }
-  }
-
-  async function handleFollow() {
-    try {
-      await toggleFollow(profileUser!.username).unwrap();
-      dispatch(userApi.util.invalidateTags([{ type: "User", id: "LIST" }]));
-    } catch (error) {
-      console.log("Error: ", error);
+      console.log('Error: ', error);
     }
   }
 
   function handleLogout() {
     dispatch(logout());
-    navigate("/");
+    navigate('/');
   }
 
   function handleCloseViewModal() {
@@ -203,10 +152,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         dispatch(openPostModal(location.state.previousPostId));
       };
 
-      window.addEventListener("popstate", handlePopState);
+      window.addEventListener('popstate', handlePopState);
 
       return () => {
-        window.removeEventListener("popstate", handlePopState);
+        window.removeEventListener('popstate', handlePopState);
       };
     }
   }, [location.state, dispatch]);
@@ -278,7 +227,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   function renderProfilePicture() {
     return (
       <div
-        className={`relative ${isOwnProfile ? "cursor-pointer" : ""}`}
+        className={`relative ${isOwnProfile ? 'cursor-pointer' : ''}`}
         onClick={isOwnProfile ? navigateToEditProfile : undefined}
       >
         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
@@ -302,10 +251,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       <div className="flex gap-2 max-md:justify-center">
         {isOwnProfile ? (
           <div>
-            <Button
-              onClick={() => navigate(`/home/${loggedInUsername}`)}
-              className="cursor-pointer mr-2"
-            >
+            <Button onClick={() => navigate(`/home/${loggedInUsername}`)} className="cursor-pointer mr-2">
               <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
               Home Page
             </Button>
@@ -317,7 +263,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="w-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
                 align="start"
               >
                 <DropdownMenuLabel className="text-gray-700 dark:text-gray-300 font-bold">
@@ -327,23 +273,30 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
-                    onClick={() =>
-                      navigate(
-                        `/userprofile/${profileUser?.username}/edit-profile`,
-                      )
-                    }
+                    onClick={() => navigate(`/userprofile/${profileUser?.username}/edit-profile`)}
                   >
                     Edit Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
-                      navigate(
-                        `/userprofile/${profileUser?.username}/edit-credentials`,
-                      )
-                    }
+                    onClick={() => navigate(`/userprofile/${profileUser?.username}/edit-credentials`)}
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
                   >
                     Edit Credentials
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
+                    onClick={() => {
+                      if (profileUser?.id) {
+                        toggleAccountStatus({ targetUserId: profileUser.id });
+                      }
+                    }}
+                  >
+                    {profileUser?.accountStatus === 'PRIVATE' ? 'Set Account to Public' : 'Set Account to Private'}
+                    {profileUser?.accountStatus === 'PRIVATE' ? (
+                      <Unlock className="ml-2 text-green-400" />
+                    ) : (
+                      <Lock className="ml-2 text-red-400" />
+                    )}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
@@ -358,10 +311,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             </DropdownMenu>
           </div>
         ) : (
-          <Button
-            onClick={() => navigate(`/home/${loggedInUsername}`)}
-            className="cursor-pointer"
-          >
+          <Button onClick={() => navigate(`/home/${loggedInUsername}`)} className="cursor-pointer">
             <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
             Home Page
           </Button>
@@ -374,9 +324,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   function renderBio() {
     return (
       <div className="text-left max-w-md">
-        <p className="font-light text-sm max-md:text-center">
-          {profileUser?.bioText || "No bio available"}
-        </p>
+        <p className="font-light text-sm max-md:text-center">{profileUser?.bioText || 'No bio available'}</p>
       </div>
     );
   }
@@ -397,7 +345,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   function renderPostsGrid() {
-    if (isPostsLoading && viewMode === "posts") {
+    if (isPostsLoading && viewMode === 'posts') {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
           {[...Array(9)].map((_, index) => (
@@ -412,7 +360,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       );
     }
 
-    if (viewMode === "posts" && posts) {
+    if (viewMode === 'posts' && posts) {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
           {sortedPosts.map((post) => (
@@ -424,7 +372,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       );
     }
 
-    if (viewMode === "liked") {
+    if (viewMode === 'liked') {
       if (likedPosts) {
         return (
           <div className="grid grid-cols-3 gap-1 mt-6">
@@ -436,15 +384,11 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           </div>
         );
       } else {
-        return (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            No liked posts yet
-          </div>
-        );
+        return <div className="col-span-full text-center py-8 text-gray-500">No liked posts yet</div>;
       }
     }
 
-    if (viewMode === "saved") {
+    if (viewMode === 'saved') {
       if (savedPosts) {
         return (
           <div className="grid grid-cols-3 gap-1 mt-6">
@@ -456,11 +400,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           </div>
         );
       } else {
-        return (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            No saved posts yet
-          </div>
-        );
+        return <div className="col-span-full text-center py-8 text-gray-500">No saved posts yet</div>;
       }
     }
 
@@ -480,22 +420,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             <div className="flex-1 text-center md:text-left">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                 <div>
-                  <div className="flex gap-2 ">
-                    <h1 className="text-2xl font-bold">
-                      {profileUser.username}
-                    </h1>
+                  <div className="md:flex gap-2 ">
+                    <h1 className="text-2xl font-bold md:text-center">{profileUser.username}</h1>
                     {!isOwnProfile ? (
-                      <Button
-                        className={`${
-                          isFollowed
-                            ? "fill-current text-white-500 text-white dark:text-white-500 bg-gray-700 dark:bg-gray-900 dark:hover:bg-gray-900 "
-                            : ""
-                        }`}
-                        onClick={handleFollow}
-                        //
-                      >
-                        {isFollowed ? "Following" : "Follow"}
-                      </Button>
+                      <FollowButton
+                        username={profileUser.username}
+                        onFollowToggled={() => dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]))}
+                      />
                     ) : null}
                   </div>
                   {renderBio()}
@@ -510,9 +441,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 {/* Number of Posts */}
                 <div className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all">
                   <div className="font-bold text-xl">{postCount || 0}</div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    Posts
-                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Posts</p>
                 </div>
 
                 {/* Number of Followers */}
@@ -520,12 +449,8 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all"
                   onClick={navigateToFollowers}
                 >
-                  <div className="font-bold text-xl">
-                    {getFollowerCount || 0}
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs tracking-wide">
-                    Followers
-                  </p>
+                  <div className="font-bold text-xl">{getFollowerCount || 0}</div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs tracking-wide">Followers</p>
                 </div>
 
                 {/* Number of Following */}
@@ -533,12 +458,8 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                   className="text-center hover:bg-gray-800 px-3 py-1 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-all"
                   onClick={navigateToFollowing}
                 >
-                  <div className="font-bold text-xl">
-                    {getFollowingCount || 0}
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    Following
-                  </p>
+                  <div className="font-bold text-xl">{getFollowingCount || 0}</div>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">Following</p>
                 </div>
               </div>
 
@@ -553,12 +474,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
           <div
-            onClick={() => setViewMode("posts")}
+            onClick={() => setViewMode('posts')}
             className={`flex items-center gap-2 py-4 px-6 transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
         ${
-          viewMode === "posts"
-            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+          viewMode === 'posts'
+            ? 'border-black dark:border-white text-black dark:text-white font-semibold border-b-2'
+            : ' text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
         }`}
           >
             <button>
@@ -572,12 +493,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           {isOwnProfile ? (
             <>
               <div
-                onClick={() => setViewMode("liked")}
+                onClick={() => setViewMode('liked')}
                 className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
-              viewMode === "liked"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+              viewMode === 'liked'
+                ? 'border-black dark:border-white text-black dark:text-white font-semibold border-b-2'
+                : ' text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
             }`}
               >
                 <button>
@@ -588,12 +509,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 </button>
               </div>
               <div
-                onClick={() => setViewMode("saved")}
+                onClick={() => setViewMode('saved')}
                 className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
-              viewMode === "saved"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+              viewMode === 'saved'
+                ? 'border-black dark:border-white text-black dark:text-white font-semibold border-b-2'
+                : ' text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
             }`}
               >
                 <button>
@@ -606,12 +527,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             </>
           ) : (
             <div
-              onClick={() => setViewMode("liked")}
+              onClick={() => setViewMode('liked')}
               className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
-              viewMode === "liked"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+              viewMode === 'liked'
+                ? 'border-black dark:border-white text-black dark:text-white font-semibold border-b-2'
+                : ' text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
             }`}
             >
               <button>
@@ -629,12 +550,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       </div>
 
       {/* Create Post Modal */}
-      {isOwnProfile && (
-        <CreatePostModal
-          isOpen={showCreatePostModal}
-          onClose={() => setShowCreatePostModal(false)}
-        />
-      )}
+      {isOwnProfile && <CreatePostModal isOpen={showCreatePostModal} onClose={() => setShowCreatePostModal(false)} />}
 
       {/* View Post Modal */}
       <ViewPost

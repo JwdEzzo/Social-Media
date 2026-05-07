@@ -1,181 +1,166 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/api/public/baseApi";
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from '@/api/public/baseApi';
 import type {
   CreatePostRequestDto,
   EditPostWithUploadRequestDto,
   EditPostWithUrlRequestDto,
-} from "@/types/requestTypes";
-import type { GetPostResponseDto } from "@/types/responseTypes";
+} from '@/types/requestTypes';
+import type { GetPostResponseDto } from '@/types/responseTypes';
 
 export const postApi = createApi({
-  reducerPath: "postApi",
+  reducerPath: 'postApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Post"],
+  tagTypes: ['Post'],
   refetchOnReconnect: true,
   refetchOnFocus: true,
   endpoints: (builder) => ({
     createPost: builder.mutation<string, CreatePostRequestDto>({
       query: (newPost) => ({
-        url: "/posts/create-post",
-        method: "POST",
+        url: '/posts/create-post',
+        method: 'POST',
         body: newPost,
       }),
-      invalidatesTags: [{ type: "Post", id: "LIST" }, "Post"],
+      invalidatesTags: [{ type: 'Post', id: 'LIST' }, 'Post'],
     }),
     uploadPost: builder.mutation<string, { description: string; image: File }>({
       query: ({ description, image }) => {
         const formData = new FormData(); // Creates an empty FormData object
-        formData.append("description", description); // append for description
-        formData.append("image", image); // append for image
+        formData.append('description', description); // append for description
+        formData.append('image', image); // append for image
         return {
-          url: "/posts/upload",
-          method: "POST",
+          url: '/posts/upload',
+          method: 'POST',
           body: formData,
         };
       },
-      invalidatesTags: [{ type: "Post", id: "LIST" }, "Post"],
+      invalidatesTags: [{ type: 'Post', id: 'LIST' }, 'Post'],
     }),
     getPosts: builder.query<GetPostResponseDto[], void>({
       query: () => ({
-        url: "/posts",
-        method: "GET",
+        url: '/posts',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
           ? [
               ...result.map(({ id }) => ({
-                type: "Post" as const,
+                type: 'Post' as const,
                 id,
               })),
-              { type: "Post", id: "LIST" },
+              { type: 'Post', id: 'LIST' },
             ]
-          : [{ type: "Post", id: "LIST" }],
+          : [{ type: 'Post', id: 'LIST' }],
     }),
     getPostsCount: builder.query<number, string>({
       query: (username) => ({
         url: `/posts/${username}/count`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (_result, _error, username) => [
-        { type: "Post", id: `COUNT_${username}` }, // Unique tag for each user's count
+        { type: 'Post', id: `COUNT_${username}` }, // Unique tag for each user's count
       ],
     }),
     getPostById: builder.query<GetPostResponseDto, number>({
       query: (id) => ({
         url: `/posts/get-by-id/${id}`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: (_result, _error, id) => [{ type: "Post", id }],
+      providesTags: (_result, _error, id) => [{ type: 'Post', id }],
     }),
 
     getPostsByUsername: builder.query<GetPostResponseDto[], string>({
       query: (username) => ({
         url: `/posts/${username}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (_result, _error, username) => [
-        { type: "Post", id: username },
-        { type: "Post", id: "LIST" },
+        { type: 'Post', id: username },
+        { type: 'Post', id: 'LIST' },
       ],
     }),
     getPostsExcludingCurrentUser: builder.query<GetPostResponseDto[], void>({
       query: () => ({
-        url: "/posts/excluded",
-        method: "GET",
+        url: '/posts/excluded',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
           ? [
               ...result.map(({ id }) => ({
-                type: "Post" as const,
+                type: 'Post' as const,
                 id,
               })),
-              { type: "Post", id: "LIST" },
+              { type: 'Post', id: 'LIST' },
             ]
-          : [{ type: "Post", id: "LIST" }],
+          : [{ type: 'Post', id: 'LIST' }],
     }),
     getPostsLikedByCurrentUser: builder.query<GetPostResponseDto[], void>({
       query: () => ({
-        url: "/posts/liked-by-me",
-        method: "GET",
+        url: '/posts/liked-by-me',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "Post" as const, id })),
-              { type: "Post", id: "LIST" },
-            ]
-          : [{ type: "Post", id: "LIST" }],
+          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
+          : [{ type: 'Post', id: 'LIST' }],
     }),
 
     getPostsSavedByCurrentUser: builder.query<GetPostResponseDto[], void>({
       query: () => ({
-        url: "/posts/saved-by-me",
-        method: "GET",
+        url: '/posts/saved-by-me',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "Post" as const, id })),
-              { type: "Post", id: "LIST" },
-            ]
-          : [{ type: "Post", id: "LIST" }],
+          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
+          : [{ type: 'Post', id: 'LIST' }],
     }),
     getFollowingPostsByUserId: builder.query<GetPostResponseDto[], void>({
       query: () => ({
-        url: "/posts/my-followers",
-        method: "GET",
+        url: '/posts/my-followers',
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Post" as const, id })),
-              { type: "Post", id: "LIST" },
-              { type: "Post", id: "FOLLOWING_POSTS" },
+              ...result.map(({ id }) => ({ type: 'Post' as const, id })),
+              { type: 'Post', id: 'LIST' },
+              { type: 'Post', id: 'FOLLOWING_POSTS' },
             ]
-          : [{ type: "Post", id: "LIST" }],
+          : [{ type: 'Post', id: 'LIST' }],
     }),
 
     getPostsByDescription: builder.query<GetPostResponseDto[], string>({
       query: (description) => ({
         url: `/posts/search-posts/containing/${description}`,
-        method: "GET",
+        method: 'GET',
       }),
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "Post" as const, id })),
-              { type: "Post", id: "LIST" },
-            ]
-          : [{ type: "Post", id: "LIST" }],
+          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
+          : [{ type: 'Post', id: 'LIST' }],
     }),
 
-    editPostWithUrl: builder.mutation<
-      void,
-      EditPostWithUrlRequestDto & { postId: number }
-    >({
+    editPostWithUrl: builder.mutation<void, EditPostWithUrlRequestDto & { postId: number }>({
       query: ({ postId, ...body }) => ({
         url: `/posts/edit-with-url/${postId}`,
-        method: "PUT",
+        method: 'PUT',
         body: body,
       }),
       invalidatesTags: (result, error, { postId }) => [
-        { type: "Post", id: postId },
-        { type: "Post", id: "LIST" },
+        { type: 'Post', id: postId },
+        { type: 'Post', id: 'LIST' },
       ],
     }),
 
-    editPostWithUpload: builder.mutation<
-      void,
-      EditPostWithUploadRequestDto & { postId: number }
-    >({
+    editPostWithUpload: builder.mutation<void, EditPostWithUploadRequestDto & { postId: number }>({
       query: ({ postId, ...body }) => {
         const formData = new FormData();
-        formData.append("description", body.description);
-        formData.append("image", body.image);
+        formData.append('description', body.description);
+        formData.append('image', body.image);
         return {
           url: `/posts/edit-with-upload/${postId}`,
-          method: "PUT",
+          method: 'PUT',
           body: formData,
         };
       },
@@ -184,11 +169,11 @@ export const postApi = createApi({
     deletePostByPostId: builder.mutation<void, number>({
       query: (postId) => ({
         url: `/posts/delete/${postId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, postId) => [
-        { type: "Post", id: postId },
-        { type: "Post", id: "LIST" },
+        { type: 'Post', id: postId },
+        { type: 'Post', id: 'LIST' },
       ],
     }),
   }),

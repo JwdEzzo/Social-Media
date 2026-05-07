@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,201 +44,161 @@ public class AppUserController {
    @Autowired
    private AppUserService appUserService;
 
-   // Login
-   @PostMapping("/login")
-   public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-      try {
-         LoginResponseDto response = appUserService.verify(loginRequestDto);
-         return ResponseEntity.ok(response);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-               .body(new LoginResponseDto(null, null, "Invalid credentials"));
-      }
-   }
+    // POST: Login
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
+        LoginResponseDto response = appUserService.verify(loginRequestDto);
+        return ResponseEntity.ok(response);
+    }
 
-   // Sign Up
-   @PostMapping("/sign-up")
-   public ResponseEntity<Void> register(@Valid @RequestBody SignUpRequestDto requestDto) {
+    // POST: Sign Up
+    @PostMapping("/sign-up")
+    public ResponseEntity<Void> register(@Valid @RequestBody SignUpRequestDto requestDto) {
+        appUserService.signUp(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
-      try {
-         appUserService.signUp(requestDto);
-         return ResponseEntity.status(HttpStatus.CREATED).build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-      }
-   }
+    // POST: Toggle account status
+    @PostMapping("/toggle-account-status/{targetUserId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> toggleAccountStatus(
+            @PathVariable Long targetUserId,
+            Authentication authentication) {
 
-   // Get All Users
-   @GetMapping
-   public ResponseEntity<List<GetUserResponseDto>> getAllUsers() {
-      try {
-         List<GetUserResponseDto> responses = appUserService.getAllUsers();
-         return ResponseEntity.status(HttpStatus.OK).body(responses);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+        Long requestingUserId = appUserService.getUserByUsername(authentication.getName()).getId();
+        appUserService.toggleAccountStatus(requestingUserId, targetUserId);
+        return ResponseEntity.noContent().build();
+    }
 
-   // Get User by Username
-   @GetMapping("/{username}")
-   public ResponseEntity<GetUserResponseDto> getUserByUsername(@PathVariable String username) {
-      try {
-         GetUserResponseDto response = appUserService.getUserByUsername(username);
-         return ResponseEntity.status(HttpStatus.OK).body(response);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+   // GET: All users
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GetUserResponseDto>> getAllUsers() {
+        List<GetUserResponseDto> responses = appUserService.getAllUsers();
+        return ResponseEntity.ok(responses);
+    }
 
-   // Get all Users excluding the logged in User
-   @GetMapping("/excluded")
-   public ResponseEntity<List<GetUserResponseDto>> getAllUsersExcludingCurrentUser() {
-      try {
-         String currentUser = getAuthenticatedUsername();
-         List<GetUserResponseDto> includedUsers = appUserService.getAllUsersExcludingCurrentUser(currentUser);
-         return ResponseEntity.status(HttpStatus.OK).body(includedUsers);
-      } catch (RuntimeException e) {
-         if (e.getMessage() != null && e.getMessage().contains("authenticated")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-         }
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+    // GET: User by username
+    @GetMapping("/{username}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GetUserResponseDto> getUserByUsername(@PathVariable String username) {
+        GetUserResponseDto response = appUserService.getUserByUsername(username);
+        return ResponseEntity.ok(response);
+    }
 
-   // GET : All users following a certain user
-   @GetMapping("/followers/{userId}")
-   public ResponseEntity<List<GetUserResponseDto>> getAllFollowers(@PathVariable Long userId) {
-      try {
-         List<GetUserResponseDto> followers = appUserService.getAllFollowers(userId);
-         return ResponseEntity.status(HttpStatus.OK).body(followers);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+    // GET: All users except the currently logged in user
+    @GetMapping("/excluded")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GetUserResponseDto>> getAllUsersExcludingCurrentUser(Authentication authentication) {
+        List<GetUserResponseDto> users = appUserService.getAllUsersExcludingCurrentUser(authentication.getName());
+        return ResponseEntity.ok(users);
+    }
 
-   // GET : All users that a certain user follows
-   @GetMapping("/followings/{userId}")
-   public ResponseEntity<List<GetUserResponseDto>> getAllFollowings(@PathVariable Long userId) {
-      try {
+    // GET: All followers of a user
+    @GetMapping("/followers/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GetUserResponseDto>> getAllFollowers(@PathVariable Long userId) {
+        List<GetUserResponseDto> followers = appUserService.getAllFollowers(userId);
+        return ResponseEntity.ok(followers);
+    }
 
-         List<GetUserResponseDto> followings = appUserService.getAllFollowings(userId);
-         return ResponseEntity.status(HttpStatus.OK).body(followings);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+    // GET: All users that a user follows
+    @GetMapping("/followings/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GetUserResponseDto>> getAllFollowings(@PathVariable Long userId) {
+        List<GetUserResponseDto> followings = appUserService.getAllFollowings(userId);
+        return ResponseEntity.ok(followings);
+    }
 
-   // GET: Search users by username
-   @GetMapping("/search/{username}")
-   public ResponseEntity<List<SearchUserResponseDto>> searchUsers(@PathVariable String username) {
-      try {
-         List<SearchUserResponseDto> users = appUserService.searchUsers(username);
-         return ResponseEntity.status(HttpStatus.OK).body(users);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+    // GET: Search users by username
+    @GetMapping("/search/{username}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<SearchUserResponseDto>> searchUsers(@PathVariable String username) {
+        List<SearchUserResponseDto> users = appUserService.searchUsers(username);
+        return ResponseEntity.ok(users);
+    }
 
-   // Update User Credentials
-   @PutMapping("/{username}/update-credentials")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> updateUserCredentials(@PathVariable String username,
-         @RequestBody UpdateCredentialsRequestDto requestDto) {
-      try {
-         appUserService.updateUserCredentials(username, requestDto);
-         return ResponseEntity.status(HttpStatus.OK).build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+    // GET: serve image bytes for a post
+    @GetMapping(value = "/{username}/profile-image/preview")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable String username) {
+        byte[] bytes = appUserService.getProfileImageBytes(username);
+        String contentType = appUserService.getProfileImageContentType(username);
+        ByteArrayResource resource = new ByteArrayResource(bytes);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
+                .contentType(MediaType
+                    .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                .body(resource);
+    }
 
-   // Update User Profile with URL
-   @PutMapping(value = "/{username}/update-profile-url", consumes = MediaType.APPLICATION_JSON_VALUE)
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> updateUserProfileWithUrl(
-         @PathVariable String username,
-         @RequestBody UpdateProfileRequestDto updateDto,
-         Authentication authentication) {
+    // PUT: Update credentials (email, username, password)
+    @PutMapping("/{username}/update-credentials")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateUserCredentials(
+            @PathVariable String username,
+            @RequestBody UpdateCredentialsRequestDto requestDto,
+            Authentication authentication) {
 
-      // Validate authorization
-      if (!authentication.getName().equals(username)) {
-         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-      }
+        if (!authentication.getName().equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
-      try {
-         appUserService.updateUserProfileWithUrl(username, updateDto);
-         return ResponseEntity.noContent().build();
-      } catch (RuntimeException e) {
-         log.error("Failed to update profile with URL for user: {}", username, e);
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+        appUserService.updateUserCredentials(username, requestDto);
+        return ResponseEntity.noContent().build();
+    }
 
-   // Update User Profile with Upload
-   @PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> updateUserProfileWithUpload(
-         @PathVariable String username,
-         @RequestParam(value = "bioText", required = false) String bioText,
-         @RequestParam(value = "profileImage", required = false) MultipartFile image,
-         Authentication authentication) {
+    // PUT: Update profile with URL
+    @PutMapping(value = "/{username}/update-profile-url", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateUserProfileWithUrl(
+            @PathVariable String username,
+            @RequestBody UpdateProfileRequestDto updateDto,
+            Authentication authentication) {
 
-      // Validate authorization
-      if (!authentication.getName().equals(username)) {
-         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-      }
+        if (!authentication.getName().equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
-      UpdateProfileRequestDto dto = new UpdateProfileRequestDto();
+        appUserService.updateUserProfileWithUrl(username, updateDto);
+        return ResponseEntity.noContent().build();
+    }
 
-      // Only set bioText if it's not null or empty
-      if (bioText != null && !bioText.trim().isEmpty()) {
-         dto.setBioText(bioText);
-      }
+    // PUT: Update profile with image upload
+    @PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateUserProfileWithUpload(
+            @PathVariable String username,
+            @RequestParam(value = "bioText", required = false) String bioText,
+            @RequestParam(value = "profileImage", required = false) MultipartFile image,
+            Authentication authentication) {
 
-      try {
-         // Call the service method. It handles both cases (image present/absent).
-         appUserService.updateUserProfileWithUpload(username, dto, image);
-         return ResponseEntity.noContent().build();
-      } catch (RuntimeException e) {
-         log.error("Failed to update profile for user: {}", username, e);
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+        if (!authentication.getName().equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
-   // GET: serve image bytes for a post
-   @GetMapping(value = "/{username}/profile-image/preview")
-   public ResponseEntity<Resource> getProfileImage(@PathVariable String username) {
-      byte[] bytes = appUserService.getProfileImageBytes(username);
-      String contentType = appUserService.getProfileImageContentType(username);
-      ByteArrayResource resource = new ByteArrayResource(bytes);
-      return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
-            .contentType(MediaType
-                  .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
-            .body(resource);
-   }
+        UpdateProfileRequestDto dto = new UpdateProfileRequestDto();
+        if (bioText != null && !bioText.trim().isEmpty()) {
+            dto.setBioText(bioText);
+        }
 
-   // Delete User
-   @DeleteMapping("/{username}")
-   public ResponseEntity<Void> deleteUser(@PathVariable String username) {
-      try {
-         appUserService.deleteUser(username);
-         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+        appUserService.updateUserProfileWithUpload(username, dto, image);
+        return ResponseEntity.noContent().build();
+    }
 
-   // Helper method to get authenticated user
-   private String getAuthenticatedUsername() {
-      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-      if (auth == null || !auth.isAuthenticated() ||
-            "anonymousUser".equals(auth.getName())) {
-         throw new RuntimeException("User not authenticated");
-      }
-      return auth.getName();
-   }
+    // DELETE: Delete own account
+    @DeleteMapping("/{username}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable String username,
+            Authentication authentication) {
+
+        if (!authentication.getName().equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        appUserService.deleteUser(username);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

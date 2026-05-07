@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +25,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PostService {
 
-   @Autowired
-   private PostRepository postRepository;
+   private final PostRepository postRepository;
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private final MappingMethods mappingMethods = new MappingMethods();
+   private final MappingMethods mappingMethods;
+
+   public PostService(PostRepository postRepository, AppUserRepository appUserRepository, MappingMethods mappingMethods) {
+      this.postRepository = postRepository;
+      this.appUserRepository = appUserRepository;
+      this.mappingMethods = mappingMethods;
+      
+   }
+
 
    // Create Post
    public void createPostWithUrl(CreatePostRequestDto requestDto, String username) {

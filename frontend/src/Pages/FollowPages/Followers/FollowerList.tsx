@@ -1,18 +1,11 @@
-import {
-  useGetFollowersByUserIdQuery,
-  useGetUserByUsernameQuery,
-} from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
-import { ModeToggle } from "@/components/ModeToggle";
+import { useGetFollowersByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
+import { useAuth } from '@/auth/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
+import { useGetFollowerCountQuery } from '@/api/followers/followApi';
+import IncomingRequestsCard from '@/components/custom/incoming-request-card';
+import NavigateBack from '@/components/custom/navigate-back';
 
 interface FollowerListProps {
   profileUsername: string;
@@ -43,6 +36,10 @@ function FollowerList({ profileUsername }: FollowerListProps) {
     isError: isFollowersError,
   } = useGetFollowersByUserIdQuery(profileUser?.id ?? 0, {
     skip: !profileUser?.id,
+  });
+
+  const { data: followerCount } = useGetFollowerCountQuery(profileUsername!, {
+    skip: !profileUsername,
   });
 
   if (isFollowersLoading || isLoggedInUserLoading || isProfileUserLoading) {
@@ -82,37 +79,31 @@ function FollowerList({ profileUsername }: FollowerListProps) {
   }
 
   return (
-    <div className="w-full h-screen dark:bg-gray-900 bg-white pt-10">
+    <div className="w-full h-screen dark:bg-gray-900 bg-white pt-5">
+      <NavigateBack />
+      <IncomingRequestsCard />
       <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+        {/* Header with username and back button */}
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
-              {profileUsername}'s Followers
+              {loggedInUsername === profileUsername ? 'Your Followers' : `${profileUsername}'s Followers`}
             </CardTitle>
-            <div className="flex items-center justify-center gap-1">
-              <Button
-                className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
-                onClick={() => window.history.back()}
-              >
-                Back
-              </Button>
-              <ModeToggle />
-            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {followers?.map((follower) => (
-            <FollowerCard
-              key={follower.id}
-              follower={follower}
-              loggedInUsername={loggedInUsername!}
-              //
-            />
-          ))}
+          {followerCount === 0 && profileUsername === loggedInUsername ? (
+            <div>You have no followers yet.</div>
+          ) : followerCount === 0 ? (
+            <div>No one is following {profileUsername}</div>
+          ) : (
+            <div>
+              {followers?.map((follower) => (
+                <FollowerCard key={follower.id} follower={follower} loggedInUsername={loggedInUsername!} />
+              ))}
+            </div>
+          )}
         </CardContent>
-        {followers?.length === 0 && (
-          <CardFooter>{<p>You have no followers.</p>}</CardFooter>
-        )}
       </Card>
     </div>
   );

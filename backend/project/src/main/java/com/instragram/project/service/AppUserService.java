@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ import com.instragram.project.dto.request.UpdateProfileRequestDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
 import com.instragram.project.dto.response.LoginResponseDto;
 import com.instragram.project.dto.response.SearchUserResponseDto;
+import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
@@ -51,7 +53,7 @@ public class AppUserService {
    private FollowRepository followRepository;
 
    @Autowired
-   private final MappingMethods mappingMethods = new MappingMethods();
+   private MappingMethods mappingMethods;
 
    // Sign Up User
    public void signUp(SignUpRequestDto requestDto) {
@@ -98,6 +100,25 @@ public class AppUserService {
             .stream()
             .map(user -> mappingMethods.convertAppUserEntityToGetUserResponse(user))
             .collect(Collectors.toList());
+   }
+
+   // Set account to private
+   public void toggleAccountStatus(Long requestingUserId, Long targetUserId) {
+   
+      if (!requestingUserId.equals(targetUserId)) {
+         throw new AccessDeniedException("You can't toggle the account status of another user.");
+      }
+
+      AppUser user = appUserRepository.findById(targetUserId)
+         .orElseThrow(() -> new RuntimeException("User not found with id: " + targetUserId));
+
+      if (user.getAccountStatus() == AccountStatus.PUBLIC) {
+         user.setAccountStatus(AccountStatus.PRIVATE);
+      } else {
+         user.setAccountStatus(AccountStatus.PUBLIC);
+      }
+
+      appUserRepository.save(user);
    }
 
    // Find all followers of a certain user
