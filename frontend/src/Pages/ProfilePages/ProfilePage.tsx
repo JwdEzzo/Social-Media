@@ -1,7 +1,8 @@
-import { useGetFollowerCountQuery, useGetFollowingCountQuery } from '@/api/followers/followApi';
+import { useGetFollowerCountQuery, useGetFollowingCountQuery, useIsFollowedQuery } from '@/api/followers/followApi';
 import {
   postApi,
   useGetPostsByUsernameQuery,
+  useGetPrivateAccountPostsUserFollowsQuery,
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserQuery,
   useGetPostsSavedByCurrentUserQuery,
@@ -68,13 +69,40 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     skip: !loggedInUsername,
   });
 
-  const {
-    data: posts,
-    isLoading: isPostsLoading,
-    isError: isPostsError,
-  } = useGetPostsByUsernameQuery(profileUsername!, {
-    skip: !profileUsername,
+  const isPrivateAccount = profileUser?.accountStatus === 'PRIVATE';
+  const isOtherPrivateProfile = !isOwnProfile && isPrivateAccount;
+
+  const { data: isFollowed, isLoading: isFollowStatusLoading } = useIsFollowedQuery(profileUsername!, {
+    skip: !profileUsername || !isOtherPrivateProfile,
   });
+
+  const useStandardPostsByUsername =
+    !!profileUsername && (isOwnProfile || (!!profileUser && profileUser.accountStatus !== 'PRIVATE'));
+  const usePrivateFollowerPosts = !!profileUsername && isOtherPrivateProfile && isFollowed === true;
+
+  const {
+    data: postsByUsername,
+    isLoading: isPostsByUsernameLoading,
+    isError: isPostsByUsernameError,
+  } = useGetPostsByUsernameQuery(profileUsername!, {
+    skip: !profileUsername || !useStandardPostsByUsername,
+  });
+
+  const {
+    data: postsAsPrivateFollower,
+    isLoading: isPostsPrivateFollowerLoading,
+    isError: isPostsPrivateFollowerError,
+  } = useGetPrivateAccountPostsUserFollowsQuery(
+    { privateAccountUsername: profileUsername! },
+    { skip: !profileUsername || !usePrivateFollowerPosts },
+  );
+
+  const posts = usePrivateFollowerPosts ? postsAsPrivateFollower : postsByUsername;
+  const isPostsLoading =
+    (useStandardPostsByUsername && isPostsByUsernameLoading) ||
+    (usePrivateFollowerPosts && isPostsPrivateFollowerLoading);
+  const isPostsError =
+    (useStandardPostsByUsername && isPostsByUsernameError) || (usePrivateFollowerPosts && isPostsPrivateFollowerError);
 
   const { data: getFollowerCount } = useGetFollowerCountQuery(profileUsername!, {
     skip: !profileUsername,
@@ -173,7 +201,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   // Error states
-  if (isUserError || (isOwnProfile && isPostsError)) {
+  if (isUserError || isPostsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center p-6 bg-gray-700 rounded-lg">
@@ -344,7 +372,40 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     );
   }
 
+  function renderPrivateAccountPlaceholder() {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center  border-gray-200 dark:border-gray-700 mt-2">
+        <div className="rounded-full border-2 border-gray-900 dark:border-gray-100 p-4 mb-4">
+          <Lock className="h-10 w-10 text-gray-900 dark:text-gray-100" />
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">This account is private</h2>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+          Follow this account to see their photos and videos.
+        </p>
+      </div>
+    );
+  }
+
   function renderPostsGrid() {
+    if (viewMode === 'posts' && isOtherPrivateProfile && isFollowStatusLoading) {
+      return (
+        <div className="grid grid-cols-3 gap-1 mt-6">
+          {[...Array(9)].map((_, index) => (
+            <div
+              key={`loading-${index}`}
+              className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
+            >
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (viewMode === 'posts' && isOtherPrivateProfile && !isFollowed) {
+      return renderPrivateAccountPlaceholder();
+    }
+
     if (isPostsLoading && viewMode === 'posts') {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
