@@ -32,5 +32,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       @Query("SELECT p FROM Post p WHERE LOWER(p.description) LIKE LOWER(CONCAT('%', :description, '%'))")
       List<Post> findByDescriptionContaining(@Param("description") String description);
 
-      // List<Post> findByDescriptionContainingIgnoreCase(String description);
+      // Find posts of a user only if the requesting user follows them
+      @Query("""
+      SELECT p FROM Post p
+      WHERE p.appUser.username = :targetUsername
+      AND EXISTS (
+            SELECT f FROM Follow f
+            WHERE f.follower.username = :followerUsername
+            AND f.following.username = :targetUsername
+      )
+      """ )
+      List<Post> findPrivateAccountPostsIfFollowing(
+      @Param("followerUsername") String followerUsername,
+      @Param("targetUsername") String targetUsername
+      );
+
 }

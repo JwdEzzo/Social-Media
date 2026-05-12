@@ -35,6 +35,24 @@ export const postApi = createApi({
       },
       invalidatesTags: [{ type: 'Post', id: 'LIST' }, 'Post'],
     }),
+
+    getPrivateAccountPostsUserFollows: builder.query<GetPostResponseDto[], { privateAccountUsername: string }>({
+      query: (privateAccountUsername) => ({
+        url: `/posts/private-account/${privateAccountUsername}`,
+        method: 'GET',
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({
+                type: 'Post' as const,
+                id,
+              })),
+              { type: 'Post', id: 'LIST' },
+            ]
+          : [{ type: 'Post', id: 'LIST' }],
+    }),
+
     getPosts: builder.query<GetPostResponseDto[], void>({
       query: () => ({
         url: '/posts',
@@ -183,6 +201,7 @@ export const {
   useCreatePostMutation,
   useUploadPostMutation,
   useGetPostsQuery,
+  useGetPrivateAccountPostsUserFollowsQuery,
   useGetPostsByUsernameQuery,
   useGetPostsExcludingCurrentUserQuery,
   useGetPostByIdQuery,

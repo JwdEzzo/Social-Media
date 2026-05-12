@@ -29,6 +29,7 @@ public class PostService {
 
    private final AppUserRepository appUserRepository;
 
+
    private final MappingMethods mappingMethods;
 
    public PostService(PostRepository postRepository, AppUserRepository appUserRepository, MappingMethods mappingMethods) {
@@ -37,7 +38,6 @@ public class PostService {
       this.mappingMethods = mappingMethods;
       
    }
-
 
    // Create Post
    public void createPostWithUrl(CreatePostRequestDto requestDto, String username) {
@@ -87,9 +87,9 @@ public class PostService {
       }
    }
 
-   // Get All Posts
-   public List<GetPostResponseDto> getAllPosts() {
-      List<Post> posts = postRepository.findAll();
+   // Get Posts from a private account that is followed by the current user
+   public List<GetPostResponseDto> getPostsByPrivateAccountTheUserFollows(String followerUsername, String privateAccountUsername) {
+      List<Post> posts = postRepository.findPrivateAccountPostsIfFollowing(followerUsername, privateAccountUsername);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
    }
 

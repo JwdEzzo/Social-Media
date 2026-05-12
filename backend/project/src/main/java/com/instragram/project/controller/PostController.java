@@ -67,11 +67,15 @@ public class PostController {
       return ResponseEntity.noContent().build();
    }
 
-   // GET : Get all posts
-   @GetMapping
-   public ResponseEntity<List<GetPostResponseDto>> getAllPosts() {
-      List<GetPostResponseDto> responseDtos = postService.getAllPosts();
-      return ResponseEntity.status(HttpStatus.OK).body(responseDtos);
+   // GET : Get posts of a private account followed by the current user , show null to non-followers
+   @GetMapping("/private-account/{privateAccountUsername}")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<List<GetPostResponseDto>> getPostsByPrivateAccountTheUserFollows(
+         @PathVariable String privateAccountUsername,
+         Authentication authentication) {
+            String followerUsername = authentication.getName();
+            List<GetPostResponseDto> posts = postService.getPostsByPrivateAccountTheUserFollows(followerUsername, privateAccountUsername);
+            return ResponseEntity.ok(posts);
    }
 
    // GET : Get post by id
