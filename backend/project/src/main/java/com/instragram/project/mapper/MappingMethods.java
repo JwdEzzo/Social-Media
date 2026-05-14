@@ -15,11 +15,13 @@ import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.dto.response.GetPostResponseDto;
 import com.instragram.project.dto.response.GetReplyResponseDto;
 import com.instragram.project.dto.response.GetUserResponseDto;
+import com.instragram.project.dto.response.NotificationResponseDto;
 import com.instragram.project.dto.response.SearchUserResponseDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentReply;
 import com.instragram.project.model.FollowRequest;
+import com.instragram.project.model.Notification;
 import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
@@ -37,7 +39,9 @@ public class MappingMethods {
 
    private final CommentRepository commentRepository;
 
-   public MappingMethods(AppUserRepository appUserRepository, PostRepository postRepository, CommentRepository commentRepository) {
+
+   public MappingMethods(AppUserRepository appUserRepository,
+        PostRepository postRepository, CommentRepository commentRepository) {
       this.appUserRepository = appUserRepository;
       this.postRepository = postRepository;
       this.commentRepository = commentRepository;
@@ -187,16 +191,36 @@ public class MappingMethods {
    }
 
    // Convert FollowRequest To FollowRequestResponseDto
-public FollowRequestResponseDto convertFollowRequestToResponseDto(FollowRequest followRequest) {
-    FollowRequestResponseDto dto = new FollowRequestResponseDto();
-    dto.setRequestId(followRequest.getId());
-    dto.setRequesterUsername(followRequest.getRequester().getUsername());
-    dto.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
-    dto.setTargetUsername(followRequest.getTarget().getUsername());
-    dto.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
-    dto.setStatus(followRequest.getStatus().name());
-    dto.setCreatedAt(followRequest.getCreatedAt());
-    return dto;
-}
+   public FollowRequestResponseDto convertFollowRequestToResponseDto(FollowRequest followRequest) {
+      FollowRequestResponseDto dto = new FollowRequestResponseDto();
+      dto.setRequestId(followRequest.getId());
+      dto.setRequesterUsername(followRequest.getRequester().getUsername());
+      dto.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
+      dto.setTargetUsername(followRequest.getTarget().getUsername());
+      dto.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
+      dto.setStatus(followRequest.getStatus().name());
+      dto.setCreatedAt(followRequest.getCreatedAt());
+      return dto;
+   }
+
+   // Convert Notification Entity to NotificationResponseDto
+   public NotificationResponseDto convertNotificationToNotificationResponseDto(Notification notification) {
+      NotificationResponseDto requestDto = new NotificationResponseDto();
+      requestDto.setId(notification.getId());
+      requestDto.setSender(this.convertAppUserEntityToGetUserResponse(notification.getSender()));
+      requestDto.setNotificationType(notification.getNotificationType().name());
+      requestDto.setEntityId(notification.getEntityId());
+      requestDto.setRead(notification.isRead());
+      requestDto.setCreatedAt(notification.getCreatedAt());
+      return requestDto;
+   }
+
+   // Convert List<Notification> to List<NotificationResponseDto>
+   public List<NotificationResponseDto> convertListNotificationToListNotificationResponseDto(List<Notification> notifications) {
+      return notifications
+            .stream()
+            .map(this::convertNotificationToNotificationResponseDto)
+            .collect(Collectors.toList());
+   }
 
 }
