@@ -10,90 +10,84 @@ import com.instragram.project.enums.NotificationType;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Notification;
-import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.NotificationRepository;
 
 @Service
 public class NotificationService {
-    
+
     private final NotificationRepository notificationRepository;
-
-    private final AppUserRepository appUserRepository;
-
     private final MappingMethods mappingMethods;
 
-    public NotificationService(NotificationRepository notificationRepository , AppUserRepository appUserRepository , MappingMethods mappingMethods) {
+    public NotificationService(
+            NotificationRepository notificationRepository,
+            MappingMethods mappingMethods) {
         this.notificationRepository = notificationRepository;
-        this.appUserRepository = appUserRepository;
         this.mappingMethods = mappingMethods;
     }
 
-    // Private method to get a verified user
-    private AppUser getVerifiedUser(Long userId, Long requestingUserId) {
-        if (!userId.equals(requestingUserId)) {
-            throw new AccessDeniedException("You cannot access another user's notifications");
-        }
-        return appUserRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-    }
+    // Create notification by recepient, sender, type and entityId
+    // Internal — called in follow service , comment service , comment reply service and like service
+    public void createNotification(
+            AppUser recipient,
+            AppUser sender,
+            NotificationType type,
+            Long entityId) {
 
-    // Create a notification using the recepient,sender, the type and the entityId
-    public void createNotification(AppUser recipient, 
-                                   AppUser sender, 
-                                   NotificationType type, Long entityId) {
-        
-        // Don't notify if the user is performing an action on their own content
-        if (recipient.getId().equals(sender.getId())) {
-            return;
-        }
+        // Entities are already loaded by the calling service, no extra DB call needed
+        if (recipient.getId().equals(sender.getId())) return;
 
         Notification notification = new Notification();
         notification.setRecipient(recipient);
         notification.setSender(sender);
         notification.setNotificationType(type);
         notification.setEntityId(entityId);
-        notification.setRead(false);
 
         notificationRepository.save(notification);
     }
 
-    // Get all notifications for a user , ordered by date , authorization in the controller
-    public List<NotificationResponseDto> getNotificationsForUser(Long userId, Long requestingUserId) {
-        AppUser user = getVerifiedUser(userId, requestingUserId);
-        List<Notification> notifications =
-                notificationRepository.findByRecipientOrderByCreatedAtDesc(user);
+    // Read operations : query by id directly, no AppUser fetch needed , to avoid heavy DB calls
+    public List<NotificationResponseDto> getNotificationsForUser(Long recipientId, Long requestingUserId) {
+        verifyOwnership(recipientId, requestingUserId);
+
+        List<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
         return mappingMethods.convertListNotificationToListNotificationResponseDto(notifications);
     }
 
-    // Get count of unread notifications for a user
-    public long getUnreadCount(Long userId, Long requestingUserId) {
-       AppUser user = getVerifiedUser(userId, requestingUserId);
-        return notificationRepository.countByRecipientAndIsRead(user, false);
+    public long getUnreadCount(Long recipientId, Long requestingUserId) {
+        verifyOwnership(recipientId, requestingUserId);
+        return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
     }
 
-    // Mark a single notification as read
+    // Mark as read operations
     public void markAsRead(Long notificationId, Long requestingUserId) {
+        // Single query — checks existence and ownership together
+        if (!notificationRepository.existsByIdAndRecipientId(notificationId, requestingUserId)) {
+            throw new AccessDeniedException("Notification not found or access denied");
+        }
+
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found: " + notificationId));
-        if (!notification.getRecipient().getId().equals(requestingUserId)) {
-            throw new AccessDeniedException("You cannot modify this notification");
-        }
+
         notification.setRead(true);
         notificationRepository.save(notification);
     }
 
+    public void markAllAsRead(Long recipientId, Long requestingUserId) {
+        verifyOwnership(recipientId, requestingUserId);
 
-    // Mark all notifications as read
-    public void markAllAsRead(Long userId, Long requestingUserId) {
-    
-        AppUser user = getVerifiedUser(userId, requestingUserId);
-    
         List<Notification> unread =
-                notificationRepository.findByRecipientAndIsRead(user, false);
-    
-                unread.forEach(n -> n.setRead(true));
-    
-                notificationRepository.saveAll(unread);
+                notificationRepository.findByRecipientIdAndIsRead(recipientId, false);
+
+        if (unread.isEmpty()) return;
+
+        unread.forEach(n -> n.setRead(true));
+        notificationRepository.saveAll(unread);
     }
 
+    // Helper Method
+    private void verifyOwnership(Long recipientId, Long requestingUserId) {
+        if (!recipientId.equals(requestingUserId)) {
+            throw new AccessDeniedException("You cannot access another user's notifications");
+        }
+    }
 }

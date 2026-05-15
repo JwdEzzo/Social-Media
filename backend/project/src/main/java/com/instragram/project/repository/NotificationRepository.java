@@ -11,9 +11,14 @@ import com.instragram.project.model.Notification;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     
-    List<Notification> findByRecipientOrderByCreatedAtDesc(AppUser recipient);
+    List<Notification> findByRecipientIdOrderByCreatedAtDesc(Long recipientId);
     
     List<Notification> findByRecipientAndIsRead(AppUser recipient, boolean isRead);
     
-    long countByRecipientAndIsRead(AppUser recipient, boolean isRead);
+    long countByRecipientIdAndIsRead(Long recipientId, boolean isRead);
+
+    List<Notification> findByRecipientIdAndIsRead(Long recipientId, boolean isRead);
+
+    boolean existsByIdAndRecipientId(Long notificationId, Long recipientId);
+    
 }
