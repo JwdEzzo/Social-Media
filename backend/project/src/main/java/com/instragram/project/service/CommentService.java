@@ -2,10 +2,10 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.dto.request.WriteCommentRequestDto;
+import com.instragram.project.enums.NotificationType;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
@@ -19,14 +19,21 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CommentService {
 
-   @Autowired
-   private CommentRepository commentRepository;
+   private final CommentRepository commentRepository;
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private MappingMethods mappingMethods;
+   private final MappingMethods mappingMethods;
+
+   private final NotificationService notificationService;
+
+   public CommentService(CommentRepository commentRepository, AppUserRepository appUserRepository,
+         MappingMethods mappingMethods, NotificationService notificationService) {
+      this.commentRepository = commentRepository;
+      this.appUserRepository = appUserRepository;
+      this.mappingMethods = mappingMethods;
+      this.notificationService = notificationService;
+   }
 
    // Create Comment
    public void createComment(WriteCommentRequestDto requestDto, String username) {
@@ -35,8 +42,15 @@ public class CommentService {
          throw new RuntimeException("User not found with username: " + username);
       }
 
-      Comment comment = mappingMethods.convertWriteCommentRequestDtoToCommentEntity(username, requestDto);
+      Comment comment = mappingMethods.convertWriteCommentRequestDtoToCommentEntity(appUser, requestDto);
       commentRepository.save(comment);
+
+      notificationService.createNotification( 
+         comment.getPost().getAppUser(), // recipient - the post owner
+         appUser, // sender - the person commenting
+         NotificationType.COMMENT, 
+         requestDto.getPostId() // entityId
+      );
    }
 
    // Get All Comments of a Post

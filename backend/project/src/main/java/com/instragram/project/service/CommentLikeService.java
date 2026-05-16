@@ -2,9 +2,9 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.instragram.project.enums.NotificationType;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentLike;
@@ -17,33 +17,51 @@ import jakarta.transaction.Transactional;
 @Service
 public class CommentLikeService {
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private CommentRepository commentRepository;
+   private final CommentRepository commentRepository;
 
-   @Autowired
-   private CommentLikeRepository commentLikeRepository;
+   private final CommentLikeRepository commentLikeRepository;
+
+   private final NotificationService notificationService;
+
+   public CommentLikeService(AppUserRepository appUserRepository, CommentRepository commentRepository,
+         CommentLikeRepository commentLikeRepository , NotificationService notificationService) {
+      this.appUserRepository = appUserRepository;
+      this.commentRepository = commentRepository;
+      this.commentLikeRepository = commentLikeRepository;
+      this.notificationService = notificationService;
+   }
 
    @Transactional
    public void toggleLike(String username, Long commentId) {
       AppUser user = appUserRepository.findByUsername(username);
-      Comment comment = commentRepository.findById(commentId).get();
 
       if (user == null) {
          throw new RuntimeException("User not found with username: " + username);
       }
+
+      Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
 
       // Check if user already liked the post
       if (commentLikeRepository.existsByAppUserAndComment(user, comment)) {
          // Unlike it
          commentLikeRepository.deleteByAppUserAndComment(user, comment);
       } else {
+         // Create Like:
          CommentLike like = new CommentLike();
          like.setAppUser(user);
          like.setComment(comment);
          commentLikeRepository.save(like);
+   
+         // Then notify the post owner
+         notificationService.createNotification(
+            comment.getAppUser(), // recipient - the post owner
+            user, // sender - the person liking
+            NotificationType.COMMENT_LIKE,
+            commentId // entityId - for the frontend to link to the post
+         );
       }
    }
 

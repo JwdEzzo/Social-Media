@@ -127,9 +127,9 @@ public class MappingMethods {
    }
 
    // Convert WriteCommentRequestDto to Comment Entity
-   public Comment convertWriteCommentRequestDtoToCommentEntity(String username, WriteCommentRequestDto requestDto) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      Post post = postRepository.findById(requestDto.getPostId()).get();
+   public Comment convertWriteCommentRequestDtoToCommentEntity(AppUser appUser, WriteCommentRequestDto requestDto) {
+      Post post = postRepository.findById(requestDto.getPostId())
+               .orElseThrow(() -> new RuntimeException("Post not found: " + requestDto.getPostId()));
 
       Comment comment = new Comment();
       comment.setContent(requestDto.getContent());
@@ -158,9 +158,8 @@ public class MappingMethods {
    }
 
    // Convert WriteReplyRequestDto to CommentReply Entity 
-   public CommentReply convertWriteReplyRequestDtoToCommentReplyEntity(String username,
+   public CommentReply convertWriteReplyRequestDtoToCommentReplyEntity(AppUser appUser,
          WriteReplyRequestDto requestDto) {
-      AppUser appUser = appUserRepository.findByUsername(username);
       Comment comment = commentRepository.findById(requestDto.getCommentId()).get();
 
       CommentReply commentReply = new CommentReply();

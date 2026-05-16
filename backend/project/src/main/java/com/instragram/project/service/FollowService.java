@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.instragram.project.dto.response.FollowRequestResponseDto;
 import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.enums.FollowRequestStatus;
+import com.instragram.project.enums.NotificationType;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Follow;
@@ -32,13 +33,17 @@ public class FollowService {
 
    private final MappingMethods mappingMethods;
 
-   public FollowService(FollowRepository followRepository, AppUserRepository appUserRepository , FollowRequestRepository followRequestRepository , MappingMethods mappingMethods) {
+   private final NotificationService notificationService;
+
+   public FollowService(NotificationService notificationService,FollowRepository followRepository, AppUserRepository appUserRepository , FollowRequestRepository followRequestRepository , MappingMethods mappingMethods) {
       this.followRepository = followRepository;
       this.appUserRepository = appUserRepository;
       this.followRequestRepository = followRequestRepository;
       this.mappingMethods = mappingMethods;
+      this.notificationService = notificationService;
    }
 
+   // Toggle follow
    @Transactional
    public void toggleFollow(String followerUsername, String followingUsername) {
       AppUser follower = appUserRepository.findByUsername(followerUsername);
@@ -52,55 +57,64 @@ public class FollowService {
          throw new RuntimeException("You cannot follow yourself");
       }
 
-      // If already following, unfollow regardless of account status
-        if (followRepository.existsByFollowerAndFollowing(follower, following)) {
-            followRepository.deleteByFollowerAndFollowing(follower, following);
-            log.info("{} unfollowed {}", followerUsername, followingUsername);
-            return;
-        }
+      if (followRepository.existsByFollowerAndFollowing(follower, following)) {
+         followRepository.deleteByFollowerAndFollowing(follower, following);
+         log.info("{} unfollowed {}", followerUsername, followingUsername);
+         // No notification on unfollow
+         return;
+      }
 
       if (following.getAccountStatus() == AccountStatus.PUBLIC) {
-         // PUBLIC Account - Follow directly
          Follow follow = new Follow();
          follow.setFollower(follower);
          follow.setFollowing(following);
          followRepository.save(follow);
          log.info("{} followed {}", followerUsername, followingUsername);
-      } else {
-         // PRIVATE Account - send a follow request instead
-         // Check if the user has already sent a follow request
-         boolean alreadyRequested = followRequestRepository.existsByRequesterIdAndTargetIdAndStatus(follower.getId(), following.getId(), FollowRequestStatus.PENDING);
 
-         // If already requested, throw exception
+         // Notify the followed user
+         notificationService.createNotification(
+                  following,                      // recipient — the person being followed
+                  follower,                       // sender — the person following
+                  NotificationType.FOLLOW,
+                  null                            // no entityId — not tied to a post/comment
+         );
+
+      } else {
+         boolean alreadyRequested = followRequestRepository
+                  .existsByRequesterIdAndTargetIdAndStatus(
+                           follower.getId(), following.getId(), FollowRequestStatus.PENDING);
+
          if (alreadyRequested) {
-            throw new RuntimeException("You have already sent a follow request to " + followingUsername);
+               throw new RuntimeException("You have already sent a follow request to " + followingUsername);
          }
 
-         // If not already requested, create a follow request
          FollowRequest followRequest = new FollowRequest();
          followRequest.setRequester(follower);
          followRequest.setTarget(following);
-         followRequestRepository.save(followRequest); // status set to PENDING via the @PrePersist
+         followRequestRepository.save(followRequest);
          log.info("{} sent a follow request to {}", followerUsername, followingUsername);
-      }
 
+         // Notify the private account owner of the incoming request
+         notificationService.createNotification(
+                  following,                      // recipient — the private account owner
+                  follower,                       // sender — the person requesting
+                  NotificationType.FOLLOW_REQUEST_SENT,
+                  null
+         );
+      }
    }
 
    // Accept or deline an incoming follow request
    @Transactional
    public void respondToFollowRequest(Long requestId, String targetUsername, boolean accepted) {
-
-      // Find the follow request
       FollowRequest followRequest = followRequestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Follow request not found with id: " + requestId));
+               .orElseThrow(() -> new RuntimeException("Follow request not found with id: " + requestId));
 
-      // Only the target user can respond to the request
       if (!followRequest.getTarget().getUsername().equals(targetUsername)) {
-          throw new AccessDeniedException("You cannot respond to this request");
+         throw new AccessDeniedException("You cannot respond to this request");
       }
 
-      // Guard against responding to an already-handled request
-      if (followRequest.getStatus()!=FollowRequestStatus.PENDING) {
+      if (followRequest.getStatus() != FollowRequestStatus.PENDING) {
          throw new RuntimeException("This request has already been responded to");
       }
 
@@ -111,11 +125,21 @@ public class FollowService {
          follow.setFollowing(followRequest.getTarget());
          followRepository.save(follow);
          log.info("{} accepted follow request from {}",
-                    targetUsername, followRequest.getRequester().getUsername());
+                  targetUsername, followRequest.getRequester().getUsername());
+
+         // Notify the requester that their request was accepted
+         notificationService.createNotification(
+                  followRequest.getRequester(),   // recipient — the person who sent the request
+                  followRequest.getTarget(),      // sender — the person who accepted
+                  NotificationType.FOLLOW_REQUEST_ACCEPTED,
+                  null
+         );
+
       } else {
          followRequest.setStatus(FollowRequestStatus.DECLINED);
          log.info("{} declined follow request from {}",
-                    targetUsername, followRequest.getRequester().getUsername());
+                  targetUsername, followRequest.getRequester().getUsername());
+         // No notification on decline — don't tell someone they were rejected
       }
 
       followRequestRepository.save(followRequest);
@@ -191,8 +215,6 @@ public class FollowService {
       long count = followRepository.countByFollowing(user);
       return count;
    }
-
-
 
    // Check if a user already follows the other
    public boolean isFollowed(String followerUsername, String followingUsername) {

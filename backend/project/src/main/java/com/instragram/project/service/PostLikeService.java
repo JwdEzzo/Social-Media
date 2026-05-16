@@ -2,9 +2,9 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.instragram.project.enums.NotificationType;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
 import com.instragram.project.model.PostLike;
@@ -19,24 +19,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PostLikeService {
 
-   @Autowired
-   private PostLikeRepository postLikeRepository;
+   private final PostLikeRepository postLikeRepository;
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private PostRepository postRepository;
+   private final PostRepository postRepository;
+
+   private final NotificationService notificationService;
+   
+   public PostLikeService(PostLikeRepository postLikeRepository, AppUserRepository appUserRepository,
+         PostRepository postRepository, NotificationService notificationService) {
+      this.postLikeRepository = postLikeRepository;
+      this.appUserRepository = appUserRepository;
+      this.postRepository = postRepository;
+      this.notificationService = notificationService;
+   }
+   
 
    // Toggle PostLike
    @Transactional
    public void toggleLike(String username, Long postId) {
       AppUser user = appUserRepository.findByUsername(username);
-      Post post = postRepository.findById(postId).get();
-
+      
       if (user == null) {
          throw new RuntimeException("User not found with username: " + username);
       }
+
+      Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new RuntimeException("Post not found: " + postId));
+
 
       // Check if user already liked the post
       if (postLikeRepository.existsByAppUserAndPost(user, post)) {
@@ -48,6 +59,15 @@ public class PostLikeService {
          like.setAppUser(user);
          like.setPost(post);
          postLikeRepository.save(like);
+
+         // Then notify the post owner
+         notificationService.createNotification(
+            post.getAppUser(), // recipient - the post owner
+            user, // sender - the person liking
+            NotificationType.POST_LIKE,
+            postId // entityId - for the frontend to link to the post
+         );
+         log.info("{} liked {}", user.getUsername(), post.getAppUser().getUsername());
       }
    }
 

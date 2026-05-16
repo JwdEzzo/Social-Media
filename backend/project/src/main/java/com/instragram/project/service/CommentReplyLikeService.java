@@ -2,9 +2,9 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.instragram.project.enums.NotificationType;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.CommentReply;
 import com.instragram.project.model.CommentReplyLike;
@@ -17,34 +17,51 @@ import jakarta.transaction.Transactional;
 @Service
 public class CommentReplyLikeService {
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private CommentReplyRepository commentReplyRepository;
+   private final CommentReplyRepository commentReplyRepository;
 
-   @Autowired
-   private CommentReplyLikeRepository commentReplyLikeRepository;
+   private final CommentReplyLikeRepository commentReplyLikeRepository;
+
+   private final NotificationService notificationService;
+
+   public CommentReplyLikeService(AppUserRepository appUserRepository, CommentReplyRepository commentReplyRepository,
+            CommentReplyLikeRepository commentReplyLikeRepository, NotificationService notificationService) {
+         this.appUserRepository = appUserRepository;
+         this.commentReplyRepository = commentReplyRepository;
+         this.commentReplyLikeRepository = commentReplyLikeRepository;
+         this.notificationService = notificationService;
+   }
 
    @Transactional
    public void toggleLike(String username, Long commentReplyId) {
       AppUser user = appUserRepository.findByUsername(username);
-      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
-            .orElseThrow(() -> new RuntimeException("Comment reply not found with id: " + commentReplyId));
-
+      
       if (user == null) {
          throw new RuntimeException("User not found with username: " + username);
       }
+      
+      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
+            .orElseThrow(() -> new RuntimeException("Comment reply not found with id: " + commentReplyId));
 
       // Check if user already liked the comment reply
       if (commentReplyLikeRepository.existsByAppUserAndCommentReply(user, commentReply)) {
          // Unlike it
          commentReplyLikeRepository.deleteByAppUserAndCommentReply(user, commentReply);
       } else {
+         // Create ReplyLike:
          CommentReplyLike like = new CommentReplyLike();
          like.setAppUser(user);
          like.setCommentReply(commentReply);
          commentReplyLikeRepository.save(like);
+
+         // Then notify the comment owner
+         notificationService.createNotification(
+            commentReply.getComment().getAppUser(), // recipient - the comment owner
+            user, // sender - the person liking
+            NotificationType.REPLY_LIKE,
+            commentReplyId
+         );
       }
    }
 
