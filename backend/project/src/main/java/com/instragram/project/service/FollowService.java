@@ -60,7 +60,14 @@ public class FollowService {
       if (followRepository.existsByFollowerAndFollowing(follower, following)) {
          followRepository.deleteByFollowerAndFollowing(follower, following);
          log.info("{} unfollowed {}", followerUsername, followingUsername);
-         // No notification on unfollow
+
+         // Delete the notification that was created when the follow was added
+         notificationService.deleteNotification(
+                  following.getId(),   // recipient — the user who was followed
+                  follower.getId(),    // sender — the user who unfollowed
+                  NotificationType.FOLLOW
+         );
+
          return;
       }
 
@@ -156,6 +163,12 @@ public class FollowService {
       if (!followRequest.getRequester().getUsername().equals(requesterUsername)) {
          throw new AccessDeniedException("You do not have the permission to cancel this request of id: " + requestId);
       }
+      // Delete the follow request notification from the target's inbox
+      notificationService.deleteNotification(
+            followRequest.getTarget().getId(),      // recipient — the private account owner
+            followRequest.getRequester().getId(),   // sender — the person who requested
+            NotificationType.FOLLOW_REQUEST_SENT
+      );
 
       followRequestRepository.deleteById(requestId);
         log.info("{} cancelled follow request to {}",

@@ -2,6 +2,7 @@ package com.instragram.project.service;
 
 import java.util.List;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.dto.request.WriteReplyRequestDto;
@@ -67,12 +68,29 @@ public class CommentReplyService {
       return mappingMethods.convertListCommentReplyEntityToListGetCommentReplyResponseDto(commentReplies);
    }
 
-   // Delete the comment reply
-   public void deleteCommentReply(Long commentReplyId) {
-      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
-            .orElseThrow(() -> new RuntimeException("Comment reply not found with id: " + commentReplyId));
+   // Delete Reply
+   public void deleteCommentReply(Long commentReplyId, String username) {
+      AppUser appUser = appUserRepository.findByUsername(username);
+      if (appUser == null) {
+         throw new RuntimeException("User not found: " + username);
+      }
 
-      commentReplyRepository.delete(commentReply);
+      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
+               .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
+
+      if (!commentReply.getAppUser().getId().equals(appUser.getId())) {
+         throw new AccessDeniedException("You cannot delete this reply");
+      }
+
+      // Delete the notification that was created when the reply was made
+      notificationService.deleteNotification(
+               commentReply.getComment().getAppUser().getId(),    // recipient — comment owner
+               appUser.getId(),                            // sender — the person who replied
+               NotificationType.REPLY,
+               commentReply.getComment().getId()
+      );
+
+      commentReplyRepository.deleteById(commentReplyId);
    }
 
    // Get number of replies to a comment

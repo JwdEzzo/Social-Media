@@ -96,7 +96,7 @@ public class CommentReplyController {
          return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
       try {
-         commentReplyService.deleteCommentReply(commentReplyId);
+         commentReplyService.deleteCommentReply(commentReplyId,authenticatedUsername);
          return ResponseEntity.ok().build();
       } catch (Exception e) {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

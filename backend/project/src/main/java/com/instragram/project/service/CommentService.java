@@ -2,6 +2,7 @@ package com.instragram.project.service;
 
 import java.util.List;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.dto.request.WriteCommentRequestDto;
@@ -69,18 +70,29 @@ public class CommentService {
       commentRepository.save(comment);
    }
 
-   // Delete the comment
-   @Transactional
+   // Delete Comment
    public void deleteComment(Long commentId, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
-      Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
-
-      if (appUser != comment.getAppUser() && appUser != comment.getPost().getAppUser()) {
-         throw new RuntimeException("You do not have permission to delete this comment");
+      if (appUser == null) {
+         throw new RuntimeException("User not found: " + username);
       }
 
-      commentRepository.delete(comment);
+      Comment comment = commentRepository.findById(commentId)
+               .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
+
+      if (!comment.getAppUser().getId().equals(appUser.getId())) {
+         throw new AccessDeniedException("You cannot delete this comment");
+      }
+
+      // Delete the notification that was created when the comment was made
+      notificationService.deleteNotification(
+               comment.getPost().getAppUser().getId(),  // recipient — post owner
+               appUser.getId(),                         // sender — commenter
+               NotificationType.COMMENT,
+               comment.getPost().getId()
+      );
+
+      commentRepository.deleteById(commentId);
    }
 
    // Get number of comments on a post
@@ -89,3 +101,14 @@ public class CommentService {
    }
 
 }
+
+// COMMENT WORKS
+// COMMENT_LIKE WORKS
+// POST_LIKE WORKS
+// REMOVE A FOLLOW WORKS
+// FOLLOW_REQUEST WORKS
+// REPLY_LIKE WORKS
+
+
+
+// COMMENT DELETE DOESNT WORK

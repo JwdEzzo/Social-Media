@@ -48,6 +48,14 @@ public class CommentLikeService {
       if (commentLikeRepository.existsByAppUserAndComment(user, comment)) {
          // Unlike it
          commentLikeRepository.deleteByAppUserAndComment(user, comment);
+         
+         // Delete the notification when unliking
+         notificationService.deleteNotification(
+                comment.getAppUser().getId(),   // recipient — comment owner
+                user.getId(),                   // sender — the person who liked
+                NotificationType.COMMENT_LIKE,
+                commentId
+        );
       } else {
          // Create Like:
          CommentLike like = new CommentLike();

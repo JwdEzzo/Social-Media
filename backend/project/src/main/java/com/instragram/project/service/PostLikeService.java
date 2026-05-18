@@ -53,6 +53,14 @@ public class PostLikeService {
       if (postLikeRepository.existsByAppUserAndPost(user, post)) {
          // Unlike it:
          postLikeRepository.deleteByAppUserAndPost(user, post);
+
+         // Delete the notification that was created when the like was added
+        notificationService.deleteNotification(
+                post.getAppUser().getId(),  // recipient — the post owner
+                user.getId(),               // sender — the person who liked
+                NotificationType.POST_LIKE,
+                postId
+        );
       } else {
          // Create Like:
          PostLike like = new PostLike();
@@ -67,7 +75,6 @@ public class PostLikeService {
             NotificationType.POST_LIKE,
             postId // entityId - for the frontend to link to the post
          );
-         log.info("{} liked {}", user.getUsername(), post.getAppUser().getUsername());
       }
    }
 

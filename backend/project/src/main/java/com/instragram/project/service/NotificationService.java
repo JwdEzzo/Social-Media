@@ -91,5 +91,19 @@ public class NotificationService {
         }
     }
 
+    // Called when a like is removed : entityId identifies which post/comment was unliked
+    public void deleteNotification(Long recipientId, Long senderId,
+                                NotificationType type, Long entityId) {
+        notificationRepository
+                .deleteByRecipientIdAndSenderIdAndNotificationTypeAndEntityId(
+                        recipientId, senderId, type, entityId);
+    }
+
+    // Called when a follow is removed : no entityId involved
+    public void deleteNotification(Long recipientId, Long senderId, NotificationType type) {
+        notificationRepository
+                .deleteByRecipientIdAndSenderIdAndNotificationType(
+                        recipientId, senderId, type);
+    }
 
 }
