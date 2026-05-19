@@ -55,7 +55,7 @@ public class PostLikeService {
          postLikeRepository.deleteByAppUserAndPost(user, post);
 
          // Delete the notification that was created when the like was added
-        notificationService.deleteNotification(
+        notificationService.deleteEntityNotification(
                 post.getAppUser().getId(),  // recipient — the post owner
                 user.getId(),               // sender — the person who liked
                 NotificationType.POST_LIKE,

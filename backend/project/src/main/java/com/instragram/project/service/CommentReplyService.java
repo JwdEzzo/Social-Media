@@ -14,6 +14,7 @@ import com.instragram.project.model.CommentReply;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentReplyRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -37,6 +38,7 @@ public class CommentReplyService {
    }
 
    // Create Comment Reply
+   @Transactional
    public void createCommentReply(WriteReplyRequestDto requestDto, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
 
@@ -69,6 +71,7 @@ public class CommentReplyService {
    }
 
    // Delete Reply
+   @Transactional
    public void deleteCommentReply(Long commentReplyId, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
@@ -83,7 +86,7 @@ public class CommentReplyService {
       }
 
       // Delete the notification that was created when the reply was made
-      notificationService.deleteNotification(
+      notificationService.deleteEntityNotification(
                commentReply.getComment().getAppUser().getId(),    // recipient — comment owner
                appUser.getId(),                            // sender — the person who replied
                NotificationType.REPLY,

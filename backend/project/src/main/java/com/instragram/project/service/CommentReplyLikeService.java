@@ -49,7 +49,7 @@ public class CommentReplyLikeService {
          // Unlike it
          commentReplyLikeRepository.deleteByAppUserAndCommentReply(user, commentReply);
          // Delete the notification when unliking
-        notificationService.deleteNotification(
+        notificationService.deleteEntityNotification(
                 commentReply.getAppUser().getId(),     // recipient — reply owner
                 user.getId(),                   // sender — the person who liked
                 NotificationType.REPLY_LIKE,

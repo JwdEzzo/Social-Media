@@ -37,6 +37,7 @@ public class CommentService {
    }
 
    // Create Comment
+   @Transactional
    public void createComment(WriteCommentRequestDto requestDto, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
@@ -71,6 +72,7 @@ public class CommentService {
    }
 
    // Delete Comment
+   @Transactional
    public void deleteComment(Long commentId, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
@@ -85,7 +87,7 @@ public class CommentService {
       }
 
       // Delete the notification that was created when the comment was made
-      notificationService.deleteNotification(
+      notificationService.deleteEntityNotification(
                comment.getPost().getAppUser().getId(),  // recipient — post owner
                appUser.getId(),                         // sender — commenter
                NotificationType.COMMENT,
@@ -108,7 +110,5 @@ public class CommentService {
 // REMOVE A FOLLOW WORKS
 // FOLLOW_REQUEST WORKS
 // REPLY_LIKE WORKS
+// COMMENT DELETE WORKS
 
-
-
-// COMMENT DELETE DOESNT WORK

@@ -62,7 +62,7 @@ public class FollowService {
          log.info("{} unfollowed {}", followerUsername, followingUsername);
 
          // Delete the notification that was created when the follow was added
-         notificationService.deleteNotification(
+         notificationService.deleteFollowNotification(
                   following.getId(),   // recipient — the user who was followed
                   follower.getId(),    // sender — the user who unfollowed
                   NotificationType.FOLLOW
@@ -164,7 +164,7 @@ public class FollowService {
          throw new AccessDeniedException("You do not have the permission to cancel this request of id: " + requestId);
       }
       // Delete the follow request notification from the target's inbox
-      notificationService.deleteNotification(
+      notificationService.deleteFollowNotification(
             followRequest.getTarget().getId(),      // recipient — the private account owner
             followRequest.getRequester().getId(),   // sender — the person who requested
             NotificationType.FOLLOW_REQUEST_SENT

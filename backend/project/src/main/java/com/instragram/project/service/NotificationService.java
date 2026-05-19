@@ -92,7 +92,7 @@ public class NotificationService {
     }
 
     // Called when a like is removed : entityId identifies which post/comment was unliked
-    public void deleteNotification(Long recipientId, Long senderId,
+    public void deleteEntityNotification(Long recipientId, Long senderId,
                                 NotificationType type, Long entityId) {
         notificationRepository
                 .deleteByRecipientIdAndSenderIdAndNotificationTypeAndEntityId(
@@ -100,7 +100,7 @@ public class NotificationService {
     }
 
     // Called when a follow is removed : no entityId involved
-    public void deleteNotification(Long recipientId, Long senderId, NotificationType type) {
+    public void deleteFollowNotification(Long recipientId, Long senderId, NotificationType type) {
         notificationRepository
                 .deleteByRecipientIdAndSenderIdAndNotificationType(
                         recipientId, senderId, type);
