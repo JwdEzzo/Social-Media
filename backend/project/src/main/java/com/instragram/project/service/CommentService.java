@@ -47,11 +47,11 @@ public class CommentService {
       Comment comment = mappingMethods.convertWriteCommentRequestDtoToCommentEntity(appUser, requestDto);
       commentRepository.save(comment);
 
-      notificationService.createNotification( 
-         comment.getPost().getAppUser(), // recipient - the post owner
-         appUser, // sender - the person commenting
-         NotificationType.COMMENT, 
-         requestDto.getPostId() // entityId
+      notificationService.createNotification(
+            comment.getPost().getAppUser(), // recipient - the post owner
+            appUser, // sender - the person commenting
+            NotificationType.COMMENT,
+            requestDto.getPostId() // entityId
       );
    }
 
@@ -63,36 +63,40 @@ public class CommentService {
    // Update a comment
    @Transactional
    public void editComment(Long commentId, String content, String username) {
-      Comment comment = commentRepository.findById(commentId).get();
+      Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
       if (!comment.getAppUser().getUsername().equals(username)) {
          throw new RuntimeException("You do not have permission to update this comment");
       }
       comment.setContent(content);
       commentRepository.save(comment);
    }
-
-   // Delete Comment
+   
+   // Delete comment by Post/Comment Owner
    @Transactional
-   public void deleteComment(Long commentId, String username) {
+   public void deleteCommentByPostOrCommentOwner(Long commentId, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
          throw new RuntimeException("User not found: " + username);
       }
 
       Comment comment = commentRepository.findById(commentId)
-               .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
+            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
 
-      if (!comment.getAppUser().getId().equals(appUser.getId())) {
+      boolean isCommentOwner = comment.getAppUser().getId().equals(appUser.getId());
+      boolean isPostOwner = comment.getPost().getAppUser().getId().equals(appUser.getId());
+
+      if (!isCommentOwner && !isPostOwner) {
          throw new AccessDeniedException("You cannot delete this comment");
       }
 
-      // Delete the notification that was created when the comment was made
+      // Sender is always the commenter — regardless of who is performing the deletion
       notificationService.deleteEntityNotification(
-               comment.getPost().getAppUser().getId(),  // recipient — post owner
-               appUser.getId(),                         // sender — commenter
-               NotificationType.COMMENT,
-               comment.getPost().getId()
-      );
+            comment.getPost().getAppUser().getId(), // recipient — post owner
+            comment.getAppUser().getId(), // sender — commenter
+            NotificationType.COMMENT,
+            comment.getPost().getId() // entityId
+         ); 
 
       commentRepository.deleteById(commentId);
    }
@@ -111,4 +115,3 @@ public class CommentService {
 // FOLLOW_REQUEST WORKS
 // REPLY_LIKE WORKS
 // COMMENT DELETE WORKS
-

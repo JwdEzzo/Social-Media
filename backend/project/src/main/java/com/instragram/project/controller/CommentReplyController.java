@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.instragram.project.dto.request.WriteReplyRequestDto;
 import com.instragram.project.dto.response.GetReplyResponseDto;
-import com.instragram.project.model.CommentReply;
 import com.instragram.project.repository.CommentReplyRepository;
 import com.instragram.project.service.CommentReplyService;
 
@@ -69,37 +69,23 @@ public class CommentReplyController {
       }
    }
 
-   // Delete Comment Reply by Post Owner
+   // Update Comment
+   @PutMapping("/edit-reply/{commentReplyId:\\d+}")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> editCommentReply(@PathVariable Long commentReplyId, @RequestBody String content, Authentication authentication) {
+      String username = authentication.getName();
+      commentReplyService.editCommentReply(commentReplyId, content, username);
+      return ResponseEntity.status(HttpStatus.OK).build();
+   }
+
    @DeleteMapping("/{commentReplyId}")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> deleteCommentReply(@PathVariable Long commentReplyId, Authentication authentication) {
+   public ResponseEntity<Void> deleteCommentReply(
+         @PathVariable Long commentReplyId,
+         Authentication authentication) {
 
-      CommentReply thisCommentReply = commentReplyRepository.findById(commentReplyId).get();
-
-      // Check if the authenticated user is the owner of the reply or the owner of the post or the owner of the comment
-      String authenticatedUsername = authentication.getName();
-      String replyOwnerUsername = thisCommentReply.getAppUser().getUsername();
-      String postOwnerUsername = thisCommentReply.getComment().getPost().getAppUser().getUsername();
-      String commentOwnerUsername = thisCommentReply.getComment().getAppUser().getUsername();
-
-      boolean isReplyOwner = authenticatedUsername.equals(replyOwnerUsername);
-      boolean isPostOwner = authenticatedUsername.equals(postOwnerUsername);
-      boolean isCommentOwner = authenticatedUsername.equals(commentOwnerUsername);
-
-      // If the authenticated name is NOT equal to the reply owner , return forbidden
-      // AND
-      // If the authenticated name is NOT equal to the post owner , return forbidden
-      // AND
-      // If the authenticated name is NOT equal to the comment owner , return forbidden
-
-      if (!isReplyOwner && !isPostOwner && !isCommentOwner) {
-         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-      }
-      try {
-         commentReplyService.deleteCommentReply(commentReplyId,authenticatedUsername);
-         return ResponseEntity.ok().build();
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
+      commentReplyService.deleteCommentReplyByPostOrCommentOrReplyOwner(commentReplyId, authentication.getName());
+      return ResponseEntity.noContent().build();
    }
+
 }

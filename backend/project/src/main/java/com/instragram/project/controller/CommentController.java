@@ -21,6 +21,7 @@ import com.instragram.project.dto.request.WriteCommentRequestDto;
 import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.Comment;
+import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
 import com.instragram.project.service.CommentService;
 
@@ -41,6 +42,9 @@ public class CommentController {
    @Autowired
    private MappingMethods mappingMethods;
 
+   @Autowired
+   private CommentRepository commentRepository;
+
    // Create Comment
    @PostMapping("/create-comment")
    @PreAuthorize("isAuthenticated()")
@@ -51,7 +55,7 @@ public class CommentController {
       return ResponseEntity.status(HttpStatus.CREATED).build();
    }
 
-   // GET: Comment Count on a Post 
+   // GET: Comment Count on a Post
    @GetMapping("/post/{postId}/comment-count")
    public ResponseEntity<Long> getCommentCount(@PathVariable Long postId) {
       if (!postRepository.existsById(postId)) {
@@ -80,12 +84,13 @@ public class CommentController {
       return ResponseEntity.status(HttpStatus.OK).build();
    }
 
-   // Delete Comment by Post Owner or Comment Owner
-   @DeleteMapping("/{commentId:\\d+}")
-   public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Authentication authentication) {
-      String username = authentication.getName();
-      commentService.deleteComment(commentId, username);
+   @DeleteMapping("/{commentId}")
+   @PreAuthorize("isAuthenticated()")
+   public ResponseEntity<Void> deleteComment(
+         @PathVariable Long commentId,
+         Authentication authentication) {
 
-      return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+      commentService.deleteCommentByPostOrCommentOwner(commentId, authentication.getName());
+      return ResponseEntity.noContent().build();
    }
 }

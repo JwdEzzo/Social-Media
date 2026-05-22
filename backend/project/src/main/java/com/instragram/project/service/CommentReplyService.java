@@ -70,9 +70,21 @@ public class CommentReplyService {
       return mappingMethods.convertListCommentReplyEntityToListGetCommentReplyResponseDto(commentReplies);
    }
 
-   // Delete Reply
    @Transactional
-   public void deleteCommentReply(Long commentReplyId, String username) {
+   public void editCommentReply(Long commentReplyId, String content, String username) {
+
+      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
+               .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
+      if (!commentReply.getAppUser().getUsername().equals(username)) {
+         throw new RuntimeException("You do not have permission to update this comment reply");
+      }
+      commentReply.setContent(content);
+      commentReplyRepository.save(commentReply);
+   }
+
+   // Delete Reply by Post/Comment/Reply Owner
+   @Transactional
+   public void deleteCommentReplyByPostOrCommentOrReplyOwner(Long commentReplyId, String username) {
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
          throw new RuntimeException("User not found: " + username);
@@ -81,16 +93,20 @@ public class CommentReplyService {
       CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
                .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
 
-      if (!commentReply.getAppUser().getId().equals(appUser.getId())) {
+      boolean isReplyOwner = commentReply.getAppUser().getId().equals(appUser.getId());
+      boolean isCommentOwner = commentReply.getComment().getAppUser().getId().equals(appUser.getId());
+      boolean isPostOwner = commentReply.getComment().getPost().getAppUser().getId().equals(appUser.getId());
+
+      if (!isReplyOwner && !isCommentOwner && !isPostOwner) {
          throw new AccessDeniedException("You cannot delete this reply");
       }
 
       // Delete the notification that was created when the reply was made
       notificationService.deleteEntityNotification(
                commentReply.getComment().getAppUser().getId(),    // recipient — comment owner
-               appUser.getId(),                            // sender — the person who replied
+               commentReply.getAppUser().getId(), // sender — the person who replied
                NotificationType.REPLY,
-               commentReply.getComment().getId()
+               commentReply.getComment().getId()  // entityId
       );
 
       commentReplyRepository.deleteById(commentReplyId);
