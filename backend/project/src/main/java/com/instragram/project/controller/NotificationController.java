@@ -71,7 +71,7 @@ public class NotificationController {
     }
 
     // PUT: Mark all notifications as read
-    @PutMapping("/mark-all-read")
+    @PutMapping("/mark-all-as-read")
     public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         notificationService.markAllAsRead(userId, userId);

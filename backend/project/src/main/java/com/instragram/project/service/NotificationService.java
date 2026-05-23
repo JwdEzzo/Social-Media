@@ -12,7 +12,10 @@ import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Notification;
 import com.instragram.project.repository.NotificationRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -79,15 +82,19 @@ public class NotificationService {
     }
 
     public void markAllAsRead(Long recipientId, Long requestingUserId) {
+        log.info("Marking all notifications as read for user: {}", recipientId);
         verifyOwnership(recipientId, requestingUserId);
 
+        log.info("Checking for unread notifications for user: {}", recipientId);
         List<Notification> unread =
                 notificationRepository.findByRecipientIdAndIsRead(recipientId, false);
 
         if (unread.isEmpty()) return;
 
+        log.info("Marking {} notifications as read for user: {}", unread.size(), recipientId);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
+        log.info("Successfully marked all notifications as read for user: {}", recipientId);
     }
 
     // Helper Method

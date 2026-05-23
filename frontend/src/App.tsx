@@ -19,6 +19,7 @@ import { YourFollowerListRouted } from "./Pages/FollowPages/Followers/YourFollow
 import { UserFollowerListRouted } from "./Pages/FollowPages/Followers/UserFollowerList";
 import { UserFollowingListRouted } from "./Pages/FollowPages/Followings/UserFollowingList";
 import { YourFollowingListRouted } from "./Pages/FollowPages/Followings/YourFollowingList";
+import NotificationPage from "@/Pages/NotificationPages/NotificationPage";
 
 function App() {
   return (
@@ -44,6 +45,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SearchUsersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationPage />
                 </ProtectedRoute>
               }
             />

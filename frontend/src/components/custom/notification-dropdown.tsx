@@ -1,4 +1,7 @@
-import { useGetLatest3NotificationsQuery } from "@/api/notifications/notificationApi";
+import {
+  useGetLatest3NotificationsQuery,
+  useMarkAllAsReadMutation,
+} from "@/api/notifications/notificationApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,11 +23,13 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 function NotificationDropdown() {
   const { data: latest3Notifications, isLoading } =
     useGetLatest3NotificationsQuery();
   const navigate = useNavigate();
+  const [markAllAsRead] = useMarkAllAsReadMutation();
 
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -124,13 +129,23 @@ function NotificationDropdown() {
         align="end"
         className="w-[320px] md:w-[380px] p-2 dark:bg-gray-950 dark:border-gray-800 shadow-2xl rounded-xl transition-all duration-200"
       >
-        <DropdownMenuLabel className="flex flex-col gap-0.5 px-3 py-2">
-          <span className="font-bold text-sm text-gray-900 dark:text-white">
-            Notifications
-          </span>
-          <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
-            Recent activity on your account
-          </span>
+        <DropdownMenuLabel className="flex items-center justify-between px-3 pt-2 pb-1">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-sm text-gray-900 dark:text-white">
+              Notifications
+            </span>
+            <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
+              Recent activity on your account
+            </span>
+          </div>
+          <Button
+            onClick={() => markAllAsRead()}
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] font-normal dark:bg-gray-900 dark:text-gray-500 dark:text-gray-400 bg-gray-100 hover:bg-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+          >
+            Mark all as read
+          </Button>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1" />
 
