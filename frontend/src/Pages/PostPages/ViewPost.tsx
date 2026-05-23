@@ -50,7 +50,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { useCreateReplyMutation } from "@/api/comments/commentRepliesApi";
+import {
+  useCreateReplyMutation,
+  useEditReplyMutation,
+} from "@/api/comments/commentRepliesApi";
 import {
   useGetPostSaveCountQuery,
   useIsPostSavedQuery,
@@ -58,7 +61,11 @@ import {
 import { useAuth } from "@/auth/useAuth";
 import type { RootState } from "@/store/store";
 import { enterReplyMode, resetReplyMode } from "@/slices/replyModeSlice";
-import { closeEditMode, enterEditMode } from "@/slices/editModeSlice";
+import {
+  closeEditMode,
+  enterEditCommentMode,
+  enterEditReplyMode,
+} from "@/slices/editModeSlice";
 
 interface ViewPostProps {
   isOpen: boolean;
@@ -84,9 +91,12 @@ function ViewPost({
   const [newComment, setNewComment] = useState<string>("");
   const focusRef = useRef<HTMLInputElement>(null);
 
-  const { isEditing, commentId: editCommentId } = useSelector(
-    (state: RootState) => state.editModeSlice,
-  );
+  const {
+    isEditing,
+    commentId: editCommentId,
+    replyId: editReplyId,
+    editType,
+  } = useSelector((state: RootState) => state.editModeSlice);
 
   const {
     isReplying,
@@ -106,16 +116,17 @@ function ViewPost({
   const { username: loggedInUsername } = useAuth();
   const scrollPositionRef = useRef<number>(0);
 
+  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
+    useToggleCommentLikeMutation();
+
   const [
     createComment,
     { isLoading: isCreateLoading, isError: isCreateError },
   ] = useCreateCommentMutation();
 
-  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
-    useToggleCommentLikeMutation();
-
   const [createReply] = useCreateReplyMutation();
   const [editComment] = useEditCommentMutation();
+  const [editReply] = useEditReplyMutation();
 
   // Fetch comments for the current post
   const {
@@ -214,36 +225,36 @@ function ViewPost({
       e.preventDefault();
       if (!newComment.trim() || !selectedPostId) return;
 
-      // Save current scroll position
       if (scrollContainerRef.current) {
         scrollPositionRef.current = scrollContainerRef.current.scrollTop;
       }
 
       try {
         if (isReplying && replyCommentId) {
-          // Create a reply to a comment
           await createReply({
             content: newComment,
             commentId: replyCommentId,
           }).unwrap();
-
-          // Reset reply mode after successful creation
           dispatch(resetReplyMode());
         } else if (!isReplying && !isEditing && selectedPostId) {
-          // Create a new comment
           await createComment({
             content: newComment,
             postId: selectedPostId,
           }).unwrap();
-        } else if (isEditing && editCommentId) {
-          // Edit an existing comment
+        } else if (isEditing && editType === "comment" && editCommentId) {
           await editComment({
             content: newComment,
             commentId: editCommentId,
           }).unwrap();
-          // Reset edit mode after successful edit
+          dispatch(closeEditMode());
+        } else if (isEditing && editType === "reply" && editReplyId) {
+          await editReply({
+            content: newComment,
+            replyId: editReplyId,
+          }).unwrap();
           dispatch(closeEditMode());
         }
+
         setNewComment("");
       } catch (error) {
         console.error("Failed to add comment/reply:", error);
@@ -255,11 +266,14 @@ function ViewPost({
       isReplying,
       replyCommentId,
       isEditing,
+      editType,
       editCommentId,
+      editReplyId,
       createReply,
-      dispatch,
       createComment,
       editComment,
+      editReply,
+      dispatch,
     ],
   );
 
@@ -289,9 +303,18 @@ function ViewPost({
       }
 
       // Enter edit mode for the specified comment
-      dispatch(enterEditMode(commentId));
+      dispatch(enterEditCommentMode(commentId));
 
       // clear the comment text field
+      setNewComment("");
+    },
+    [dispatch, isReplying],
+  );
+
+  const handleEditReply = useCallback(
+    (replyId: number) => {
+      if (isReplying) dispatch(resetReplyMode());
+      dispatch(enterEditReplyMode(replyId));
       setNewComment("");
     },
     [dispatch, isReplying],
@@ -523,7 +546,8 @@ function ViewPost({
                   onReply={handleReplyToComment}
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
                   loggedInUser={loggedInUser}
-                  onEdit={handleEditComment}
+                  onEditComment={handleEditComment}
+                  onEditReply={handleEditReply}
                   focusRef={focusRef}
                 />
               ))}

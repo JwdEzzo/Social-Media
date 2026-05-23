@@ -85,22 +85,30 @@ public class CommentReplyService {
    // Delete Reply by Post/Comment/Reply Owner
    @Transactional
    public void deleteCommentReplyByPostOrCommentOrReplyOwner(Long commentReplyId, String username) {
+      log.info("Started deleting process with comment reply ID: {}", commentReplyId);
       AppUser appUser = appUserRepository.findByUsername(username);
       if (appUser == null) {
+         log.error("User not found: {}", username);
          throw new RuntimeException("User not found: " + username);
       }
+      log.info("Found user: {}", appUser.getUsername());
 
       CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
                .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
+      log.info("Found reply: {}", commentReply);
 
       boolean isReplyOwner = commentReply.getAppUser().getId().equals(appUser.getId());
+      log.info("Is reply owner: {}", isReplyOwner);
       boolean isCommentOwner = commentReply.getComment().getAppUser().getId().equals(appUser.getId());
+      log.info("Is comment owner: {}", isCommentOwner);
       boolean isPostOwner = commentReply.getComment().getPost().getAppUser().getId().equals(appUser.getId());
+      log.info("Is post owner: {}", isPostOwner);
 
       if (!isReplyOwner && !isCommentOwner && !isPostOwner) {
          throw new AccessDeniedException("You cannot delete this reply");
       }
 
+      log.info("Deleting notifications");
       // Delete the notification that was created when the reply was made
       notificationService.deleteEntityNotification(
                commentReply.getComment().getAppUser().getId(),    // recipient — comment owner

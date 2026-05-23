@@ -1,19 +1,44 @@
+import { useDeleteReplyMutation } from "@/api/comments/commentRepliesApi";
 import {
   useGetReplyLikeCountQuery,
   useIsReplyLikedQuery,
   useToggleReplyLikeMutation,
 } from "@/api/comments/commentReplyLikesApi";
-import type { GetReplyResponseDto } from "@/types/responseTypes";
-import { Heart } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type {
+  GetCommentResponseDto,
+  GetReplyResponseDto,
+  GetUserResponseDto,
+} from "@/types/responseTypes";
+import { Edit, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { memo, useCallback } from "react";
 
 interface ReplyCardProps {
   reply: GetReplyResponseDto;
   navigateToSelectedUserProfile: (username: string) => void;
+  comment: GetCommentResponseDto;
+  postUsername: string;
+  loggedInUser: GetUserResponseDto | undefined;
+  onEditReply: (replyId: number) => void;
 }
 
 const ReplyCard = memo(
-  ({ reply, navigateToSelectedUserProfile }: ReplyCardProps) => {
+  ({
+    reply,
+    navigateToSelectedUserProfile,
+    comment,
+    postUsername,
+    loggedInUser,
+    onEditReply,
+    //
+  }: ReplyCardProps) => {
     const [toggleReplyLike, { isLoading: isLikeToggling }] =
       useToggleReplyLikeMutation();
 
@@ -28,6 +53,22 @@ const ReplyCard = memo(
     const handleToggleLike = useCallback(() => {
       toggleReplyLike(reply.id);
     }, [toggleReplyLike, reply.id]);
+
+    const [deleteReply] = useDeleteReplyMutation();
+
+    const handleDeleteReply = useCallback(async () => {
+      try {
+        await deleteReply(reply.id).unwrap();
+      } catch (error) {
+        console.error("Failed to delete reply", error);
+      }
+    }, [deleteReply, reply.id]);
+
+    // Post/Comment/Reply owners have the authority to delete the reply
+    const isAuthenticated =
+      comment.appUser.username === loggedInUser?.username ||
+      postUsername === loggedInUser?.username ||
+      reply.appUser.username === loggedInUser?.username;
 
     return (
       <div className="pt-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
@@ -46,7 +87,7 @@ const ReplyCard = memo(
 
           {/* Reply Content */}
           <div className="flex-1 min-w-0 pr-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
               <span
                 className="font-bold text-[11px] dark:text-white font-sans"
                 onClick={() => {
@@ -55,9 +96,45 @@ const ReplyCard = memo(
               >
                 {reply.appUser.username}
               </span>
+              <div>
+                {isAuthenticated && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <MoreHorizontal className="h-4 w-4 cursor-pointer" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="min-w-fit dark:bg-gray-900"
+                      align="center"
+                    >
+                      {/* Dropdown Content - Edit and Delete */}
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuGroup>
+                        <div className="flex items-center justify-start gap-7 cursor-pointer">
+                          <DropdownMenuItem
+                            className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                            onClick={() => onEditReply(reply.id)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <Edit className="size-4 text-blue-200" />
+                        </div>
+                        <div
+                          className="flex items-center justify-start cursor-pointer"
+                          onClick={() => handleDeleteReply()}
+                        >
+                          <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+                            Delete
+                          </DropdownMenuItem>
+                          <Trash2 className="size-4 text-red-200" />
+                        </div>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
 
-            <div className="">
+            <div className="pb-1">
               <span className="text-sm dark:text-white break-words font-normal">
                 {reply.content}
               </span>

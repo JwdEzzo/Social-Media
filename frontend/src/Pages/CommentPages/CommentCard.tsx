@@ -38,7 +38,8 @@ interface CommentCardProps {
   loggedInUser: GetUserResponseDto | undefined;
   postUsername: string;
   focusRef: React.RefObject<HTMLInputElement | null>;
-  onEdit: (commentId: number) => void;
+  onEditComment: (commentId: number) => void;
+  onEditReply: (replyId: number) => void;
 }
 
 const CommentCard = memo(
@@ -50,7 +51,8 @@ const CommentCard = memo(
     navigateToSelectedUserProfile,
     loggedInUser,
     postUsername,
-    onEdit,
+    onEditComment,
+    onEditReply,
     focusRef,
   }: CommentCardProps) => {
     // Each comment now has its own showReplies state
@@ -146,7 +148,7 @@ const CommentCard = memo(
                       <div className="flex items-center justify-start gap-7 cursor-pointer">
                         <DropdownMenuItem
                           className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                          onClick={() => onEdit(comment.id)}
+                          onClick={() => onEditComment(comment.id)}
                         >
                           Edit
                         </DropdownMenuItem>
@@ -234,6 +236,10 @@ const CommentCard = memo(
                       navigateToSelectedUserProfile={
                         navigateToSelectedUserProfile
                       }
+                      postUsername={postUsername}
+                      comment={comment}
+                      loggedInUser={loggedInUser}
+                      onEditReply={onEditReply}
                       //
                     />
                   ))

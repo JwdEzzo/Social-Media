@@ -21,7 +21,6 @@ import com.instragram.project.dto.request.WriteCommentRequestDto;
 import com.instragram.project.dto.response.GetCommentResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.Comment;
-import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
 import com.instragram.project.service.CommentService;
 
@@ -42,8 +41,6 @@ public class CommentController {
    @Autowired
    private MappingMethods mappingMethods;
 
-   @Autowired
-   private CommentRepository commentRepository;
 
    // Create Comment
    @PostMapping("/create-comment")

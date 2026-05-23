@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.instragram.project.dto.request.WriteReplyRequestDto;
 import com.instragram.project.dto.response.GetReplyResponseDto;
-import com.instragram.project.repository.CommentReplyRepository;
 import com.instragram.project.service.CommentReplyService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +31,6 @@ public class CommentReplyController {
 
    @Autowired
    private CommentReplyService commentReplyService;
-
-   @Autowired
-   private CommentReplyRepository commentReplyRepository;
 
    // Create Comment Reply
    @PostMapping("/create-reply")
@@ -78,12 +74,12 @@ public class CommentReplyController {
       return ResponseEntity.status(HttpStatus.OK).build();
    }
 
-   @DeleteMapping("/{commentReplyId}")
+   @DeleteMapping("/delete-reply/{commentReplyId:\\d+}")
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> deleteCommentReply(
          @PathVariable Long commentReplyId,
          Authentication authentication) {
-
+      log.info("Started deleting process for comment reply ID: {}", commentReplyId);
       commentReplyService.deleteCommentReplyByPostOrCommentOrReplyOwner(commentReplyId, authentication.getName());
       return ResponseEntity.noContent().build();
    }
