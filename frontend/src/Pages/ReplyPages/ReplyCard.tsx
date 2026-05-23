@@ -4,20 +4,13 @@ import {
   useIsReplyLikedQuery,
   useToggleReplyLikeMutation,
 } from "@/api/comments/commentReplyLikesApi";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
 import type {
   GetCommentResponseDto,
   GetReplyResponseDto,
   GetUserResponseDto,
 } from "@/types/responseTypes";
-import { Edit, Heart, MoreHorizontal, Trash2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
 
 interface ReplyCardProps {
@@ -98,38 +91,12 @@ const ReplyCard = memo(
               </span>
               <div>
                 {isAuthenticated && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <MoreHorizontal className="h-4 w-4 cursor-pointer" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="min-w-fit dark:bg-gray-900"
-                      align="center"
-                    >
-                      {/* Dropdown Content - Edit and Delete */}
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuGroup>
-                        <div className="flex items-center justify-start gap-7 cursor-pointer">
-                          <DropdownMenuItem
-                            className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                            onClick={() => onEditReply(reply.id)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <Edit className="size-4 text-blue-200" />
-                        </div>
-                        <div
-                          className="flex items-center justify-start cursor-pointer"
-                          onClick={() => handleDeleteReply()}
-                        >
-                          <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
-                            Delete
-                          </DropdownMenuItem>
-                          <Trash2 className="size-4 text-red-200" />
-                        </div>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <EditDeleteDropdown
+                    isAuthenticated={isAuthenticated}
+                    entityId={reply.id}
+                    handleEntityDelete={handleDeleteReply}
+                    handleEntityEdit={onEditReply}
+                  />
                 )}
               </div>
             </div>

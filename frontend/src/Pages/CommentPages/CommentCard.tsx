@@ -10,24 +10,12 @@ import type {
   GetCommentResponseDto,
   GetUserResponseDto,
 } from "@/types/responseTypes";
-import {
-  Edit,
-  Heart,
-  MessageCircle,
-  MoreHorizontal,
-  Trash2,
-} from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { useDeleteCommentMutation } from "@/api/comments/commentApi";
+import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
 
 interface CommentCardProps {
   comment: GetCommentResponseDto;
@@ -133,40 +121,12 @@ const CommentCard = memo(
                   {comment.createdAt.substring(0, 10)}
                 </span>
               </div>
-              {isAuthenticated && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <MoreHorizontal className="h-6 w-6 cursor-pointer" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="min-w-fit dark:bg-gray-900"
-                    align="center"
-                  >
-                    {/* Dropdown Content - Edit and Delete */}
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuGroup>
-                      <div className="flex items-center justify-start gap-7 cursor-pointer">
-                        <DropdownMenuItem
-                          className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                          onClick={() => onEditComment(comment.id)}
-                        >
-                          Edit
-                        </DropdownMenuItem>
-                        <Edit className="size-4 text-blue-200" />
-                      </div>
-                      <div
-                        className="flex items-center justify-start cursor-pointer"
-                        onClick={handleDeleteComment}
-                      >
-                        <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
-                          Delete
-                        </DropdownMenuItem>
-                        <Trash2 className="size-4 text-red-200" />
-                      </div>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              <EditDeleteDropdown
+                isAuthenticated={isAuthenticated}
+                entityId={comment.id}
+                handleEntityDelete={handleDeleteComment}
+                handleEntityEdit={onEditComment}
+              />
             </div>
 
             <div className="mb-1">

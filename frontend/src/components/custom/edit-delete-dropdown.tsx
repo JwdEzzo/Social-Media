@@ -9,27 +9,25 @@ import {
 } from "../ui/dropdown-menu";
 
 interface EditDeleteDropdownProps {
-  entityType: "comment" | "reply";
+  isAuthenticated: boolean;
   entityId: number;
-  canEdit: boolean;
-  canDelete: boolean;
-  handleEntityEdit: (entityType: "comment" | "reply", entityId: number) => void;
-  handleEntityDelete: (
-    entityType: "comment" | "reply",
-    entityId: number,
-  ) => void;
+  handleEntityEdit: (entityId: number) => void;
+  handleEntityDelete: () => void;
 }
+// Is Authenticated
+// onEditComment
+// handleDeleteComment
+// onEditReply
+// handleDeleteReply
 
 function EditDeleteDropdown({
-  entityType,
   entityId,
-  canEdit,
-  canDelete,
+  isAuthenticated,
   handleEntityDelete,
   handleEntityEdit,
 }: EditDeleteDropdownProps) {
   // Don't render at all if the user can't do either action
-  if (!canEdit && !canDelete) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <DropdownMenu>
@@ -42,27 +40,21 @@ function EditDeleteDropdown({
       >
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuGroup>
-          {canEdit && (
+          {isAuthenticated && (
             <div className="flex items-center justify-start gap-7 cursor-pointer">
               <DropdownMenuItem
                 className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEntityEdit(entityType, entityId);
-                }}
+                onClick={() => handleEntityEdit(entityId)}
               >
                 Edit
               </DropdownMenuItem>
               <Edit className="size-4 text-blue-200" />
             </div>
           )}
-          {canDelete && (
+          {isAuthenticated && (
             <div
               className="flex items-center justify-start cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEntityDelete(entityType, entityId);
-              }}
+              onClick={handleEntityDelete}
             >
               <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
                 Delete
