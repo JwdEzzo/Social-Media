@@ -58,6 +58,12 @@ public class NotificationService {
         return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
     }
 
+    public List<NotificationResponseDto> getLatest3Notifications(Long recipientId, Long requestingUserId) {
+        verifyOwnership(recipientId, requestingUserId);
+        List<Notification> notifications = notificationRepository.findFirst3ByRecipientIdOrderByCreatedAtDesc(recipientId);
+        return mappingMethods.convertListNotificationToListNotificationResponseDto(notifications);
+    }
+
     // Mark as read operations
     public void markAsRead(Long notificationId, Long requestingUserId) {
         // Single query — checks existence and ownership together

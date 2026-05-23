@@ -20,4 +20,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     // For follow/follow request — no entityId involved
     void deleteByRecipientIdAndSenderIdAndNotificationType(Long recipientId, Long senderId, NotificationType type);
+
+    // Get the first 3 notifications
+    List<Notification> findFirst3ByRecipientIdOrderByCreatedAtDesc(Long recipientId);
 }

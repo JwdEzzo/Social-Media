@@ -42,6 +42,15 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
+    // GET: 3 latest notifications for the logged in user
+    @GetMapping("/latest-3")
+    public ResponseEntity<List<NotificationResponseDto>> getLatest3Notifications(Authentication authentication) {
+        Long userId = getAuthenticatedUserId(authentication);
+        List<NotificationResponseDto> notifications =
+                notificationService.getLatest3Notifications(userId, userId);
+        return ResponseEntity.ok(notifications);
+    }
+
     // GET: Unread notification count (for bell icon badge)
     @GetMapping("/unread-count")
     public ResponseEntity<Long> getUnreadCount(Authentication authentication) {

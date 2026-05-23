@@ -1,4 +1,4 @@
-import type { AccountStatus } from './enums';
+import type { AccountStatus, NotificationType } from "./enums";
 
 export interface LoginResponse {
   token: string;
@@ -56,6 +56,15 @@ export interface FollowRequestResponseDto {
   requesterProfilePictureUrl: string | null;
   targetUsername: string;
   targetProfilePictureUrl: string | null;
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  status: "PENDING" | "ACCEPTED" | "DECLINED";
+  createdAt: string;
+}
+
+export interface NotificationResponseDto {
+  id: number;
+  sender: GetUserResponseDto;
+  notificationType: NotificationType;
+  entityId: number;
+  isRead: boolean;
   createdAt: string;
 }

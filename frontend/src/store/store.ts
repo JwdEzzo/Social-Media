@@ -1,19 +1,21 @@
-import { authApi } from '@/auth/authApi';
-import { postApi } from '@/api/posts/postApi';
-import { userApi } from '@/api/users/userApi';
-import authSlice, { logout } from '@/auth/authSlice';
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
-import { commentApi } from '@/api/comments/commentApi';
-import viewPostModalReducer from '@/slices/viewPostSlice';
-import { postLikesApi } from '@/api/posts/postLikesApi';
-import { commentLikesApi } from '@/api/comments/commentLikesApi';
-import { followApi } from '@/api/followers/followApi';
-import { commentRepliesApi } from '@/api/comments/commentRepliesApi';
-import { commentReplyLikesApi } from '@/api/comments/commentReplyLikesApi';
-import { postSavesApi } from '@/api/posts/postSavesApi';
-import { replyModeSlice } from '@/slices/replyModeSlice';
-import { editModeSlice } from '@/slices/editModeSlice';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { authApi } from "@/auth/authApi";
+import { postApi } from "@/api/posts/postApi";
+import { userApi } from "@/api/users/userApi";
+import authSlice, { logout } from "@/auth/authSlice";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { commentApi } from "@/api/comments/commentApi";
+import viewPostModalReducer from "@/slices/viewPostSlice";
+import { postLikesApi } from "@/api/posts/postLikesApi";
+import { commentLikesApi } from "@/api/comments/commentLikesApi";
+import { followApi } from "@/api/followers/followApi";
+import { commentRepliesApi } from "@/api/comments/commentRepliesApi";
+import { commentReplyLikesApi } from "@/api/comments/commentReplyLikesApi";
+import { postSavesApi } from "@/api/posts/postSavesApi";
+import { replyModeSlice } from "@/slices/replyModeSlice";
+import { editModeSlice } from "@/slices/editModeSlice";
+import { notificationApi } from "@/api/notifications/notificationApi";
 
 // Combine all reducers
 const appReducer = combineReducers({
@@ -31,6 +33,7 @@ const appReducer = combineReducers({
   [commentRepliesApi.reducerPath]: commentRepliesApi.reducer,
   [commentReplyLikesApi.reducerPath]: commentReplyLikesApi.reducer,
   [postSavesApi.reducerPath]: postSavesApi.reducer,
+  [notificationApi.reducerPath]: notificationApi.reducer,
 });
 
 // Root reducer that resets state on logout
@@ -56,6 +59,7 @@ export const store = configureStore({
       followApi.middleware,
       commentReplyLikesApi.middleware,
       postSavesApi.middleware,
+      notificationApi.middleware,
     ]),
 });
 
