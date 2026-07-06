@@ -2,7 +2,6 @@ package com.instragram.project.configuration;
 
 import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,11 +28,14 @@ import com.instragram.project.security.users.AppUserDetailsService;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-   @Autowired
-   private AppUserDetailsService appUserDetailsService;
+   private final AppUserDetailsService appUserDetailsService;
 
-   @Autowired
-   private JwtFilter jwtFilter;
+   private final JwtFilter jwtFilter;
+
+   public SecurityConfig(AppUserDetailsService appUserDetailsService, JwtFilter jwtFilter) {
+      this.appUserDetailsService = appUserDetailsService;
+      this.jwtFilter = jwtFilter;
+   }
 
    @Bean
    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

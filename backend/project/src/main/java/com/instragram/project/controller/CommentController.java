@@ -2,7 +2,6 @@ package com.instragram.project.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,14 +31,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CommentController {
 
-   @Autowired
-   private CommentService commentService;
+   private final CommentService commentService;
 
-   @Autowired
-   private PostRepository postRepository;
+   private final PostRepository postRepository;
 
-   @Autowired
-   private MappingMethods mappingMethods;
+   private final MappingMethods mappingMethods;
+
+   public CommentController(CommentService commentService, PostRepository postRepository,
+         MappingMethods mappingMethods) {
+      this.commentService = commentService;
+      this.postRepository = postRepository;
+      this.mappingMethods = mappingMethods;
+   }
 
 
    // Create Comment

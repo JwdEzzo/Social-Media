@@ -2,7 +2,6 @@ package com.instragram.project.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -23,8 +22,11 @@ import com.instragram.project.service.FollowService;
 @PreAuthorize("isAuthenticated()") // all endpoints here require auth
 public class FollowRequestController {
 
-    @Autowired
-    private FollowService followService;
+    private final FollowService followService;
+
+    public FollowRequestController(FollowService followService) {
+        this.followService = followService;
+    }
 
     // GET: Get all outgoing follow requests (the notification list)
     @GetMapping("/outgoing")

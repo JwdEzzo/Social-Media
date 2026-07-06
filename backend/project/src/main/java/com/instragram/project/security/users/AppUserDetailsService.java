@@ -1,6 +1,5 @@
 package com.instragram.project.security.users;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,8 +11,11 @@ import com.instragram.project.repository.AppUserRepository;
 @Service
 public class AppUserDetailsService implements UserDetailsService {
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
+
+   public AppUserDetailsService(AppUserRepository appUserRepository) {
+      this.appUserRepository = appUserRepository;
+   }
 
    @Override
    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

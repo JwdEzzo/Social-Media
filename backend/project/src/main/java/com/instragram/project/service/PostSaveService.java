@@ -2,7 +2,6 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.model.AppUser;
@@ -20,14 +19,18 @@ import lombok.extern.slf4j.Slf4j;
 public class PostSaveService {
 
    // Same as postlike
-   @Autowired
-   private PostSaveRepository postSaveRepository;
+   private final PostSaveRepository postSaveRepository;
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   @Autowired
-   private PostRepository postRepository;
+   private final PostRepository postRepository;
+
+   public PostSaveService(PostSaveRepository postSaveRepository, AppUserRepository appUserRepository,
+         PostRepository postRepository) {
+      this.postSaveRepository = postSaveRepository;
+      this.appUserRepository = appUserRepository;
+      this.postRepository = postRepository;
+   }
 
    // Toggle PostSave
    @Transactional

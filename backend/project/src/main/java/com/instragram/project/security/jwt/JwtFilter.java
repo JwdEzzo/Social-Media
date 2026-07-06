@@ -2,7 +2,6 @@ package com.instragram.project.security.jwt;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,11 +18,14 @@ import jakarta.servlet.http.HttpServletResponse;
 @Service
 public class JwtFilter extends OncePerRequestFilter {
 
-   @Autowired
-   private JwtService jwtService;
+   private final JwtService jwtService;
 
-   @Autowired
-   private UserDetailsService userDetailsService;
+   private final UserDetailsService userDetailsService;
+
+   public JwtFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+      this.jwtService = jwtService;
+      this.userDetailsService = userDetailsService;
+   }
 
    @Override
    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

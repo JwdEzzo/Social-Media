@@ -4,12 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.instragram.project.enums.FollowRequestStatus;
 import com.instragram.project.model.FollowRequest;
 
-@Repository
 public interface FollowRequestRepository extends JpaRepository<FollowRequest, Long> {
 
     // Check if a pending request already exists between two users

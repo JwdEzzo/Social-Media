@@ -79,14 +79,14 @@ const HomePagePostCard = memo(
               </div>
             </CardTitle>
             <CardDescription>
-              <div className="h-fit">
+              <div className="h-96">
                 {/* Post image with lazy loading and async decoding */}
                 <img
                   src={post.imageUrl}
                   alt={post.description}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full aspect-auto object-fit"
+                  className="w-full object-cover h-full aspect-square"
                   onDoubleClick={() => handleTogglePostLike(post.id)}
                 />
               </div>

@@ -4,13 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
 import com.instragram.project.model.PostSave;
 
-@Repository
 public interface PostSaveRepository extends JpaRepository<PostSave, Long> {
 
    // Check if a user has liked a specific post

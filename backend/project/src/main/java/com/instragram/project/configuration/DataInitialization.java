@@ -1,6 +1,5 @@
 package com.instragram.project.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -8,13 +7,18 @@ import org.springframework.stereotype.Component;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
 
+
 @Component
 public class DataInitialization implements CommandLineRunner {
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
-   private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+   private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+   
+   public DataInitialization(AppUserRepository appUserRepository) {
+      this.appUserRepository = appUserRepository;
+   }
+
 
    @Override
    public void run(String... args) throws Exception {

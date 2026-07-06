@@ -1,6 +1,5 @@
 package com.instragram.project.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -18,8 +17,11 @@ import com.instragram.project.service.CommentReplyLikeService;
 @RequestMapping("/api/instagram/comment-reply-likes")
 public class CommentReplyLikeController {
 
-   @Autowired
-   private CommentReplyLikeService commentReplyLikeService;
+   private final CommentReplyLikeService commentReplyLikeService;
+
+   public CommentReplyLikeController(CommentReplyLikeService commentReplyLikeService) {
+      this.commentReplyLikeService = commentReplyLikeService;
+   }
 
    // POST : Toggle Like
    @PostMapping("/comment-reply/{commentReplyId}")

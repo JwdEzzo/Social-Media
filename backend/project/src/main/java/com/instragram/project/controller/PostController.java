@@ -3,7 +3,6 @@ package com.instragram.project.controller;
 import java.io.IOException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -40,11 +39,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PostController {
 
-   @Autowired
-   private PostService postService;
+   private final PostService postService;
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
+
+   public PostController(PostService postService, AppUserRepository appUserRepository) {
+      this.postService = postService;
+      this.appUserRepository = appUserRepository;
+   }
 
    // POST: create post
    @PostMapping("/create-post")

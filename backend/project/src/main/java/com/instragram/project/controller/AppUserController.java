@@ -2,7 +2,6 @@ package com.instragram.project.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -41,8 +40,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppUserController {
 
-   @Autowired
-   private AppUserService appUserService;
+   private final AppUserService appUserService;
+
+    public AppUserController(AppUserService appUserService) {
+        this.appUserService = appUserService;
+    }
 
     // POST: Login
     @PostMapping("/login")

@@ -30,7 +30,6 @@ import com.instragram.project.repository.PostRepository;
 @Component
 public class MappingMethods {
 
-   @SuppressWarnings("unused")
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
    private final AppUserRepository appUserRepository;

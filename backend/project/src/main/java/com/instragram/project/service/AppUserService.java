@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,24 +35,29 @@ import jakarta.transaction.Transactional;
 @Service
 public class AppUserService {
 
-   @Autowired
-   private AppUserRepository appUserRepository;
+   private final AppUserRepository appUserRepository;
 
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-   @Autowired
-   private JwtService jwtService;
+   private final JwtService jwtService;
 
-   @Autowired
-   private AuthenticationManager authenticationManager;
+   private final AuthenticationManager authenticationManager;
 
    private final Logger log = LoggerFactory.getLogger(AppUserService.class);
 
-   @Autowired
-   private FollowRepository followRepository;
+   private final FollowRepository followRepository;
 
-   @Autowired
-   private MappingMethods mappingMethods;
+   private final MappingMethods mappingMethods;
+
+   public AppUserService(AppUserRepository appUserRepository, JwtService jwtService,
+         AuthenticationManager authenticationManager, FollowRepository followRepository,
+         MappingMethods mappingMethods) {
+      this.appUserRepository = appUserRepository;
+      this.jwtService = jwtService;
+      this.authenticationManager = authenticationManager;
+      this.followRepository = followRepository;
+      this.mappingMethods = mappingMethods;
+   }
 
    // Sign Up User
    public void signUp(SignUpRequestDto requestDto) {

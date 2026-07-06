@@ -1,6 +1,5 @@
 package com.instragram.project.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -21,8 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PostSaveController {
 
-   @Autowired
-   private PostSaveService postSaveService;
+   private final PostSaveService postSaveService;
+
+   public PostSaveController(PostSaveService postSaveService) {
+      this.postSaveService = postSaveService;
+   }
 
    // POST : Toggle Save
    @PostMapping("/post/{postId}")

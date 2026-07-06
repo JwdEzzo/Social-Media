@@ -1,6 +1,5 @@
 package com.instragram.project.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -18,8 +17,11 @@ import com.instragram.project.service.FollowService;
 @RequestMapping("/api/instagram/follows")
 public class FollowController {
 
-   @Autowired
-   private FollowService followService;
+   private final FollowService followService;
+
+   public FollowController(FollowService followService) {
+      this.followService = followService;
+   }
 
    // POST : Toggle Follow
    @PostMapping("/following/{followingUsername}")
