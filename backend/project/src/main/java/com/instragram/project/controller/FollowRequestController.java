@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.response.FollowRequestResponseDto;
+import com.instragram.project.dto.follow.response.FollowRequestResponseDto;
 import com.instragram.project.service.FollowService;
 
 @RestController

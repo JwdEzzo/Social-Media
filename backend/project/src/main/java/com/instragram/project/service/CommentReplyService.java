@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.request.WriteReplyRequestDto;
-import com.instragram.project.dto.response.GetReplyResponseDto;
+import com.instragram.project.dto.reply.request.WriteReplyRequestDto;
+import com.instragram.project.dto.reply.response.GetReplyResponseDto;
 import com.instragram.project.enums.NotificationType;
 import com.instragram.project.mapper.MappingMethods; // You might want to create a specific DTO
 import com.instragram.project.model.AppUser;

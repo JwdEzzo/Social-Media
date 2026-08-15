@@ -29,7 +29,6 @@ import com.instragram.project.security.users.AppUserDetailsService;
 public class SecurityConfig {
 
    private final AppUserDetailsService appUserDetailsService;
-
    private final JwtFilter jwtFilter;
 
    public SecurityConfig(AppUserDetailsService appUserDetailsService, JwtFilter jwtFilter) {
@@ -43,6 +42,7 @@ public class SecurityConfig {
             .csrf(customizer -> customizer.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(request -> request
+
                   .requestMatchers("/*")
                   .permitAll()
                   .anyRequest().permitAll())

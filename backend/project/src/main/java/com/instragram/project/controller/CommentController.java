@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.request.WriteCommentRequestDto;
-import com.instragram.project.dto.response.GetCommentResponseDto;
+import com.instragram.project.dto.comment.request.WriteCommentRequestDto;
+import com.instragram.project.dto.comment.response.GetCommentResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.Comment;
 import com.instragram.project.repository.PostRepository;

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.response.NotificationResponseDto;
+import com.instragram.project.dto.notification.NotificationResponseDto;
 import com.instragram.project.service.AppUserService;
 import com.instragram.project.service.NotificationService;
 

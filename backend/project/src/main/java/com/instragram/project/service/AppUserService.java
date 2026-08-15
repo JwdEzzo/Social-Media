@@ -16,18 +16,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.request.LoginRequestDto;
-import com.instragram.project.dto.request.SignUpRequestDto;
-import com.instragram.project.dto.request.UpdateCredentialsRequestDto;
-import com.instragram.project.dto.request.UpdateProfileRequestDto;
-import com.instragram.project.dto.response.GetUserResponseDto;
-import com.instragram.project.dto.response.LoginResponseDto;
-import com.instragram.project.dto.response.SearchUserResponseDto;
+import com.instragram.project.dto.security.request.LoginRequestDto;
+import com.instragram.project.dto.security.request.SignUpRequestDto;
+import com.instragram.project.dto.security.response.LoginResponseDto;
+import com.instragram.project.dto.user.request.SearchUserResponseDto;
+import com.instragram.project.dto.user.request.UpdateCredentialsRequestDto;
+import com.instragram.project.dto.user.request.UpdateProfileRequestDto;
+import com.instragram.project.dto.user.response.GetUserResponseDto;
 import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
+import com.instragram.project.model.ProfilePicture;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
+import com.instragram.project.repository.ProfilePictureRepository;
 import com.instragram.project.security.jwt.JwtService;
 
 import jakarta.transaction.Transactional;
@@ -36,27 +38,23 @@ import jakarta.transaction.Transactional;
 public class AppUserService {
 
    private final AppUserRepository appUserRepository;
-
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-
    private final JwtService jwtService;
-
    private final AuthenticationManager authenticationManager;
-
    private final Logger log = LoggerFactory.getLogger(AppUserService.class);
-
    private final FollowRepository followRepository;
-
    private final MappingMethods mappingMethods;
+   private final ProfilePictureRepository profilePictureRepository;
 
    public AppUserService(AppUserRepository appUserRepository, JwtService jwtService,
          AuthenticationManager authenticationManager, FollowRepository followRepository,
-         MappingMethods mappingMethods) {
+         MappingMethods mappingMethods, ProfilePictureRepository profilePictureRepository) {
       this.appUserRepository = appUserRepository;
       this.jwtService = jwtService;
       this.authenticationManager = authenticationManager;
       this.followRepository = followRepository;
       this.mappingMethods = mappingMethods;
+      this.profilePictureRepository = profilePictureRepository;
    }
 
    // Sign Up User
@@ -108,13 +106,13 @@ public class AppUserService {
 
    // Set account to private
    public void toggleAccountStatus(Long requestingUserId, Long targetUserId) {
-   
+
       if (!requestingUserId.equals(targetUserId)) {
          throw new AccessDeniedException("You can't toggle the account status of another user.");
       }
 
       AppUser user = appUserRepository.findById(targetUserId)
-         .orElseThrow(() -> new RuntimeException("User not found with id: " + targetUserId));
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + targetUserId));
 
       if (user.getAccountStatus() == AccountStatus.PUBLIC) {
          user.setAccountStatus(AccountStatus.PRIVATE);
@@ -222,6 +220,7 @@ public class AppUserService {
    }
 
    // Update User Profile With Url
+   @Transactional
    public void updateUserProfileWithUrl(String username, UpdateProfileRequestDto updateDto) {
       AppUser user = appUserRepository.findByUsername(username);
       LocalDateTime updatedNow = LocalDateTime.now();
@@ -238,11 +237,8 @@ public class AppUserService {
       // Update profile picture URL if provided
       if (updateDto.getProfilePictureUrl() != null && !updateDto.getProfilePictureUrl().trim().isEmpty()) {
          user.setProfilePictureUrl(updateDto.getProfilePictureUrl());
-         // Clear image data since we're using URL now
-         user.setImageData(null);
-         user.setImageName(null);
-         user.setImageType(null);
-         user.setImageSize(null);
+         // Switching to an external URL — drop any previously uploaded bytes.
+         profilePictureRepository.deleteByAppUserUsername(username);
       }
 
       user.setUpdatedAt(updatedNow);
@@ -250,6 +246,7 @@ public class AppUserService {
    }
 
    // Update User Profile With Upload
+   @Transactional
    public void updateUserProfileWithUpload(String username, UpdateProfileRequestDto updateDto, MultipartFile image) {
       AppUser user = appUserRepository.findByUsername(username);
       LocalDateTime updatedNow = LocalDateTime.now();
@@ -275,13 +272,17 @@ public class AppUserService {
          }
 
          user.setUpdatedAt(updatedNow);
-         user.setImageData(image.getBytes());
-         user.setImageName(image.getOriginalFilename());
-         user.setImageType(image.getContentType());
-         user.setImageSize(image.getSize());
          user.setProfilePictureUrl("http://localhost:8080/api/instagram/users/" + username + "/profile-image/preview");
-
          appUserRepository.save(user);
+
+         ProfilePicture picture = profilePictureRepository.findByAppUserUsername(username)
+               .orElseGet(ProfilePicture::new);
+         picture.setAppUser(user);
+         picture.setImageData(image.getBytes());
+         picture.setImageName(image.getOriginalFilename());
+         picture.setImageType(image.getContentType());
+         picture.setImageSize(image.getSize());
+         profilePictureRepository.save(picture);
       } catch (IOException e) {
          throw new RuntimeException("Failed to save uploaded image", e);
       }
@@ -321,16 +322,16 @@ public class AppUserService {
 
    @Transactional
    public byte[] getProfileImageBytes(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user.getImageData() == null) {
-         throw new RuntimeException("No image data stored for User Profile Picture: " + username);
-      }
-      return user.getImageData();
+      return profilePictureRepository.findByAppUserUsername(username)
+            .map(ProfilePicture::getImageData)
+            .orElseThrow(() -> new RuntimeException(
+                  "No image data stored for User Profile Picture: " + username));
    }
 
    @Transactional
    public String getProfileImageContentType(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      return user.getImageType() != null ? user.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+      return profilePictureRepository.findByAppUserUsername(username)
+            .map(ProfilePicture::getImageType)
+            .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
    }
 }

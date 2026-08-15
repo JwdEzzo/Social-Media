@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.request.CreatePostRequestDto;
-import com.instragram.project.dto.request.EditPostWithUploadRequestDto;
-import com.instragram.project.dto.request.EditPostWithUrlRequestDto;
-import com.instragram.project.dto.response.GetPostResponseDto;
+import com.instragram.project.dto.post.request.CreatePostRequestDto;
+import com.instragram.project.dto.post.request.EditPostWithUploadRequestDto;
+import com.instragram.project.dto.post.request.EditPostWithUrlRequestDto;
+import com.instragram.project.dto.post.response.GetPostResponseDto;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;

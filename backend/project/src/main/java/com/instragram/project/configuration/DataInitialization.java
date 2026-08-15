@@ -7,18 +7,15 @@ import org.springframework.stereotype.Component;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
 
-
 @Component
 public class DataInitialization implements CommandLineRunner {
 
    private final AppUserRepository appUserRepository;
-
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-   
+
    public DataInitialization(AppUserRepository appUserRepository) {
       this.appUserRepository = appUserRepository;
    }
-
 
    @Override
    public void run(String... args) throws Exception {
@@ -53,26 +50,4 @@ public class DataInitialization implements CommandLineRunner {
          System.out.println("=== USERS ALREADY EXISTS ===");
       }
    }
-   //    if (appUserRepository.findByUsername("admin123") == null) {
-   //       AppUser user = new AppUser();
-   //       user.setUsername("admin123");
-   //       user.setPassword(encoder.encode("admin123"));
-   //       user.setEmail("admin@hotmail.com");
-   //       appUserRepository.save(user);
-
-   //       AppUser user2 = new AppUser();
-   //       user2.setUsername("admin456");
-   //       user2.setPassword(encoder.encode("admin456"));
-   //       user2.setEmail("admin2@hotmail.com");
-   //       appUserRepository.save(user2);
-
-   //       System.out.println("=== DEFAULT ADMIN USER CREATED ===");
-   //       System.out.println("Username: admin123 , admin456");
-   //       System.out.println("Password: admin123 , admin456");
-   //       System.out.println("Please change this password after first login!");
-   //       System.out.println("==================================");
-   //    } else {
-   //       System.out.println("=== USERS ALREADY EXISTS ===");
-   //    }
-   // }
 }

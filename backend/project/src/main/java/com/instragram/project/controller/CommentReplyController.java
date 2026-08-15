@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.request.WriteReplyRequestDto;
-import com.instragram.project.dto.response.GetReplyResponseDto;
+import com.instragram.project.dto.reply.request.WriteReplyRequestDto;
+import com.instragram.project.dto.reply.response.GetReplyResponseDto;
 import com.instragram.project.service.CommentReplyService;
 
 import lombok.extern.slf4j.Slf4j;

@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.response.NotificationResponseDto;
+import com.instragram.project.dto.notification.NotificationResponseDto;
 import com.instragram.project.enums.NotificationType;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;

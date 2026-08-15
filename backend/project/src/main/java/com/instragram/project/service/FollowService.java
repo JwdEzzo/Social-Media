@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.response.FollowRequestResponseDto;
+import com.instragram.project.dto.follow.response.FollowRequestResponseDto;
 import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.enums.FollowRequestStatus;
 import com.instragram.project.enums.NotificationType;

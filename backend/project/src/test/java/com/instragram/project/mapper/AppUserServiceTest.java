@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.instragram.project.dto.request.SignUpRequestDto;
+import com.instragram.project.dto.security.request.SignUpRequestDto;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;

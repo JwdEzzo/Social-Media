@@ -22,13 +22,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.request.LoginRequestDto;
-import com.instragram.project.dto.request.SignUpRequestDto;
-import com.instragram.project.dto.request.UpdateCredentialsRequestDto;
-import com.instragram.project.dto.request.UpdateProfileRequestDto;
-import com.instragram.project.dto.response.GetUserResponseDto;
-import com.instragram.project.dto.response.LoginResponseDto;
-import com.instragram.project.dto.response.SearchUserResponseDto;
+import com.instragram.project.dto.security.request.LoginRequestDto;
+import com.instragram.project.dto.security.request.SignUpRequestDto;
+import com.instragram.project.dto.security.response.LoginResponseDto;
+import com.instragram.project.dto.user.request.SearchUserResponseDto;
+import com.instragram.project.dto.user.request.UpdateCredentialsRequestDto;
+import com.instragram.project.dto.user.request.UpdateProfileRequestDto;
+import com.instragram.project.dto.user.response.GetUserResponseDto;
 import com.instragram.project.service.AppUserService;
 
 import jakarta.validation.Valid;
