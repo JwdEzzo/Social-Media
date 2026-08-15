@@ -1,23 +1,7 @@
-import { useGetFollowerCountQuery, useGetFollowingCountQuery, useIsFollowedQuery } from '@/api/followers/followApi';
-import {
-  postApi,
-  useGetPostsByUsernameQuery,
-  useGetPrivateAccountPostsUserFollowsQuery,
-  useGetPostsCountQuery,
-  useGetPostsLikedByCurrentUserQuery,
-  useGetPostsSavedByCurrentUserQuery,
-} from '@/api/posts/postApi';
-import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
-import { useAuth } from '@/auth/useAuth';
+import { postApi } from '@/api/posts/postApi';
 import { Button } from '@/components/ui/button';
 import { Camera, Grid3X3, Heart, MoveLeft, Bookmark, Lock, Edit3, LogOut, Unlock } from 'lucide-react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { ModeToggle } from '@/components/ModeToggle';
-import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
-import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
-import { useDispatch } from 'react-redux';
-import { logout } from '@/auth/authSlice';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,167 +13,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import CreatePostModal from '@/Pages/PostPages/CreatePostModal';
 import ViewPost from '@/Pages/PostPages/ViewPost';
-import type { RootState } from '@/store/store';
-import { closePostModal, openPostModal } from '@/slices/viewPostSlice';
-import { useSelector } from 'react-redux';
 import ProfilePagePostCard from '@/Pages/PostPages/ProfilePagePostCard';
 import FollowButton from '@/components/custom/follow-button';
+import { useProfileLogic } from '@/hooks/useProfilePageHook';
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
 }
 
 function ProfilePage({ isOwnProfile }: ProfilePageProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
-  const { username: loggedInUsername } = useAuth();
-  const { searchedUsername } = useParams<{ searchedUsername: string }>();
-  const [viewMode, setViewMode] = useState<'posts' | 'liked' | 'saved'>('posts');
-  const [showCreatePostModal, setShowCreatePostModal] = useState<boolean>(false);
-
-  // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
-  // We call the state from Redux store in both components
-  // We then pass them as props to the ViewPost component
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector((state: RootState) => state.viewPostModal);
-
-  // Determine which username to use
-  const profileUsername = isOwnProfile ? loggedInUsername : searchedUsername;
-
-  // API Queries
-  const {
-    data: profileUser,
-    isLoading: isUserLoading,
-    isError: isUserError,
-  } = useGetUserByUsernameQuery(profileUsername!, {
-    skip: !profileUsername,
-  });
-
-  const { data: loggedInUserData } = useGetUserByUsernameQuery(loggedInUsername!, {
-    skip: !loggedInUsername,
-  });
-
-  const isPrivateAccount = profileUser?.accountStatus === 'PRIVATE';
-  const isOtherPrivateProfile = !isOwnProfile && isPrivateAccount;
-
-  const { data: isFollowed, isLoading: isFollowStatusLoading } = useIsFollowedQuery(profileUsername!, {
-    skip: !profileUsername || !isOtherPrivateProfile,
-  });
-
-  const useStandardPostsByUsername =
-    !!profileUsername && (isOwnProfile || (!!profileUser && profileUser.accountStatus !== 'PRIVATE'));
-  const usePrivateFollowerPosts = !!profileUsername && isOtherPrivateProfile && isFollowed === true;
-
-  const {
-    data: postsByUsername,
-    isLoading: isPostsByUsernameLoading,
-    isError: isPostsByUsernameError,
-  } = useGetPostsByUsernameQuery(profileUsername!, {
-    skip: !profileUsername || !useStandardPostsByUsername,
-  });
-
-  const {
-    data: postsAsPrivateFollower,
-    isLoading: isPostsPrivateFollowerLoading,
-    isError: isPostsPrivateFollowerError,
-  } = useGetPrivateAccountPostsUserFollowsQuery(
-    { privateAccountUsername: profileUsername! },
-    { skip: !profileUsername || !usePrivateFollowerPosts },
-  );
-
-  const posts = usePrivateFollowerPosts ? postsAsPrivateFollower : postsByUsername;
-  const isPostsLoading =
-    (useStandardPostsByUsername && isPostsByUsernameLoading) ||
-    (usePrivateFollowerPosts && isPostsPrivateFollowerLoading);
-  const isPostsError =
-    (useStandardPostsByUsername && isPostsByUsernameError) || (usePrivateFollowerPosts && isPostsPrivateFollowerError);
-
-  const { data: getFollowerCount } = useGetFollowerCountQuery(profileUsername!, {
-    skip: !profileUsername,
-  });
-
-  const { data: getFollowingCount } = useGetFollowingCountQuery(profileUsername!, {
-    skip: !profileUsername,
-  });
-
-  const { data: postCount } = useGetPostsCountQuery(profileUsername!, {
-    skip: !profileUsername,
-  });
-
-  const { data: likedPosts } = useGetPostsLikedByCurrentUserQuery();
-  const { data: savedPosts } = useGetPostsSavedByCurrentUserQuery();
-  const [togglePostLike, { isLoading: isTogglingPostLike }] = useTogglePostLikeMutation();
-  const [toggleSave, { isLoading: isTogglingSavePost }] = useTogglePostSaveMutation();
-  const [toggleAccountStatus] = useToggleAccountStatusMutation();
-
-  // Sorting logic
-  const sortedPosts = posts
-    ? [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    : [];
-
-  const sortedLikedPosts = likedPosts
-    ? [...likedPosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    : [];
-
-  const sortedSavedPosts = savedPosts
-    ? [...savedPosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    : [];
-
-  // Handlers
-  async function handleTogglePostLike(postId: number) {
-    if (!isOwnProfile) return;
-    try {
-      await togglePostLike(postId)
-        .unwrap()
-        .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
-        });
-    } catch (error) {
-      console.log('Error: ', error);
-    }
-  }
-
-  async function handleToggleSavePost(postId: number) {
-    if (!isOwnProfile) return;
-    try {
-      await toggleSave(postId)
-        .unwrap()
-        .then(() => {
-          dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]));
-        });
-    } catch (error) {
-      console.log('Error: ', error);
-    }
-  }
-
-  function handleLogout() {
-    dispatch(logout());
-    navigate('/');
-  }
-
-  function handleCloseViewModal() {
-    dispatch(closePostModal());
-  }
-
-  useEffect(() => {
-    // Check if we came from the modal
-    if (location.state?.fromModal && location.state?.previousPostId) {
-      // Set up a listener for when user navigates back
-      const handlePopState = () => {
-        // Re-open the modal when user goes back
-        dispatch(openPostModal(location.state.previousPostId));
-      };
-
-      window.addEventListener('popstate', handlePopState);
-
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-      };
-    }
-  }, [location.state, dispatch]);
+  const { state, actions } = useProfileLogic(isOwnProfile);
+  const { profileUser, loggedInUserData, viewMode } = state;
 
   // Loading state
-  if (!profileUsername || isUserLoading) {
+  if (!state.profileUser || state.isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -201,7 +38,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   // Error states
-  if (isUserError || isPostsError) {
+  if (state.isUserError || state.isPostsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center p-6 bg-gray-700 rounded-lg">
@@ -227,36 +64,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     );
   }
 
-  // Navigation handlers
-  function navigateToFollowers() {
-    if (isOwnProfile) {
-      navigate(`/userprofile/${profileUsername}/yourfollowers`);
-    } else {
-      navigate(`/userprofile/${profileUsername}/userfollowers`);
-    }
-  }
-
-  function navigateToFollowing() {
-    if (isOwnProfile) {
-      navigate(`/userprofile/${profileUsername}/yourfollowings`);
-    } else {
-      navigate(`/userprofile/${profileUsername}/userfollowings`);
-    }
-  }
-
-  function navigateToEditProfile() {
-    if (isOwnProfile) {
-      navigate(`/userprofile/${profileUser?.username}/edit-profile`);
-    }
-  }
-
   // Conditional rendering based on profile type
 
   function renderProfilePicture() {
     return (
       <div
         className={`relative ${isOwnProfile ? 'cursor-pointer' : ''}`}
-        onClick={isOwnProfile ? navigateToEditProfile : undefined}
+        onClick={isOwnProfile ? actions.navigateToEditProfile : undefined}
       >
         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
           <img
@@ -279,7 +93,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       <div className="flex gap-2 max-md:justify-center">
         {isOwnProfile ? (
           <div>
-            <Button onClick={() => navigate(`/home/${loggedInUsername}`)} className="cursor-pointer mr-2">
+            <Button onClick={() => actions.navigate(`/home/${state.loggedInUsername}`)} className="cursor-pointer mr-2">
               <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
               Home Page
             </Button>
@@ -301,12 +115,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
-                    onClick={() => navigate(`/userprofile/${profileUser?.username}/edit-profile`)}
+                    onClick={() => actions.navigate(`/userprofile/${profileUser?.username}/edit-profile`)}
                   >
                     Edit Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => navigate(`/userprofile/${profileUser?.username}/edit-credentials`)}
+                    onClick={() => actions.navigate(`/userprofile/${profileUser?.username}/edit-credentials`)}
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
                   >
                     Edit Credentials
@@ -315,7 +129,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                     className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
                     onClick={() => {
                       if (profileUser?.id) {
-                        toggleAccountStatus({ targetUserId: profileUser.id });
+                        actions.toggleAccountStatus({ targetUserId: profileUser.id });
                       }
                     }}
                   >
@@ -329,7 +143,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                 <DropdownMenuItem
-                  onClick={handleLogout}
+                  onClick={actions.handleLogout}
                   className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:bg-red-100 dark:focus:bg-red-900/30 cursor-pointer"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -339,7 +153,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             </DropdownMenu>
           </div>
         ) : (
-          <Button onClick={() => navigate(`/home/${loggedInUsername}`)} className="cursor-pointer">
+          <Button onClick={() => actions.navigate(`/home/${state.loggedInUsername}`)} className="cursor-pointer">
             <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
             Home Page
           </Button>
@@ -363,7 +177,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         <div className="flex items-center justify-start max-md:justify-center">
           <Button
             className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
-            onClick={() => setShowCreatePostModal(true)}
+            onClick={() => actions.setShowCreatePostModal(true)}
           >
             Create Post
           </Button>
@@ -387,7 +201,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   function renderPostsGrid() {
-    if (viewMode === 'posts' && isOtherPrivateProfile && isFollowStatusLoading) {
+    if (viewMode === 'posts' && state.isOtherPrivateProfile && state.isFollowStatusLoading) {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
           {[...Array(9)].map((_, index) => (
@@ -402,11 +216,11 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       );
     }
 
-    if (viewMode === 'posts' && isOtherPrivateProfile && !isFollowed) {
+    if (viewMode === 'posts' && state.isOtherPrivateProfile && !state.isFollowed) {
       return renderPrivateAccountPlaceholder();
     }
 
-    if (isPostsLoading && viewMode === 'posts') {
+    if (state.isPostsLoading && viewMode === 'posts') {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
           {[...Array(9)].map((_, index) => (
@@ -421,10 +235,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       );
     }
 
-    if (viewMode === 'posts' && posts) {
+    if (viewMode === 'posts' && state.sortedPosts) {
       return (
         <div className="grid grid-cols-3 gap-1 mt-6">
-          {sortedPosts.map((post) => (
+          {state.sortedPosts.map((post) => (
             <div key={post.id} className="group relative aspect-square">
               <ProfilePagePostCard post={post} />
             </div>
@@ -434,10 +248,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     }
 
     if (viewMode === 'liked') {
-      if (likedPosts) {
+      if (state.sortedLikedPosts) {
         return (
           <div className="grid grid-cols-3 gap-1 mt-6">
-            {sortedLikedPosts.map((post) => (
+            {state.sortedLikedPosts.map((post) => (
               <div key={post.id} className="group relative aspect-square">
                 <ProfilePagePostCard post={post} />
               </div>
@@ -450,10 +264,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     }
 
     if (viewMode === 'saved') {
-      if (savedPosts) {
+      if (state.sortedSavedPosts) {
         return (
           <div className="grid grid-cols-3 gap-1 mt-6">
-            {sortedSavedPosts.map((post) => (
+            {state.sortedSavedPosts.map((post) => (
               <div key={post.id} className="group relative aspect-square">
                 <ProfilePagePostCard post={post} />
               </div>
@@ -486,7 +300,9 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                     {!isOwnProfile ? (
                       <FollowButton
                         username={profileUser.username}
-                        onFollowToggled={() => dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]))}
+                        onFollowToggled={() =>
+                          actions.dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]))
+                        }
                       />
                     ) : null}
                   </div>
@@ -501,25 +317,25 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
               <div className="flex gap-4 mb-4 items-center justify-center md:justify-start transition-colors">
                 {/* Number of Posts */}
                 <div className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all">
-                  <div className="font-bold text-xl">{postCount || 0}</div>
+                  <div className="font-bold text-xl">{state.stats.postCount || 0}</div>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">Posts</p>
                 </div>
 
                 {/* Number of Followers */}
                 <div
                   className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all"
-                  onClick={navigateToFollowers}
+                  onClick={actions.navigateToFollowers}
                 >
-                  <div className="font-bold text-xl">{getFollowerCount || 0}</div>
+                  <div className="font-bold text-xl">{state.stats.followerCount || 0}</div>
                   <p className="text-gray-500 dark:text-gray-400 text-xs tracking-wide">Followers</p>
                 </div>
 
                 {/* Number of Following */}
                 <div
                   className="text-center hover:bg-gray-800 px-3 py-1 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-all"
-                  onClick={navigateToFollowing}
+                  onClick={actions.navigateToFollowing}
                 >
-                  <div className="font-bold text-xl">{getFollowingCount || 0}</div>
+                  <div className="font-bold text-xl">{state.stats.followingCount || 0}</div>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">Following</p>
                 </div>
               </div>
@@ -535,7 +351,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
           <div
-            onClick={() => setViewMode('posts')}
+            onClick={() => actions.setViewMode('posts')}
             className={`flex items-center gap-2 py-4 px-6 transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
         ${
           viewMode === 'posts'
@@ -554,7 +370,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           {isOwnProfile ? (
             <>
               <div
-                onClick={() => setViewMode('liked')}
+                onClick={() => actions.setViewMode('liked')}
                 className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
               viewMode === 'liked'
@@ -570,7 +386,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                 </button>
               </div>
               <div
-                onClick={() => setViewMode('saved')}
+                onClick={() => actions.setViewMode('saved')}
                 className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
               viewMode === 'saved'
@@ -588,7 +404,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             </>
           ) : (
             <div
-              onClick={() => setViewMode('liked')}
+              onClick={() => actions.setViewMode('liked')}
               className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
             ${
               viewMode === 'liked'
@@ -611,18 +427,20 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       </div>
 
       {/* Create Post Modal */}
-      {isOwnProfile && <CreatePostModal isOpen={showCreatePostModal} onClose={() => setShowCreatePostModal(false)} />}
+      {isOwnProfile && (
+        <CreatePostModal isOpen={state.showCreatePostModal} onClose={() => actions.setShowCreatePostModal(false)} />
+      )}
 
       {/* View Post Modal */}
       <ViewPost
-        isOpen={isViewModalOpen}
-        handleCloseViewModal={handleCloseViewModal}
-        selectedPostId={selectedPostId}
+        isOpen={state.isViewModalOpen}
+        handleCloseViewModal={actions.handleCloseViewModal}
+        selectedPostId={state.selectedPostId}
         loggedInUser={loggedInUserData}
-        handleTogglePostLike={handleTogglePostLike}
-        isTogglingPostLike={isTogglingPostLike}
-        handleToggleSavePost={handleToggleSavePost}
-        isTogglingSavePost={isTogglingSavePost}
+        handleTogglePostLike={actions.handleTogglePostLike}
+        isTogglingPostLike={state.isTogglingPostLike}
+        handleToggleSavePost={actions.handleToggleSavePost}
+        isTogglingSavePost={state.isTogglingSavePost}
       />
     </div>
   );
