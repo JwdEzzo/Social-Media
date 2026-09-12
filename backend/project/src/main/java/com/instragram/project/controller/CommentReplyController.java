@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.reply.request.WriteReplyRequestDto;
-import com.instragram.project.dto.reply.response.GetReplyResponseDto;
+import com.instragram.project.dto.reply.request.WriteReplyRequest;
+import com.instragram.project.dto.reply.response.GetReplyResponse;
 import com.instragram.project.service.CommentReplyService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class CommentReplyController {
    @PostMapping("/create-reply")
    @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> createCommentReply(
-         @RequestBody WriteReplyRequestDto requestDto,
+         @RequestBody WriteReplyRequest requestDto,
          Authentication authentication) {
       String username = authentication.getName();
       commentReplyService.createCommentReply(requestDto, username);
@@ -58,9 +58,9 @@ public class CommentReplyController {
 
    // Get Replies By CommentId
    @GetMapping("/comment/{commentId}")
-   public ResponseEntity<List<GetReplyResponseDto>> getRepliesByCommentId(@PathVariable Long commentId) {
+   public ResponseEntity<List<GetReplyResponse>> getRepliesByCommentId(@PathVariable Long commentId) {
       try {
-         List<GetReplyResponseDto> commentReplies = commentReplyService.findByCommentId(commentId);
+         List<GetReplyResponse> commentReplies = commentReplyService.findByCommentId(commentId);
          return ResponseEntity.status(HttpStatus.OK).body(commentReplies);
       } catch (Exception e) {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

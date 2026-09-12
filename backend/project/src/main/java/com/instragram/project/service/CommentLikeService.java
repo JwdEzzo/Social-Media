@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentLike;
@@ -35,14 +36,10 @@ public class CommentLikeService {
 
    @Transactional
    public void toggleLike(String username, Long commentId) {
-      AppUser user = appUserRepository.findByUsername(username);
+      AppUser user = getUserOrThrow(username);
 
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
 
-      Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
+      Comment comment = getCommentOrThrow(commentId);
 
       // Check if user already liked the post
       if (commentLikeRepository.existsByAppUserAndComment(user, comment)) {
@@ -75,26 +72,33 @@ public class CommentLikeService {
 
    // Get like count for a comment
    public Long getLikeCount(Long commentId) {
-      Comment comment = commentRepository.findById(commentId).get();
+      Comment comment = getCommentOrThrow(commentId);
       return commentLikeRepository.countByComment(comment);
    }
 
    // Get all likes by a user
    public List<CommentLike> getLikesByUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found");
-      }
+      AppUser user = getUserOrThrow(username);
 
       return commentLikeRepository.findByAppUser(user);
    }
 
    // Check if a user liked a post
    public boolean isLikedByUser(String username, Long commentId) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      Comment comment = commentRepository.findById(commentId).get();
+      AppUser appUser = getUserOrThrow(username);
+      Comment comment = getCommentOrThrow(commentId);
 
       return commentLikeRepository.existsByAppUserAndComment(appUser, comment);
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private Comment getCommentOrThrow(Long id) {
+      return commentRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("comment.notfound", id));
    }
 
 }

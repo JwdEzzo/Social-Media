@@ -3,13 +3,16 @@ package com.instragram.project.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.follow.response.FollowRequestResponseDto;
+import com.instragram.project.dto.follow.response.FollowRequestResponse;
 import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.enums.FollowRequestStatus;
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.AlreadyExistsException;
+import com.instragram.project.exception.BadRequestException;
+import com.instragram.project.exception.ForbiddenException;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Follow;
@@ -46,15 +49,11 @@ public class FollowService {
    // Toggle follow
    @Transactional
    public void toggleFollow(String followerUsername, String followingUsername) {
-      AppUser follower = appUserRepository.findByUsername(followerUsername);
-      AppUser following = appUserRepository.findByUsername(followingUsername);
-
-      if (follower == null || following == null) {
-         throw new RuntimeException("User not found with username: " + followingUsername);
-      }
+      AppUser follower = getUserOrThrow(followerUsername);
+      AppUser following = getUserOrThrow(followingUsername);
 
       if (followerUsername.equals(followingUsername)) {
-         throw new RuntimeException("You cannot follow yourself");
+         throw new BadRequestException("follow.self");
       }
 
       if (followRepository.existsByFollowerAndFollowing(follower, following)) {
@@ -92,7 +91,7 @@ public class FollowService {
                            follower.getId(), following.getId(), FollowRequestStatus.PENDING);
 
          if (alreadyRequested) {
-               throw new RuntimeException("You have already sent a follow request to " + followingUsername);
+               throw new AlreadyExistsException("follow.request.exists", followingUsername);
          }
 
          FollowRequest followRequest = new FollowRequest();
@@ -114,11 +113,10 @@ public class FollowService {
    // Accept or deline an incoming follow request
    @Transactional
    public void respondToFollowRequest(Long requestId, String targetUsername, boolean accepted) {
-      FollowRequest followRequest = followRequestRepository.findById(requestId)
-               .orElseThrow(() -> new RuntimeException("Follow request not found with id: " + requestId));
+      FollowRequest followRequest = getFollowRequestOrThrow(requestId);
 
       if (!followRequest.getTarget().getUsername().equals(targetUsername)) {
-         throw new AccessDeniedException("You cannot respond to this request");
+         throw new ForbiddenException("follow.request.forbidden.respond");
       }
 
       if (followRequest.getStatus() != FollowRequestStatus.PENDING) {
@@ -157,11 +155,11 @@ public class FollowService {
    public void cancelFollowRequest(Long requestId, String requesterUsername) {
       
       // Find the followRequest
-      FollowRequest followRequest = followRequestRepository.findById(requestId).orElseThrow(()-> new RuntimeException("Follow request not found with id: " + requestId));
+      FollowRequest followRequest = getFollowRequestOrThrow(requestId);
 
       // Only the requester can cancel the follow request
       if (!followRequest.getRequester().getUsername().equals(requesterUsername)) {
-         throw new AccessDeniedException("You do not have the permission to cancel this request of id: " + requestId);
+         throw new ForbiddenException("follow.request.forbidden.cancel");
       }
       // Delete the follow request notification from the target's inbox
       notificationService.deleteFollowNotification(
@@ -176,18 +174,13 @@ public class FollowService {
    }
 
    // Get all pending incoming requests for a private account
-   public List<FollowRequestResponseDto> getAllPendingIncomingRequests(String targetUsername) {
+   public List<FollowRequestResponse> getAllPendingIncomingRequests(String targetUsername) {
       
       // Find the target User 
-      AppUser targetUser = appUserRepository.findByUsername(targetUsername);
-
-      // Null Check on the User
-      if (targetUser == null) {
-         throw new RuntimeException("User not found of username: " + targetUsername);
-      }
+      AppUser targetUser = getUserOrThrow(targetUsername);
 
       // Get the requests
-      List<FollowRequestResponseDto> responseDtos = followRequestRepository
+      List<FollowRequestResponse> responseDtos = followRequestRepository
                 .findAllByTargetIdAndStatus(targetUser.getId(), FollowRequestStatus.PENDING)
                 .stream()
                 .map(mappingMethods::convertFollowRequestToResponseDto)
@@ -199,10 +192,7 @@ public class FollowService {
 
    // Get count of users that a user is following
    public long getFollowingCount(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found: " + username);
-      }
+      AppUser user = getUserOrThrow(username);
       long count = followRepository.countByFollower(user);
       return count;
    }
@@ -210,10 +200,7 @@ public class FollowService {
    // Auto-accept all pending requests when a user switches PRIVATE -> PUBLIC
     @Transactional
     public void acceptAllPendingRequests(String targetUsername) {
-        AppUser target = appUserRepository.findByUsername(targetUsername);
-        if (target == null) {
-            throw new RuntimeException("User not found: " + targetUsername);
-        }
+        AppUser target = getUserOrThrow(targetUsername);
         followRequestRepository
                 .findAllByTargetIdAndStatus(target.getId(), FollowRequestStatus.PENDING)
                 .forEach(req -> respondToFollowRequest(req.getId(), targetUsername, true));
@@ -221,23 +208,15 @@ public class FollowService {
 
    // Get count of followers for a user
    public long getFollowersCount(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found: " + username);
-      }
+      AppUser user = getUserOrThrow(username);
       long count = followRepository.countByFollowing(user);
       return count;
    }
 
    // Check if a user already follows the other
    public boolean isFollowed(String followerUsername, String followingUsername) {
-      AppUser follower = appUserRepository.findByUsername(followerUsername);
-      AppUser following = appUserRepository.findByUsername(followingUsername);
-
-      if (follower == null || following == null) {
-
-         return false;
-      }
+      AppUser follower = getUserOrThrow(followerUsername);
+      AppUser following = getUserOrThrow(followingUsername);
 
       boolean isFollowed = followRepository.existsByFollowerAndFollowing(follower, following);
       return isFollowed;
@@ -245,9 +224,8 @@ public class FollowService {
 
    // ONLY LOOK FOR PENDING REQUESTS, maybe we declined a previous one, it shouldnt be the target of our response
    public Long getPendingRequestId(String requesterUsername, String targetUsername) {
-      AppUser requester = appUserRepository.findByUsername(requesterUsername);
-      AppUser target = appUserRepository.findByUsername(targetUsername);
-      if (requester == null || target == null) return null;
+      AppUser requester = getUserOrThrow(requesterUsername);
+      AppUser target = getUserOrThrow(targetUsername);
 
     return followRequestRepository
             .findByRequesterIdAndTargetIdAndStatus(
@@ -258,22 +236,17 @@ public class FollowService {
 
    // Get count of follow requests for an account
    public long getFollowRequestsCount(String targetUsername) {
-      AppUser user = appUserRepository.findByUsername(targetUsername);
-      if (user == null) {
-         throw new RuntimeException("User not found: " + targetUsername);
-      }
+      AppUser user = getUserOrThrow(targetUsername);
+
       long count = followRequestRepository.countByTargetIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
       return count;
    }
 
    // Get all outgoing requests for a user
-   public List<FollowRequestResponseDto> getAllOutgoingRequests(String requesterUsername) {
+   public List<FollowRequestResponse> getAllOutgoingRequests(String requesterUsername) {
 
-      AppUser user = appUserRepository.findByUsername(requesterUsername);
-      if (user == null) {
-         throw new RuntimeException("User not found: " + requesterUsername);
-      }
-      List<FollowRequestResponseDto> responseDtos = followRequestRepository
+      AppUser user = getUserOrThrow(requesterUsername);
+      List<FollowRequestResponse> responseDtos = followRequestRepository
                 .findAllByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING)
                 .stream()
                 .map(mappingMethods::convertFollowRequestToResponseDto)
@@ -283,11 +256,18 @@ public class FollowService {
 
    // Get count of the requests that the user sent
    public long getOutgoingRequestsCount(String requesterUsername) {
-      AppUser user = appUserRepository.findByUsername(requesterUsername);
-      if (user == null) {
-         throw new RuntimeException("User not found: " + requesterUsername);
-      }
+      AppUser user = getUserOrThrow(requesterUsername);
       long count = followRequestRepository.countByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
       return count;
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private FollowRequest getFollowRequestOrThrow(Long id) {
+      return followRequestRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("follow.request.notfound", id));
    }
 }

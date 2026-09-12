@@ -1,0 +1,43 @@
+{
+  "common": {
+    "or": "OU",
+    "language": "Langue"
+  },
+  "auth": {
+    "fields": {
+      "email": "E-mail",
+      "emailPlaceholder": "Saisissez votre e-mail",
+      "username": "Nom d'utilisateur",
+      "usernamePlaceholder": "Saisissez votre nom d'utilisateur",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Saisissez votre mot de passe"
+    },
+    "validation": {
+      "emailInvalid": "L'adresse e-mail n'est pas valide",
+      "usernameRequired": "Le nom d'utilisateur est obligatoire",
+      "usernameMin": "Le nom d'utilisateur doit contenir au moins {{min}} caractères",
+      "passwordMin": "Le mot de passe doit contenir au moins {{min}} caractères"
+    },
+    "login": {
+      "title": "Bon retour",
+      "submit": "Se connecter",
+      "submitting": "Connexion en cours...",
+      "failed": "Nom d'utilisateur ou mot de passe invalide. Veuillez réessayer.",
+      "forgotPassword": "Mot de passe oublié ?",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "signUpLink": "S'inscrire"
+    },
+    "signUp": {
+      "title": "Créer un nouveau compte",
+      "submit": "Créer le compte",
+      "submitting": "Création du compte...",
+      "loggingIn": "Connexion en cours...",
+      "loggingInScreen": "Connexion en cours...",
+      "conflict": "Ce nom d'utilisateur ou cet e-mail existe déjà",
+      "networkError": "Impossible de se connecter au serveur. Veuillez réessayer plus tard.",
+      "unknownError": "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signInLink": "Se connecter"
+    }
+  }
+}

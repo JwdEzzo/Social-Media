@@ -2,28 +2,38 @@ package com.instragram.project.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.security.request.LoginRequestDto;
-import com.instragram.project.dto.security.request.SignUpRequestDto;
-import com.instragram.project.dto.security.response.LoginResponseDto;
-import com.instragram.project.dto.user.request.SearchUserResponseDto;
-import com.instragram.project.dto.user.request.UpdateCredentialsRequestDto;
-import com.instragram.project.dto.user.request.UpdateProfileRequestDto;
-import com.instragram.project.dto.user.response.GetUserResponseDto;
+import com.instragram.project.dto.security.request.LoginRequest;
+import com.instragram.project.dto.security.request.SignUpRequest;
+import com.instragram.project.dto.security.response.LoginResponse;
+import com.instragram.project.dto.user.response.SignUpResponse;
+import com.instragram.project.dto.user.response.UpdateUserProfileResponse;
+import com.instragram.project.dto.user.request.SearchUserResponse;
+import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
+import com.instragram.project.dto.user.request.UpdateProfileRequest;
+import com.instragram.project.dto.user.response.GetUserResponse;
 import com.instragram.project.enums.AccountStatus;
+import com.instragram.project.exception.BadRequestException;
+import com.instragram.project.exception.ConflictException;
+import com.instragram.project.exception.ForbiddenException;
+import com.instragram.project.exception.NotFoundException;
+import com.instragram.project.exception.UnauthorizedException;
+import com.instragram.project.exception.AlreadyExistsException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.ProfilePicture;
@@ -31,17 +41,19 @@ import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
 import com.instragram.project.repository.ProfilePictureRepository;
 import com.instragram.project.security.jwt.JwtService;
+import com.instragram.project.utils.FieldViolation;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.log4j.Log4j2;
 
 @Service
+@Log4j2
 public class AppUserService {
 
    private final AppUserRepository appUserRepository;
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
    private final JwtService jwtService;
    private final AuthenticationManager authenticationManager;
-   private final Logger log = LoggerFactory.getLogger(AppUserService.class);
    private final FollowRepository followRepository;
    private final MappingMethods mappingMethods;
    private final ProfilePictureRepository profilePictureRepository;
@@ -57,46 +69,60 @@ public class AppUserService {
       this.profilePictureRepository = profilePictureRepository;
    }
 
-   // Sign Up User
-   public void signUp(SignUpRequestDto requestDto) {
+   /**
+    * Sign up a new user with the {@link SignUpRequest} <br>
+    * Checks if the data already exists in DB <br>
+    * @return {@link SignUpResponse} with the newly created user data and a JWT token. <br>
+    */
+   @Transactional
+   public SignUpResponse signUp(SignUpRequest request) {
 
-      if (appUserRepository.findByUsername(requestDto.getUsername()) != null) {
-         throw new RuntimeException("User already exists with username: " + requestDto.getUsername());
+      // Step 1: Validate request
+      validateSignUpRequestOrThrow(request);
 
+      // Step 2: Convert the request DTO to an AppUser entity
+      AppUser appUser = mappingMethods.convertSignUpRequestToAppUserEntity(request);
+
+      // TODO: needs locking
+      try {
+         // saveAndFlush forces the INSERT here, inside the try, so a constraint violation
+         // is thrown where we can translate it. Plain save() defers the flush to commit,
+         // after this method has returned. It also guarantees the generated id and the
+         // @PrePersist createdAt are populated before we map the response.
+         AppUser saved = appUserRepository.saveAndFlush(appUser);
+         return mappingMethods.convertAppUserEntityToSignUpResponse(saved);
+      } catch (DataIntegrityViolationException e) {
+         // Lost the race: another request claimed this username or email between the
+         // checks above and this insert. Which of the two it was would mean parsing the
+         // constraint name out of the exception, so the message stays deliberately vague.
+         throw new AlreadyExistsException("signup.conflict", e);
       }
-
-      AppUser appUser = mappingMethods.convertSignUpRequestToAppUserEntity(requestDto);
-      appUserRepository.save(appUser);
-
    }
 
-   // Get User by username
-   public GetUserResponseDto getUserByUsername(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public GetUserResponse getUserByUsername(String username) {
+      AppUser user = getUserByUsernameOrThrow(username);
       return mappingMethods.convertAppUserEntityToGetUserResponse(user);
    }
 
-   // Get User By Id
-   public GetUserResponseDto getUserById(Long id) {
-      AppUser user = appUserRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+   public GetUserResponse getUserById(Long id) {
+      AppUser user = getUserByIdOrThrow(id);
       return mappingMethods.convertAppUserEntityToGetUserResponse(user);
    }
 
-   // Get all Users
-   public List<GetUserResponseDto> getAllUsers() {
-      List<AppUser> users = appUserRepository.findAll();
-      return users
-            .stream()
-            .map(user -> mappingMethods.convertAppUserEntityToGetUserResponse(user))
-            .collect(Collectors.toList());
+   /**
+    *  Get a page of {@code AppUser}s and return it as a page of GetUserResponse.
+    *  The {@code Pageable} carries the page number, size and sort, and the returned
+    *  {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<GetUserResponse> getAllUsers(Pageable pageable) {
+      // map() keeps the page metadata (number, size, totalElements) and only
+      // converts the content, so no second count query is issued.
+      return appUserRepository
+            .findAll(pageable)
+            .map(mappingMethods::convertAppUserEntityToGetUserResponse);
    }
 
-   // Get all Users excluding the logged in
-   public List<GetUserResponseDto> getAllUsersExcludingCurrentUser(String username) {
+   public List<GetUserResponse> getAllUsersExcludingCurrentUser(String username) {
       List<AppUser> users = appUserRepository.findByUsernameNot(username);
       return users
             .stream()
@@ -104,178 +130,185 @@ public class AppUserService {
             .collect(Collectors.toList());
    }
 
-   // Set account to private
-   public void toggleAccountStatus(Long requestingUserId, Long targetUserId) {
+   /**
+    * Toggle the account status of the caller between PUBLIC and PRIVATE.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    *                 Never accept this from the request.
+    */
+   public AccountStatus toggleAccountStatus(String username) {
 
-      if (!requestingUserId.equals(targetUserId)) {
-         throw new AccessDeniedException("You can't toggle the account status of another user.");
-      }
+      // Step 1: Retrieve the caller.
+      // There is no target to authorize against — the principal *is* the target.
+      AppUser user = getUserByUsernameOrThrow(username);
 
-      AppUser user = appUserRepository.findById(targetUserId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + targetUserId));
-
+      // Step 2: Toggle the account status.
       if (user.getAccountStatus() == AccountStatus.PUBLIC) {
          user.setAccountStatus(AccountStatus.PRIVATE);
       } else {
          user.setAccountStatus(AccountStatus.PUBLIC);
       }
 
+      // Step 3: Save the change and return the new status.
       appUserRepository.save(user);
+      return user.getAccountStatus();
    }
+   
+   /**
+    * Find all followers of a certain user and return a list of GetUserResponse.
+    */
+   public List<GetUserResponse> getAllFollowers(Long userId) {
+      
+      getUserByIdOrThrow(userId);
 
-   // Find all followers of a certain user
-   public List<GetUserResponseDto> getAllFollowers(Long userId) {
-      AppUser user = appUserRepository.findById(userId).get();
-
-      if (user == null) {
-         throw new RuntimeException("User not found: " + user);
-      }
       List<AppUser> followersOfUser = followRepository.findFollowersByUserId(userId);
+      
       return followersOfUser
             .stream()
-            .map(follower -> mappingMethods
-                  .convertAppUserEntityToGetUserResponse(follower))
+            .map(follower -> mappingMethods.convertAppUserEntityToGetUserResponse(follower))
             .collect(Collectors.toList());
    }
 
-   // Find the users that are followed by a certain user
-   public List<GetUserResponseDto> getAllFollowings(Long userId) {
-      AppUser user = appUserRepository.findById(userId).get();
+   /**
+    * Find the users that are followed by a certain user and return a list of GetUserResponse.
+    */
+   public List<GetUserResponse> getAllFollowings(Long userId) {
 
-      if (user == null) {
-         throw new RuntimeException("User not found: " + user);
-      }
+      getUserByIdOrThrow(userId);
+
       List<AppUser> followingsOfUser = followRepository.findFollowingsByUserId(userId);
       return followingsOfUser
             .stream()
-            .map(follower -> mappingMethods
-                  .convertAppUserEntityToGetUserResponse(follower))
+            .map(follower -> mappingMethods.convertAppUserEntityToGetUserResponse(follower))
             .collect(Collectors.toList());
    }
 
-   public List<SearchUserResponseDto> searchUsers(String username) {
+   /**
+    * Search for users by their username and return a list of SearchUserResponse.
+    */
+   public List<SearchUserResponse> searchUsers(String username) {
+
       List<AppUser> users = appUserRepository.findByUsernameContaining(username);
-      return users.stream()
+
+      return users
+            .stream()
             .map(user -> mappingMethods.convertAppUserEntityToSearchUserResponse(user))
             .collect(Collectors.toList());
    }
 
-   // Delete user by username
-   public void deleteUser(String username, String password) {
-      // Find the user
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   /**
+    * Update the credentials of the caller, including email, username, and password. <br>
+    * The old password must be provided for verification. <br>
+    * Every field is optional: a blank one leaves that credential untouched. <br>
+    * A field that carries the value the account already has is an error, throws {@code 400} instead of succeeding. <br>
+    * A field that collides with <b>another</b> account still answers {@code 409}.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    *                 Never accept this from the request.
+    */
+   public UpdateUserProfileResponse updateUserCredentials(String username, UpdateCredentialsRequest newUser) {
 
-      // Verify the password
-      if (!encoder.matches(password, user.getPassword())) {
-         throw new RuntimeException("Invalid credentials. Account deletion failed.");
-      }
+      // Step 1: Get the caller by username or throw NotFoundException if not found
+      AppUser user = getUserByUsernameOrThrow(username);
 
-      // Delete the user
-      appUserRepository.delete(user);
-      log.info("User account deleted successfully: " + username);
+      // Step 2: The old password proves the caller owns the account; every change below depends on it.
+      if (!encoder.matches(newUser.getOldPassword(), user.getPassword())) {
+         throw new BadRequestException("error.old.password.different");
+      }
+      // Step 3: Check and update email if provided
+      if (StringUtils.hasText(newUser.getEmail())) {
+         if (newUser.getEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new BadRequestException("error.same.email");
+         }
+         checkUserExistsByEmailOrThrow(newUser.getEmail());
+         user.setEmail(newUser.getEmail());
+      }
+      // Step 4: Check and update username if provided
+      if (StringUtils.hasText(newUser.getUsername())) {
+         if (newUser.getUsername().equals(user.getUsername())) {
+            throw new BadRequestException("error.same.username");
+         }
+         checkUserExistsByUsernameOrThrow(newUser.getUsername());
+         user.setUsername(newUser.getUsername());
+      }
+      // Step 5: Check and update password if provided
+      if (StringUtils.hasText(newUser.getNewPassword())) {
+         if (encoder.matches(newUser.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("error.same.password");
+         }
+         user.setPassword(encoder.encode(newUser.getNewPassword()));
+      }
+      // Step 6: Update the timestamp, save, and return the user
+      user.setUpdatedAt(LocalDateTime.now());
+      appUserRepository.save(user);
+      return new UpdateUserProfileResponse(user.getBioText(), user.getProfilePictureUrl());
    }
 
-   // Update User Credentials
-   public void updateUserCredentials(String username, UpdateCredentialsRequestDto newUser) {
-      // Get old user
-      AppUser oldUser = appUserRepository.findByUsername(username);
-
-      // Set updatedAt to now
-      LocalDateTime updatedNow = LocalDateTime.now();
-      if (oldUser == null) {
-         throw new RuntimeException("Error 404 === User with username: " + username + " not found");
-      }
-
-      // Check if old password is correct
-      if (!encoder.matches(newUser.getOldPassword(), oldUser.getPassword())) {
-         throw new RuntimeException("Invalid credentials. Account update failed.");
-      }
-
-      // Check if email already exists and if it is not the same as the old email
-      if (appUserRepository.findByEmail(newUser.getEmail()) != null && !newUser.getEmail().equals(oldUser.getEmail())) {
-         throw new RuntimeException("Email already exists. Account update failed.");
-      }
-
-      oldUser.setEmail(newUser.getEmail());
-
-      // Check if username already exists
-      if (appUserRepository.findByUsername(newUser.getUsername()) != null
-            && !newUser.getUsername().equals(oldUser.getUsername())) {
-         throw new RuntimeException("Username already exists. Account update failed.");
-      }
-      oldUser.setUsername(newUser.getUsername());
-
-      // Check if new password is the same as the old password
-      if (encoder.matches(newUser.getNewPassword(), oldUser.getPassword())) {
-         throw new RuntimeException("Invalid credentials. Account update failed.");
-
-      }
-
-      oldUser.setPassword(encoder.encode(newUser.getNewPassword()));
-      oldUser.setUpdatedAt(updatedNow);
-      appUserRepository.save(oldUser);
-   }
-
-   // Update User Profile With Url
+   /**
+    * Update the caller's profile, including bio and profile picture URL.
+    * If a new profile picture URL is provided, any previously uploaded bytes are deleted.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    *                 Never accept this from the request.
+    */
    @Transactional
-   public void updateUserProfileWithUrl(String username, UpdateProfileRequestDto updateDto) {
-      AppUser user = appUserRepository.findByUsername(username);
-      LocalDateTime updatedNow = LocalDateTime.now();
+   public void updateUserProfileWithUrl(String username, UpdateProfileRequest updateDto) {
 
-      if (user == null) {
-         throw new RuntimeException("Error 404 === User with username: " + username + " not found");
-      }
+      // Step 1: Get the caller
+      AppUser user = getUserByUsernameOrThrow(username);
 
-      // Update bio if provided
-      if (updateDto.getBioText() != null) {
+      // Step 2: Update bio if provided
+      if (StringUtils.hasText(updateDto.getBioText())) {
          user.setBioText(updateDto.getBioText());
       }
 
-      // Update profile picture URL if provided
-      if (updateDto.getProfilePictureUrl() != null && !updateDto.getProfilePictureUrl().trim().isEmpty()) {
+      // Step 3: Update profile picture URL if provided
+      if (StringUtils.hasText(updateDto.getProfilePictureUrl())) {
+
          user.setProfilePictureUrl(updateDto.getProfilePictureUrl());
          // Switching to an external URL — drop any previously uploaded bytes.
-         profilePictureRepository.deleteByAppUserUsername(username);
+         profilePictureRepository.deleteByAppUserId(user.getId());
       }
 
-      user.setUpdatedAt(updatedNow);
+      // Step 4: Update the timestamp and save the user
+      user.setUpdatedAt(LocalDateTime.now());
       appUserRepository.save(user);
    }
 
-   // Update User Profile With Upload
+   /**
+    * Update the caller's profile, including bio and profile picture upload.
+    * If a new image is provided, it replaces any previously uploaded profile picture.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    *                 Never accept this from the request.
+    */
    @Transactional
-   public void updateUserProfileWithUpload(String username, UpdateProfileRequestDto updateDto, MultipartFile image) {
-      AppUser user = appUserRepository.findByUsername(username);
-      LocalDateTime updatedNow = LocalDateTime.now();
+   public void updateUserProfileWithUpload(String username, UpdateProfileRequest updateDto, MultipartFile image) {
 
-      if (user == null) {
-         throw new RuntimeException("Error 404 === User with username: " + username + " not found");
-      }
+      // Step 1: Get the caller
+      AppUser user = getUserByUsernameOrThrow(username);
 
-      // If no image is provided, only update bio
+      // Step 2: If no image is provided, only update bio
       if (image == null || image.isEmpty()) {
-         if (updateDto.getBioText() != null) {
+         if (StringUtils.hasText(updateDto.getBioText())) {
             user.setBioText(updateDto.getBioText());
          }
-         user.setUpdatedAt(updatedNow);
+         user.setUpdatedAt(LocalDateTime.now());
          appUserRepository.save(user);
          return;
       }
-
       try {
-         // Update bio if provided
-         if (updateDto.getBioText() != null) {
+         // Step 3: Update bio if provided
+         if (StringUtils.hasText(updateDto.getBioText())) {
             user.setBioText(updateDto.getBioText());
          }
 
-         user.setUpdatedAt(updatedNow);
-         user.setProfilePictureUrl("http://localhost:8080/api/instagram/users/" + username + "/profile-image/preview");
+         // Step 4: Update the timestamp, set profile picture URL, and save the user
+         user.setUpdatedAt(LocalDateTime.now());
+         user.setProfilePictureUrl("http://localhost:8080/api/instagram/users/" + user.getId() + "/profile-image/preview");
          appUserRepository.save(user);
 
-         ProfilePicture picture = profilePictureRepository.findByAppUserUsername(username)
+         ProfilePicture picture = profilePictureRepository.findByAppUserId(user.getId())
                .orElseGet(ProfilePicture::new);
          picture.setAppUser(user);
          picture.setImageData(image.getBytes());
@@ -288,50 +321,125 @@ public class AppUserService {
       }
    }
 
-   // Verify Login
-   public LoginResponseDto verify(LoginRequestDto loginRequestDto) {
-      try {
-         AppUser appUser = appUserRepository.findByUsername(loginRequestDto.getUsername());
-         if (appUser == null) {
-            throw new RuntimeException("User not found with username: " + loginRequestDto.getUsername());
-         }
 
-         Authentication authentication = authenticationManager.authenticate(
+   /**
+    * Verify user credentials and generate a JWT token if valid. <br>
+    * No lookup for the user in DB.
+    * {@code AuthenticationManager.authenticate(..)} already resolves the user through
+    * AppUserDetailsService, which throws UsernameNotFoundException (an
+    * AuthenticationException), gets caught. <br> 
+    */
+   public LoginResponse verify(LoginRequest loginRequestDto) {
+      try {
+         // Step 1: Authenticate the user with the provided credentials
+         authenticationManager.authenticate(
                new UsernamePasswordAuthenticationToken(loginRequestDto.getUsername(), loginRequestDto.getPassword()));
 
-         if (authentication.isAuthenticated()) {
-            String token = jwtService.generateToken(loginRequestDto.getUsername());
-            return new LoginResponseDto(token, loginRequestDto.getUsername(), "Login successful");
-         }
-      } catch (RuntimeException e) {
-         log.error("Authentication failed for user: " + loginRequestDto.getUsername(), e);
-         throw new RuntimeException("Invalid credentials");
-      }
+         // Step 2: Generate a JWT token for the authenticated user and return LoginResponse
+         String token = jwtService.generateToken(loginRequestDto.getUsername());
+         return new LoginResponse(token, loginRequestDto.getUsername());
 
-      return null;
+         // Step 3: Catch if Step 1 throws
+      } catch (AuthenticationException e) {
+         log.warn("Failed login attempt for username: {}", loginRequestDto.getUsername());
+         throw new UnauthorizedException("error.invalid.credentials");
+      }
    }
 
-   // Delete User
-   public void deleteUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
+   /**
+    * Delete the caller's account after verifying the password.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    *                 Never accept this from the request.
+    */
+   public void deleteUser(String username, String password) {
+      // Step 1: Retrieve the caller and verify the password
+      AppUser user = getUserByUsernameOrThrow(username);
+      if (!encoder.matches(password, user.getPassword())) {
+         throw new ForbiddenException("error.invalid.credentials");
       }
+      // Step 2: Delete the user
       appUserRepository.delete(user);
+      log.info("User account deleted successfully: " + username);
    }
 
+   /**
+    * Get the profile image bytes of a user by their id.
+    * Throws NotFoundException if the profile picture is not found.
+    */
    @Transactional
-   public byte[] getProfileImageBytes(String username) {
-      return profilePictureRepository.findByAppUserUsername(username)
+   public byte[] getProfileImageBytes(Long id) {
+      return profilePictureRepository.findByAppUserId(id)
             .map(ProfilePicture::getImageData)
-            .orElseThrow(() -> new RuntimeException(
-                  "No image data stored for User Profile Picture: " + username));
+            .orElseThrow(() -> new NotFoundException("user.profile.picture.notfound", id));
    }
 
+   /**
+    * Get the content type of a user's profile image by their id.
+    * Returns APPLICATION_OCTET_STREAM if the profile picture is not found.
+    */
    @Transactional
-   public String getProfileImageContentType(String username) {
-      return profilePictureRepository.findByAppUserUsername(username)
+   public String getProfileImageContentType(Long id) {
+      return profilePictureRepository.findByAppUserId(id)
             .map(ProfilePicture::getImageType)
             .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+   }
+
+   // ===================== PRIVATE HELPERS =====================
+   //
+   //
+   //
+   //
+
+   /**
+    * Get user by username or throw NotFoundException if not found.
+    */
+   private AppUser getUserByUsernameOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   /**
+    * Get user by id or throw NotFoundException if not found.
+    */
+   private AppUser getUserByIdOrThrow(Long id) {
+      return appUserRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("user.notfound.id", id));
+   }
+
+   /**
+    * Check if a user exists by username and throw AlreadyExistsException if it does.
+    */
+   private void checkUserExistsByUsernameOrThrow(String username) {
+      if (appUserRepository.existsByUsername(username)) {
+            throw new AlreadyExistsException("user.exists", username);
+      }
+   }
+
+   /**
+    * Check if a user exists by email and throw AlreadyExistsException if it does.
+    */
+   private void checkUserExistsByEmailOrThrow(String email) {
+      if (appUserRepository.existsByEmail(email)) {
+         throw new AlreadyExistsException("email.exists", email);
+      }
+   }
+
+   /**
+    * Validate the sign-up request and throw a ConflictException if there are any conflicts (e.g., username or email already exists). <br>
+    * Our logic before sent out only 1 conflict at a time, but now we collect all conflicts and report them together.
+    * @param request
+    */
+   private void validateSignUpRequestOrThrow(SignUpRequest request) {
+      List<FieldViolation> conflicts = new ArrayList<>();
+      if (appUserRepository.existsByUsername(request.getUsername())) {
+         conflicts.add(new FieldViolation("username", "user.exists", request.getUsername()));
+      }
+      if (appUserRepository.existsByEmail(request.getEmail())) {
+         conflicts.add(new FieldViolation("email", "email.exists", request.getEmail()));
+      }
+      if (!conflicts.isEmpty()) {
+         throw new ConflictException("signup.conflict", conflicts);
+      }
    }
 }

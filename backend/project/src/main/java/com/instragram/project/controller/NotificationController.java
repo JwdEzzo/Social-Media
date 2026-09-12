@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.notification.NotificationResponseDto;
+import com.instragram.project.dto.notification.NotificationResponse;
 import com.instragram.project.service.AppUserService;
 import com.instragram.project.service.NotificationService;
 
@@ -33,20 +33,20 @@ public class NotificationController {
 
     // GET: All notifications for the logged in user
     @GetMapping
-    public ResponseEntity<List<NotificationResponseDto>> getNotifications(
+    public ResponseEntity<List<NotificationResponse>> getNotifications(
             Authentication authentication) {
 
         Long userId = getAuthenticatedUserId(authentication);
-        List<NotificationResponseDto> notifications =
+        List<NotificationResponse> notifications =
                 notificationService.getNotificationsForUser(userId, userId);
         return ResponseEntity.ok(notifications);
     }
 
     // GET: 3 latest notifications for the logged in user
     @GetMapping("/latest-3")
-    public ResponseEntity<List<NotificationResponseDto>> getLatest3Notifications(Authentication authentication) {
+    public ResponseEntity<List<NotificationResponse>> getLatest3Notifications(Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
-        List<NotificationResponseDto> notifications =
+        List<NotificationResponse> notifications =
                 notificationService.getLatest3Notifications(userId, userId);
         return ResponseEntity.ok(notifications);
     }

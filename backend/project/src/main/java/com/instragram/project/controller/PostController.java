@@ -2,6 +2,7 @@ package com.instragram.project.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -23,10 +24,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.post.request.CreatePostRequestDto;
-import com.instragram.project.dto.post.request.EditPostWithUploadRequestDto;
-import com.instragram.project.dto.post.request.EditPostWithUrlRequestDto;
-import com.instragram.project.dto.post.response.GetPostResponseDto;
+import com.instragram.project.dto.post.request.CreatePostRequest;
+import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
+import com.instragram.project.dto.post.request.EditPostWithUrlRequest;
+import com.instragram.project.dto.post.response.GetPostResponse;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.service.PostService;
@@ -51,7 +52,7 @@ public class PostController {
    // POST: create post
    @PostMapping("/create-post")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> createPost(@RequestBody CreatePostRequestDto requestDto, Authentication authentication) {
+   public ResponseEntity<Void> createPost(@RequestBody CreatePostRequest requestDto, Authentication authentication) {
       String username = authentication.getName();
       postService.createPostWithUrl(requestDto, username);
       return ResponseEntity.noContent().build();
@@ -72,65 +73,67 @@ public class PostController {
    // GET : Get posts of a private account followed by the current user , show null to non-followers
    @GetMapping("/private-account/{privateAccountUsername}")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponseDto>> getPostsByPrivateAccountTheUserFollows(
+   public ResponseEntity<List<GetPostResponse>> getPostsByPrivateAccountTheUserFollows(
          @PathVariable String privateAccountUsername,
          Authentication authentication) {
             String followerUsername = authentication.getName();
-            List<GetPostResponseDto> posts = postService.getPostsByPrivateAccountTheUserFollows(followerUsername, privateAccountUsername);
+            List<GetPostResponse> posts = postService.getPostsByPrivateAccountTheUserFollows(followerUsername, privateAccountUsername);
             return ResponseEntity.ok(posts);
    }
 
    // GET : Get post by id
    @GetMapping("/get-by-id/{postId}")
-   public ResponseEntity<GetPostResponseDto> getPostById(@PathVariable Long postId) {
-      GetPostResponseDto responseDto = postService.getPostById(postId);
+   public ResponseEntity<GetPostResponse> getPostById(@PathVariable Long postId) {
+      GetPostResponse responseDto = postService.getPostById(postId);
       return ResponseEntity.status(HttpStatus.OK).body(responseDto);
    }
 
    // GET : Get posts by username
    @GetMapping("/{username}")
-   public ResponseEntity<List<GetPostResponseDto>> getPostsByUsername(@PathVariable String username) {
-      List<GetPostResponseDto> responseDtos = postService.getPostsByUsername(username);
+   public ResponseEntity<List<GetPostResponse>> getPostsByUsername(@PathVariable String username) {
+      List<GetPostResponse> responseDtos = postService.getPostsByUsername(username);
       return ResponseEntity.status(HttpStatus.OK).body(responseDtos);
    }
 
    // GET : Get posts excluding the current logged in user
    @GetMapping("/excluded")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponseDto>> getAllPostsExcludingTheCurrentUser(Authentication authentication) {
+   public ResponseEntity<List<GetPostResponse>> getAllPostsExcludingTheCurrentUser(Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponseDto> posts = postService.getAllPostsExcludingUser(username);
+      List<GetPostResponse> posts = postService.getAllPostsExcludingUser(username);
       return ResponseEntity.ok(posts);
    }
 
    // GET : Get all Posts liked by the logged in user
    @GetMapping("/liked-by-me")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponseDto>> getPostsLikedByCurrentUser(Authentication authentication) {
+   public ResponseEntity<List<GetPostResponse>> getPostsLikedByCurrentUser(Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponseDto> likedPosts = postService.getPostslikedByUser(username);
+      List<GetPostResponse> likedPosts = postService.getPostslikedByUser(username);
       return ResponseEntity.ok(likedPosts);
    }
 
    // GET : Get all Posts saved by the logged in user
    @GetMapping("/saved-by-me")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponseDto>> getPostsSavedByCurrentUser(Authentication authentication) {
+   public ResponseEntity<List<GetPostResponse>> getPostsSavedByCurrentUser(Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponseDto> savedPosts = postService.getPostsSavedByUser(username);
+      List<GetPostResponse> savedPosts = postService.getPostsSavedByUser(username);
       return ResponseEntity.ok(savedPosts);
    }
 
    // GET : Get all Posts liked by the logged in user
    @GetMapping("/my-followers")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponseDto>> getFollowingPosts(Authentication authentication) {
+   public ResponseEntity<List<GetPostResponse>> getFollowingPosts(Authentication authentication) {
       String username = authentication.getName();
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
+      // Deliberately not the fetch-or-throw-NotFound pattern: an authenticated principal whose
+      // row is gone means a stale token, which this endpoint answers with 401, not 404.
+      Optional<AppUser> user = appUserRepository.findByUsername(username);
+      if (user.isEmpty()) {
          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
       }
-      List<GetPostResponseDto> followingPosts = postService.getPostsByFollowings(user.getId());
+      List<GetPostResponse> followingPosts = postService.getPostsByFollowings(user.get().getId());
       return ResponseEntity.ok().body(followingPosts);
    }
 
@@ -143,8 +146,8 @@ public class PostController {
 
    // GET : Get posts by searching description
    @GetMapping("/search-posts/containing/{description}")
-   public ResponseEntity<List<GetPostResponseDto>> getPostsByDescription(@PathVariable String description) {
-      List<GetPostResponseDto> posts = postService.getPostsByDescription(description);
+   public ResponseEntity<List<GetPostResponse>> getPostsByDescription(@PathVariable String description) {
+      List<GetPostResponse> posts = postService.getPostsByDescription(description);
       return ResponseEntity.status(HttpStatus.OK).body(posts);
    }
 
@@ -164,7 +167,7 @@ public class PostController {
    // PUT : Update/Edit a post
    @PutMapping("/edit-with-url/{postId}")
    public ResponseEntity<Void> editPostWithUrl(@PathVariable Long postId,
-         @RequestBody EditPostWithUrlRequestDto requestDto, Authentication authentication) throws IOException {
+         @RequestBody EditPostWithUrlRequest requestDto, Authentication authentication) throws IOException {
       String username = authentication.getName();
       postService.updatePostWithUrl(postId, requestDto, username);
       return ResponseEntity.noContent().build();
@@ -172,7 +175,7 @@ public class PostController {
 
    @PutMapping("/edit-with-upload/{postId}")
    public ResponseEntity<Void> editPostWithUpload(@PathVariable Long postId,
-         EditPostWithUploadRequestDto requestDto, Authentication authentication) throws IOException {
+         EditPostWithUploadRequest requestDto, Authentication authentication) throws IOException {
       String username = authentication.getName();
       postService.updatePostWithUpload(postId, requestDto, username);
       return ResponseEntity.noContent().build();

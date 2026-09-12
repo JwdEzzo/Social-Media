@@ -6,17 +6,19 @@ import java.util.stream.Collectors;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.instragram.project.dto.comment.request.WriteCommentRequestDto;
-import com.instragram.project.dto.comment.response.GetCommentResponseDto;
-import com.instragram.project.dto.follow.response.FollowRequestResponseDto;
-import com.instragram.project.dto.notification.NotificationResponseDto;
-import com.instragram.project.dto.post.request.CreatePostRequestDto;
-import com.instragram.project.dto.post.response.GetPostResponseDto;
-import com.instragram.project.dto.reply.request.WriteReplyRequestDto;
-import com.instragram.project.dto.reply.response.GetReplyResponseDto;
-import com.instragram.project.dto.security.request.SignUpRequestDto;
-import com.instragram.project.dto.user.request.SearchUserResponseDto;
-import com.instragram.project.dto.user.response.GetUserResponseDto;
+import com.instragram.project.dto.comment.request.WriteCommentRequest;
+import com.instragram.project.dto.comment.response.GetCommentResponse;
+import com.instragram.project.dto.follow.response.FollowRequestResponse;
+import com.instragram.project.dto.notification.NotificationResponse;
+import com.instragram.project.dto.post.request.CreatePostRequest;
+import com.instragram.project.dto.post.response.GetPostResponse;
+import com.instragram.project.dto.reply.request.WriteReplyRequest;
+import com.instragram.project.dto.reply.response.GetReplyResponse;
+import com.instragram.project.dto.security.request.SignUpRequest;
+import com.instragram.project.dto.user.request.SearchUserResponse;
+import com.instragram.project.dto.user.response.GetUserResponse;
+import com.instragram.project.dto.user.response.SignUpResponse;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.model.CommentReply;
@@ -26,6 +28,7 @@ import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
+import com.instragram.project.utils.ApiResponse;
 
 @Component
 public class MappingMethods {
@@ -45,180 +48,210 @@ public class MappingMethods {
       this.postRepository = postRepository;
       this.commentRepository = commentRepository;
    }
+   
+   /**
+    * Map to ApiResponse<T> with data and message
+    */
+   public <T> ApiResponse<T> mapToApiResponse(T data, String message) {
+      return ApiResponse.success(data, message);
+   }
 
-   // Convert SignUpRequestDto to AppUser Entity
-   public AppUser convertSignUpRequestToAppUserEntity(SignUpRequestDto requestDto) {
+   // Convert AppUser Entity to CreateUserResponse
+   public SignUpResponse convertAppUserEntityToSignUpResponse(AppUser appUser) {
+      SignUpResponse response = new SignUpResponse();
+      response.setId(appUser.getId());
+      response.setUsername(appUser.getUsername());
+      response.setEmail(appUser.getEmail());
+      response.setCreatedAt(appUser.getCreatedAt());
+      return response;
+   }
+
+   // Convert SignUpRequest to AppUser Entity
+   public AppUser convertSignUpRequestToAppUserEntity(SignUpRequest request) {
       AppUser appUser = new AppUser();
-      appUser.setEmail(requestDto.getEmail());
-      appUser.setUsername(requestDto.getUsername());
-      appUser.setPassword(encoder.encode(requestDto.getPassword()));
+      appUser.setEmail(request.getEmail());
+      appUser.setUsername(request.getUsername());
+      appUser.setPassword(encoder.encode(request.getPassword()));
       return appUser;
    }
 
-   // Convert Post Entity to GetPostResponseDto
-   public GetPostResponseDto convertPostEnttityToGetPostResponseDto(Post post) {
-      GetPostResponseDto responseDto = new GetPostResponseDto();
-      responseDto.setId(post.getId());
-      responseDto.setUsername(post.getAppUser().getUsername());
-      responseDto.setProfilePictureUrl(post.getAppUser().getProfilePictureUrl());
+   // Convert Post Entity to GetPostResponse
+   public GetPostResponse convertPostEntityToGetPostResponse(Post post) {
+      GetPostResponse response = new GetPostResponse();
+      response.setId(post.getId());
+      response.setUsername(post.getAppUser().getUsername());
+      response.setProfilePictureUrl(post.getAppUser().getProfilePictureUrl());
 
       // If imageUrl is null (uploaded image), use the serving endpoint
       if (post.getImageUrl() == null && post.getImageData() != null) {
-         responseDto.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
+         response.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
       } else {
-         responseDto.setImageUrl(post.getImageUrl());
+         response.setImageUrl(post.getImageUrl());
       }
 
-      responseDto.setDescription(post.getDescription());
-      responseDto.setCreatedAt(post.getCreatedAt());
-      responseDto.setUpdatedAt(post.getUpdatedAt());
-      return responseDto;
+      response.setDescription(post.getDescription());
+      response.setCreatedAt(post.getCreatedAt());
+      response.setUpdatedAt(post.getUpdatedAt());
+      return response;
    }
 
-   // Convert List<Post> to List<GetPostResponseDto> responseDtos; 
-   public List<GetPostResponseDto> convertListPostEntityToListGetPostResponseDto(List<Post> posts) {
+   // Convert List<Post> to List<GetPostResponse> responses; 
+   public List<GetPostResponse> convertListPostEntityToListGetPostResponse(List<Post> posts) {
       return posts
             .stream()
-            .map(this::convertPostEnttityToGetPostResponseDto)
+            .map(this::convertPostEntityToGetPostResponse)
             .collect(Collectors.toList());
    }
 
-   // Convert AppUser to GetUserResponseDto
-   public GetUserResponseDto convertAppUserEntityToGetUserResponse(AppUser appUser) {
-      GetUserResponseDto responseDto = new GetUserResponseDto();
-      responseDto.setId(appUser.getId());
-      responseDto.setUsername(appUser.getUsername());
-      responseDto.setBioText(appUser.getBioText());
-      responseDto.setProfilePictureUrl(appUser.getProfilePictureUrl());
-      responseDto.setCreatedAt(appUser.getCreatedAt());
-      responseDto.setUpdatedAt(appUser.getUpdatedAt());
-      responseDto.setAccountStatus(appUser.getAccountStatus());
-      responseDto.setPosts(convertListPostEntityToListGetPostResponseDto(appUser.getPosts()));
-      return responseDto;
+   // Convert AppUser to GetUserresponse
+   public GetUserResponse convertAppUserEntityToGetUserResponse(AppUser appUser) {
+      GetUserResponse response = new GetUserResponse();
+      response.setId(appUser.getId());
+      response.setUsername(appUser.getUsername());
+      response.setBioText(appUser.getBioText());
+      response.setProfilePictureUrl(appUser.getProfilePictureUrl());
+      response.setCreatedAt(appUser.getCreatedAt());
+      response.setUpdatedAt(appUser.getUpdatedAt());
+      response.setAccountStatus(appUser.getAccountStatus());
+      response.setPosts(convertListPostEntityToListGetPostResponse(appUser.getPosts()));
+      return response;
    }
 
-   // Convert AppUser to SearchUserResponseDto
-   public SearchUserResponseDto convertAppUserEntityToSearchUserResponse(AppUser appUser) {
-      SearchUserResponseDto responseDto = new SearchUserResponseDto();
-      responseDto.setId(appUser.getId());
-      responseDto.setUsername(appUser.getUsername());
-      responseDto.setProfilePictureUrl(appUser.getProfilePictureUrl());
-      return responseDto;
+   // Convert AppUser to SearchUserresponse
+   public SearchUserResponse convertAppUserEntityToSearchUserResponse(AppUser appUser) {
+      SearchUserResponse response = new SearchUserResponse();
+      response.setId(appUser.getId());
+      response.setUsername(appUser.getUsername());
+      response.setProfilePictureUrl(appUser.getProfilePictureUrl());
+      return response;
    }
 
-   // Convert CreatePostRequestDto to Post Entity
-   public Post convertCreatePostRequestDtoToPostEntity(CreatePostRequestDto requestDto, String username) {
+   // Convert CreatePostRequest to Post Entity
+   public Post convertCreatePostRequestToPostEntity(CreatePostRequest request, String username) {
       Post post = new Post();
-      post.setImageUrl(requestDto.getImageUrl());
-      post.setDescription(requestDto.getDescription());
-      post.setAppUser(appUserRepository.findByUsername(username));
+      post.setImageUrl(request.getImageUrl());
+      post.setDescription(request.getDescription());
+      post.setAppUser(getUserOrThrow(username));
       return post;
    }
 
-   // Convert List<Post> to List<GetPostResponseDto> responseDtos by username; 
-   public List<GetPostResponseDto> convertListPostEntityToListGetPostResponseDtoByUsername(List<Post> posts,
+   // Convert List<Post> to List<GetPostResponse> responses by username; 
+   public List<GetPostResponse> convertListPostEntityToListGetPostResponseByUsername(List<Post> posts,
          String username) {
       return posts
             .stream()
             .filter(post -> post.getAppUser().getUsername().equals(username))
-            .map(this::convertPostEnttityToGetPostResponseDto)
+            .map(this::convertPostEntityToGetPostResponse)
             .collect(Collectors.toList());
    }
 
-   // Convert WriteCommentRequestDto to Comment Entity
-   public Comment convertWriteCommentRequestDtoToCommentEntity(AppUser appUser, WriteCommentRequestDto requestDto) {
-      Post post = postRepository.findById(requestDto.getPostId())
-               .orElseThrow(() -> new RuntimeException("Post not found: " + requestDto.getPostId()));
+   // Convert WriteCommentRequest to Comment Entity
+   public Comment convertWriteCommentRequestToCommentEntity(AppUser appUser, WriteCommentRequest request) {
+      Post post = getPostOrThrow(request.getPostId());
 
       Comment comment = new Comment();
-      comment.setContent(requestDto.getContent());
+      comment.setContent(request.getContent());
       comment.setAppUser(appUser);
       comment.setPost(post);
 
       return comment;
    }
 
-   // Convert Comment Entity to GetCommentResponseDto
-   public GetCommentResponseDto convertCommentEntityToGetCommentResponseDto(Comment comment) {
-      GetCommentResponseDto responseDto = new GetCommentResponseDto();
-      responseDto.setId(comment.getId());
-      responseDto.setContent(comment.getContent());
-      responseDto.setCreatedAt(comment.getCreatedAt());
-      responseDto.setAppUser(convertAppUserEntityToGetUserResponse(comment.getAppUser()));
-      return responseDto;
+   // Convert Comment Entity to GetCommentResponse
+   public GetCommentResponse convertCommentEntityToGetCommentResponse(Comment comment) {
+      GetCommentResponse response = new GetCommentResponse();
+      response.setId(comment.getId());
+      response.setContent(comment.getContent());
+      response.setCreatedAt(comment.getCreatedAt());
+      response.setAppUser(convertAppUserEntityToGetUserResponse(comment.getAppUser()));
+      return response;
    }
 
-   // Convert List<Comment> to List<GetCommentResponseDto> responseDtos; 
-   public List<GetCommentResponseDto> convertListCommentEntityToListGetCommentResponseDto(List<Comment> comments) {
+   // Convert List<Comment> to List<GetCommentResponse> responses; 
+   public List<GetCommentResponse> convertListCommentEntityToListGetCommentResponse(List<Comment> comments) {
       return comments
             .stream()
-            .map(this::convertCommentEntityToGetCommentResponseDto)
+            .map(this::convertCommentEntityToGetCommentResponse)
             .collect(Collectors.toList());
    }
 
-   // Convert WriteReplyRequestDto to CommentReply Entity 
-   public CommentReply convertWriteReplyRequestDtoToCommentReplyEntity(AppUser appUser,
-         WriteReplyRequestDto requestDto) {
-      Comment comment = commentRepository.findById(requestDto.getCommentId()).get();
+   // Convert WriteReplyRequest to CommentReply Entity 
+   public CommentReply convertWriteReplyRequestToCommentReplyEntity(AppUser appUser,
+         WriteReplyRequest request) {
+      Comment comment = getCommentOrThrow(request.getCommentId());
 
       CommentReply commentReply = new CommentReply();
-      commentReply.setContent(requestDto.getContent());
+      commentReply.setContent(request.getContent());
       commentReply.setAppUser(appUser);
       commentReply.setComment(comment);
 
       return commentReply;
    }
 
-   // Convert CommentReply Entity to GetCommentReplyResponseDto
-   public GetReplyResponseDto convertCommentReplyEntityToGetCommentReplyResponseDto(CommentReply commentReply) {
-      GetReplyResponseDto responseDto = new GetReplyResponseDto();
-      responseDto.setId(commentReply.getId());
-      responseDto.setContent(commentReply.getContent());
-      responseDto.setCreatedAt(commentReply.getCreatedAt());
-      responseDto.setAppUser(convertAppUserEntityToGetUserResponse(commentReply.getAppUser()));
-      return responseDto;
+   // Convert CommentReply Entity to GetCommentReplyresponse
+   public GetReplyResponse convertCommentReplyEntityToGetCommentReplyResponse(CommentReply commentReply) {
+      GetReplyResponse response = new GetReplyResponse();
+      response.setId(commentReply.getId());
+      response.setContent(commentReply.getContent());
+      response.setCreatedAt(commentReply.getCreatedAt());
+      response.setAppUser(convertAppUserEntityToGetUserResponse(commentReply.getAppUser()));
+      return response;
    }
 
-   // Convert List<CommentReply> to List<GetCommentReplyResponseDto> responseDtos; 
-   public List<GetReplyResponseDto> convertListCommentReplyEntityToListGetCommentReplyResponseDto(
+   // Convert List<CommentReply> to List<GetReplyResponse> responses; 
+   public List<GetReplyResponse> convertListCommentReplyEntityToListGetCommentReplyResponse(
          List<CommentReply> commentReplies) {
       return commentReplies
             .stream()
-            .map(this::convertCommentReplyEntityToGetCommentReplyResponseDto)
+            .map(this::convertCommentReplyEntityToGetCommentReplyResponse)
             .collect(Collectors.toList());
    }
 
-   // Convert FollowRequest To FollowRequestResponseDto
-   public FollowRequestResponseDto convertFollowRequestToResponseDto(FollowRequest followRequest) {
-      FollowRequestResponseDto dto = new FollowRequestResponseDto();
-      dto.setRequestId(followRequest.getId());
-      dto.setRequesterUsername(followRequest.getRequester().getUsername());
-      dto.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
-      dto.setTargetUsername(followRequest.getTarget().getUsername());
-      dto.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
-      dto.setStatus(followRequest.getStatus().name());
-      dto.setCreatedAt(followRequest.getCreatedAt());
-      return dto;
+   // Convert FollowRequest To FollowRequestResponse
+   public FollowRequestResponse convertFollowRequestToResponse(FollowRequest followRequest) {
+      FollowRequestResponse response = new FollowRequestResponse();
+      response.setRequestId(followRequest.getId());
+      response.setRequesterUsername(followRequest.getRequester().getUsername());
+      response.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
+      response.setTargetUsername(followRequest.getTarget().getUsername());
+      response.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
+      response.setStatus(followRequest.getStatus().name());
+      response.setCreatedAt(followRequest.getCreatedAt());
+      return response;
    }
 
-   // Convert Notification Entity to NotificationResponseDto
-   public NotificationResponseDto convertNotificationToNotificationResponseDto(Notification notification) {
-      NotificationResponseDto requestDto = new NotificationResponseDto();
-      requestDto.setId(notification.getId());
-      requestDto.setSender(this.convertAppUserEntityToGetUserResponse(notification.getSender()));
-      requestDto.setNotificationType(notification.getNotificationType().name());
-      requestDto.setEntityId(notification.getEntityId());
-      requestDto.setRead(notification.isRead());
-      requestDto.setCreatedAt(notification.getCreatedAt());
-      return requestDto;
+   // Convert Notification Entity to NotificationResponse
+   public NotificationResponse convertNotificationToNotificationResponse(Notification notification) {
+      NotificationResponse request = new NotificationResponse();
+      request.setId(notification.getId());
+      request.setSender(this.convertAppUserEntityToGetUserResponse(notification.getSender()));
+      request.setNotificationType(notification.getNotificationType().name());
+      request.setEntityId(notification.getEntityId());
+      request.setRead(notification.isRead());
+      request.setCreatedAt(notification.getCreatedAt());
+      return request;
    }
 
-   // Convert List<Notification> to List<NotificationResponseDto>
-   public List<NotificationResponseDto> convertListNotificationToListNotificationResponseDto(List<Notification> notifications) {
+   public List<NotificationResponse> convertListNotificationToListNotificationResponse(List<Notification> notifications) {
       return notifications
             .stream()
-            .map(this::convertNotificationToNotificationResponseDto)
+            .map(this::convertNotificationToNotificationResponse)
             .collect(Collectors.toList());
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private Post getPostOrThrow(Long id) {
+      return postRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("post.notfound", id));
+   }
+
+   private Comment getCommentOrThrow(Long id) {
+      return commentRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("comment.notfound", id));
    }
 
 }

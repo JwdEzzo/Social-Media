@@ -17,15 +17,17 @@ public class AppUserDetailsService implements UserDetailsService {
       this.appUserRepository = appUserRepository;
    }
 
+   /** 
+    *  Loads the user details by username.
+    *  @param username the username of the user to load
+    *  @return the user details
+    *  @throws UsernameNotFoundException if the user is not found
+    */
    @Override
    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      if (appUser == null) {
-         throw new UsernameNotFoundException("User '" + username + "' not found");
-      } else {
-         return new AppUserPrincipal(appUser);
-
-      }
+      AppUser appUser = appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User '" + username + "' not found"));
+      return new AppUserPrincipal(appUser);
    }
 
 }

@@ -2,11 +2,12 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.comment.request.WriteCommentRequestDto;
+import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.ForbiddenException;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
@@ -38,11 +39,8 @@ public class CommentService {
 
    // Create Comment
    @Transactional
-   public void createComment(WriteCommentRequestDto requestDto, String username) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public void createComment(WriteCommentRequest requestDto, String username) {
+      AppUser appUser = getUserOrThrow(username);
 
       Comment comment = mappingMethods.convertWriteCommentRequestDtoToCommentEntity(appUser, requestDto);
       commentRepository.save(comment);
@@ -63,10 +61,9 @@ public class CommentService {
    // Update a comment
    @Transactional
    public void editComment(Long commentId, String content, String username) {
-      Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
+      Comment comment = getCommentOrThrow(commentId);
       if (!comment.getAppUser().getUsername().equals(username)) {
-         throw new RuntimeException("You do not have permission to update this comment");
+         throw new ForbiddenException("comment.forbidden.edit");
       }
       comment.setContent(content);
       commentRepository.save(comment);
@@ -75,19 +72,14 @@ public class CommentService {
    // Delete comment by Post/Comment Owner
    @Transactional
    public void deleteCommentByPostOrCommentOwner(Long commentId, String username) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      if (appUser == null) {
-         throw new RuntimeException("User not found: " + username);
-      }
+      AppUser appUser = getUserOrThrow(username);
 
-      Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new RuntimeException("Comment not found: " + commentId));
-
+      Comment comment = getCommentOrThrow(commentId);
       boolean isCommentOwner = comment.getAppUser().getId().equals(appUser.getId());
       boolean isPostOwner = comment.getPost().getAppUser().getId().equals(appUser.getId());
 
       if (!isCommentOwner && !isPostOwner) {
-         throw new AccessDeniedException("You cannot delete this comment");
+         throw new ForbiddenException("comment.forbidden.delete");
       }
 
       // Sender is always the commenter — regardless of who is performing the deletion
@@ -106,12 +98,14 @@ public class CommentService {
       return commentRepository.countByPostId(postId);
    }
 
-}
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
 
-// COMMENT WORKS
-// COMMENT_LIKE WORKS
-// POST_LIKE WORKS
-// REMOVE A FOLLOW WORKS
-// FOLLOW_REQUEST WORKS
-// REPLY_LIKE WORKS
-// COMMENT DELETE WORKS
+   private Comment getCommentOrThrow(Long id) {
+      return commentRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("comment.notfound", id));
+   }
+
+}

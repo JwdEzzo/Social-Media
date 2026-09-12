@@ -2,11 +2,12 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.notification.NotificationResponseDto;
+import com.instragram.project.dto.notification.NotificationResponse;
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.ForbiddenException;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Notification;
@@ -49,7 +50,7 @@ public class NotificationService {
     }
 
     // Read operations : query by id directly, no AppUser fetch needed , to avoid heavy DB calls
-    public List<NotificationResponseDto> getNotificationsForUser(Long recipientId, Long requestingUserId) {
+    public List<NotificationResponse> getNotificationsForUser(Long recipientId, Long requestingUserId) {
         verifyOwnership(recipientId, requestingUserId);
 
         List<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
@@ -61,7 +62,7 @@ public class NotificationService {
         return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
     }
 
-    public List<NotificationResponseDto> getLatest3Notifications(Long recipientId, Long requestingUserId) {
+    public List<NotificationResponse> getLatest3Notifications(Long recipientId, Long requestingUserId) {
         verifyOwnership(recipientId, requestingUserId);
         List<Notification> notifications = notificationRepository.findFirst3ByRecipientIdOrderByCreatedAtDesc(recipientId);
         return mappingMethods.convertListNotificationToListNotificationResponseDto(notifications);
@@ -71,11 +72,10 @@ public class NotificationService {
     public void markAsRead(Long notificationId, Long requestingUserId) {
         // Single query — checks existence and ownership together
         if (!notificationRepository.existsByIdAndRecipientId(notificationId, requestingUserId)) {
-            throw new AccessDeniedException("Notification not found or access denied");
+            throw new ForbiddenException("notification.forbidden.access");
         }
 
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found: " + notificationId));
+        Notification notification = getNotificationOrThrow(notificationId);
 
         notification.setRead(true);
         notificationRepository.save(notification);
@@ -100,7 +100,7 @@ public class NotificationService {
     // Helper Method
     private void verifyOwnership(Long recipientId, Long requestingUserId) {
         if (!recipientId.equals(requestingUserId)) {
-            throw new AccessDeniedException("You cannot access another user's notifications");
+            throw new ForbiddenException("notification.forbidden.access");
         }
     }
 
@@ -117,6 +117,11 @@ public class NotificationService {
         notificationRepository
                 .deleteByRecipientIdAndSenderIdAndNotificationType(
                         recipientId, senderId, type);
+    }
+
+    private Notification getNotificationOrThrow(Long id) {
+        return notificationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("notification.notfound", id));
     }
 
 }

@@ -9,10 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.post.request.CreatePostRequestDto;
-import com.instragram.project.dto.post.request.EditPostWithUploadRequestDto;
-import com.instragram.project.dto.post.request.EditPostWithUrlRequestDto;
-import com.instragram.project.dto.post.response.GetPostResponseDto;
+import com.instragram.project.dto.post.request.CreatePostRequest;
+import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
+import com.instragram.project.dto.post.request.EditPostWithUrlRequest;
+import com.instragram.project.dto.post.response.GetPostResponse;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
@@ -40,13 +41,9 @@ public class PostService {
    }
 
    // Create Post
-   public void createPostWithUrl(CreatePostRequestDto requestDto, String username) {
-      // Get the AppUser entity from username
-      AppUser appUser = appUserRepository.findByUsername(username);
-
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public void createPostWithUrl(CreatePostRequest requestDto, String username) {
+      // Fail fast if the user does not exist; the mapper resolves the entity itself.
+      getUserOrThrow(username);
 
       // Convert post request to entity
       Post post = mappingMethods.convertCreatePostRequestDtoToPostEntity(requestDto, username);
@@ -58,10 +55,7 @@ public class PostService {
    // Create Post with uploaded image
    @Transactional
    public void createPostWithUpload(String description, MultipartFile image, String username) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+      AppUser appUser = getUserOrThrow(username);
 
       if (image == null || image.isEmpty()) {
          throw new RuntimeException("Image file is required");
@@ -88,56 +82,46 @@ public class PostService {
    }
 
    // Get Posts from a private account that is followed by the current user
-   public List<GetPostResponseDto> getPostsByPrivateAccountTheUserFollows(String followerUsername, String privateAccountUsername) {
+   public List<GetPostResponse> getPostsByPrivateAccountTheUserFollows(String followerUsername, String privateAccountUsername) {
       List<Post> posts = postRepository.findPrivateAccountPostsIfFollowing(followerUsername, privateAccountUsername);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
    }
 
    // Get Post By Id
-   public GetPostResponseDto getPostById(Long id) {
-      Post post = postRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+   public GetPostResponse getPostById(Long id) {
+      Post post = getPostOrThrow(id);
       return mappingMethods.convertPostEnttityToGetPostResponseDto(post);
    }
 
    // Get Posts by username
-   public List<GetPostResponseDto> getPostsByUsername(String username) {
+   public List<GetPostResponse> getPostsByUsername(String username) {
       List<Post> posts = postRepository.findByAppUserUsername(username);
       return mappingMethods.convertListPostEntityToListGetPostResponseDtoByUsername(posts, username);
    }
 
    // Get All Posts Excluding User
-   public List<GetPostResponseDto> getAllPostsExcludingUser(String username) {
+   public List<GetPostResponse> getAllPostsExcludingUser(String username) {
       List<Post> posts = postRepository.findAllPostsExceptByCurrentUser(username);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
    }
 
    // Get all Posts liked by a specified user 
-   public List<GetPostResponseDto> getPostslikedByUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public List<GetPostResponse> getPostslikedByUser(String username) {
+      getUserOrThrow(username);
       List<Post> likedPosts = postRepository.findPostsLikedByUser(username);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(likedPosts);
    }
 
    // Get all posts saved by a specified user
-   public List<GetPostResponseDto> getPostsSavedByUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public List<GetPostResponse> getPostsSavedByUser(String username) {
+      getUserOrThrow(username);
       List<Post> savedPosts = postRepository.findPostsSavedByUser(username);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(savedPosts);
    }
 
    // Get all Posts by users followers
-   public List<GetPostResponseDto> getPostsByFollowings(Long id) {
-      AppUser user = appUserRepository.findById(id).get();
-      if (user == null) {
-         throw new RuntimeException("User not found with id: " + id);
-      }
+   public List<GetPostResponse> getPostsByFollowings(Long id) {
+      getUserOrThrow(id);
       List<Post> followingPosts = postRepository.findPostsByFollowing(id);
       return mappingMethods.convertListPostEntityToListGetPostResponseDto(followingPosts);
    }
@@ -145,28 +129,17 @@ public class PostService {
    // Get posts count
    public long getPostCount(String username) {
 
-      AppUser user = appUserRepository.findByUsername(username);
-
-      if (user == null) {
-         throw new RuntimeException("User not found: " + username);
-      }
+      getUserOrThrow(username);
 
       return postRepository.countByAppUserUsername(username);
    }
 
    // Update/Edit a post with upload
-   public void updatePostWithUrl(Long postId, EditPostWithUrlRequestDto requestDto, String username)
+   public void updatePostWithUrl(Long postId, EditPostWithUrlRequest requestDto, String username)
          throws IOException {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      Post oldPost = postRepository.findById(postId).get();
+      AppUser appUser = getUserOrThrow(username);
+      Post oldPost = getPostOrThrow(postId);
       LocalDateTime now = LocalDateTime.now();
-      if (oldPost == null) {
-         throw new RuntimeException("Post not found with id: " + postId);
-      }
-
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
 
       if (oldPost.getAppUser() != appUser || !oldPost.getAppUser().getUsername().equals(username)) {
          throw new RuntimeException("You do not have permission to update this post");
@@ -180,18 +153,11 @@ public class PostService {
    }
 
    // Update/Edit a post with upload
-   public void updatePostWithUpload(Long postId, EditPostWithUploadRequestDto requestDto, String username)
+   public void updatePostWithUpload(Long postId, EditPostWithUploadRequest requestDto, String username)
          throws IOException {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      Post oldPost = postRepository.findById(postId).get();
+      AppUser appUser = getUserOrThrow(username);
+      Post oldPost = getPostOrThrow(postId);
       LocalDateTime now = LocalDateTime.now();
-      if (oldPost == null) {
-         throw new RuntimeException("Post not found with id: " + postId);
-      }
-
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
 
       if (oldPost.getAppUser() != appUser || !oldPost.getAppUser().getUsername().equals(username)) {
          throw new RuntimeException("You do not have permission to update this post");
@@ -211,19 +177,15 @@ public class PostService {
    // Delete Post by id
    public void deletePost(Long postId) {
 
-      if (postRepository.findById(postId) == null) {
-         throw new RuntimeException("Post not found with id: " + postId);
+      Post post = getPostOrThrow(postId);
 
-      }
-
-      postRepository.deleteById(postId);
+      postRepository.delete(post);
    }
 
    // Delete Post By User
    @Transactional
    public void deletePostByUser(String username, Long postId) {
-      Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+      Post post = getPostOrThrow(postId);
 
       // User2 : John logs in       
       // John tries to delete User1 Bob post            
@@ -247,27 +209,40 @@ public class PostService {
 
    @Transactional
    public byte[] getPostImageBytes(Long postId) {
-      Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+      Post post = getPostOrThrow(postId);
       if (post.getImageData() == null) {
-         throw new RuntimeException("No image data stored for post: " + postId);
+         throw new NotFoundException("post.image.notfound", postId);
       }
       return post.getImageData();
    }
 
    @Transactional
    public String getPostImageContentType(Long postId) {
-      Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+      Post post = getPostOrThrow(postId);
       return post.getImageType() != null ? post.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
    }
 
    // Search post by description (not case sensitive)
-   public List<GetPostResponseDto> getPostsByDescription(String description) {
+   public List<GetPostResponse> getPostsByDescription(String description) {
       List<Post> foundPosts = postRepository.findByDescriptionContaining(description);
-      List<GetPostResponseDto> postResponseDtos = mappingMethods
+      List<GetPostResponse> postResponseDtos = mappingMethods
             .convertListPostEntityToListGetPostResponseDto(foundPosts);
       return postResponseDtos;
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private AppUser getUserOrThrow(Long id) {
+      return appUserRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("user.notfound.id", id));
+   }
+
+   private Post getPostOrThrow(Long id) {
+      return postRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("post.notfound", id));
    }
 
 }

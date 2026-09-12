@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.comment.request.WriteCommentRequestDto;
-import com.instragram.project.dto.comment.response.GetCommentResponseDto;
+import com.instragram.project.dto.comment.request.WriteCommentRequest;
+import com.instragram.project.dto.comment.response.GetCommentResponse;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.Comment;
 import com.instragram.project.repository.PostRepository;
@@ -48,7 +48,7 @@ public class CommentController {
    // Create Comment
    @PostMapping("/create-comment")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> createComment(@RequestBody WriteCommentRequestDto requestDto,
+   public ResponseEntity<Void> createComment(@RequestBody WriteCommentRequest requestDto,
          Authentication authentication) {
       String username = authentication.getName();
       commentService.createComment(requestDto, username);
@@ -68,9 +68,9 @@ public class CommentController {
 
    // Get Comments By PostId
    @GetMapping("/{postId:\\d+}")
-   public ResponseEntity<List<GetCommentResponseDto>> getCommentsByPostId(@PathVariable Long postId) {
+   public ResponseEntity<List<GetCommentResponse>> getCommentsByPostId(@PathVariable Long postId) {
       List<Comment> comments = commentService.findByPostId(postId);
-      List<GetCommentResponseDto> commentResponseDtos = mappingMethods
+      List<GetCommentResponse> commentResponseDtos = mappingMethods
             .convertListCommentEntityToListGetCommentResponseDto(comments);
       return ResponseEntity.status(HttpStatus.OK).body(commentResponseDtos);
    }

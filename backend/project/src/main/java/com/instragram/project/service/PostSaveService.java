@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
 import com.instragram.project.model.PostSave;
@@ -35,12 +36,8 @@ public class PostSaveService {
    // Toggle PostSave
    @Transactional
    public void toggleSave(String username, Long postId) {
-      AppUser user = appUserRepository.findByUsername(username);
-      Post post = postRepository.findById(postId).get();
-
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+      AppUser user = getUserOrThrow(username);
+      Post post = getPostOrThrow(postId);
 
       if (postSaveRepository.existsByAppUserAndPost(user, post)) {
          postSaveRepository.deleteByAppUserAndPost(user, post);
@@ -55,26 +52,31 @@ public class PostSaveService {
 
    // Get save count for a post
    public Long getSaveCount(Long postId) {
-      Post post = postRepository.findById(postId).get();
+      Post post = getPostOrThrow(postId);
       return postSaveRepository.countByPost(post);
    }
 
    // Get all saves by a user
    public List<PostSave> getSavesByUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-
-      if (user == null) {
-         throw new RuntimeException("User not found");
-      }
-
+      AppUser user = getUserOrThrow(username);
       return postSaveRepository.findByAppUser(user);
    }
 
    // Check if a user saved a post
    public boolean isSavedByUser(String username, Long postId) {
-      AppUser user = appUserRepository.findByUsername(username);
-      Post post = postRepository.findById(postId).get();
+      AppUser user = getUserOrThrow(username);
+      Post post = getPostOrThrow(postId);
 
       return postSaveRepository.existsByAppUserAndPost(user, post);
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private Post getPostOrThrow(Long id) {
+      return postRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("post.notfound", id));
    }
 }

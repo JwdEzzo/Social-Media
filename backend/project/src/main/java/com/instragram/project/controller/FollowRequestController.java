@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.follow.response.FollowRequestResponseDto;
+import com.instragram.project.dto.follow.response.FollowRequestResponse;
 import com.instragram.project.service.FollowService;
 
 @RestController
@@ -30,10 +30,10 @@ public class FollowRequestController {
 
     // GET: Get all outgoing follow requests (the notification list)
     @GetMapping("/outgoing")
-    public ResponseEntity<List<FollowRequestResponseDto>> getOutgoingRequests(
+    public ResponseEntity<List<FollowRequestResponse>> getOutgoingRequests(
             Authentication authentication) {
 
-        List<FollowRequestResponseDto> requests =
+        List<FollowRequestResponse> requests =
                 followService.getAllOutgoingRequests(authentication.getName());
         return ResponseEntity.ok(requests);
     }
@@ -47,10 +47,10 @@ public class FollowRequestController {
 
     // GET: Get all pending incoming follow requests (the notification list)
     @GetMapping("/incoming")
-    public ResponseEntity<List<FollowRequestResponseDto>> getIncomingRequests(
+    public ResponseEntity<List<FollowRequestResponse>> getIncomingRequests(
             Authentication authentication) {
 
-        List<FollowRequestResponseDto> requests =
+        List<FollowRequestResponse> requests =
                 followService.getAllPendingIncomingRequests(authentication.getName());
         return ResponseEntity.ok(requests);
     }

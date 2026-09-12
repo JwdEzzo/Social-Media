@@ -20,9 +20,9 @@ public class DataInitialization implements CommandLineRunner {
    @Override
    public void run(String... args) throws Exception {
 
-      if (appUserRepository.findByUsername("admin123") == null
-            && appUserRepository.findByUsername("admin456") == null
-            && appUserRepository.findByUsername("admin789") == null) {
+   if (!appUserRepository.existsByUsername("admin123")
+         && !appUserRepository.existsByUsername("admin456")
+         && !appUserRepository.existsByUsername("admin789")) {
          AppUser user = new AppUser();
          user.setUsername("admin123");
          user.setPassword(encoder.encode("admin123"));

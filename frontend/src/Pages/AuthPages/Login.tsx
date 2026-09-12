@@ -1,48 +1,46 @@
-import { Camera, Loader2 } from "lucide-react";
-import { useLoginMutation } from "@/auth/authApi";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v3";
-import type { LoginRequest } from "@/types/requestTypes";
-import { setCredentials } from "@/auth/authSlice";
-import { ModeToggle } from "@/components/ModeToggle";
+import { Camera, Loader2 } from 'lucide-react';
+import { useLoginMutation } from '@/auth/authApi';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { TFunction } from 'i18next';
+import { z } from 'zod/v3';
+import type { LoginRequest } from '@/types/requestTypes';
+import { setCredentials } from '@/auth/authSlice';
+import { ModeToggle } from '@/components/ModeToggle';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
-const loginSchema = z.object({
-  username: z.string().min(6, "Username is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+// Built from `t` rather than declared at module scope, because the messages have to be
+// resolved in the language that is active when validation runs, not when this file loads.
+const buildLoginSchema = (t: TFunction) =>
+  z.object({
+    username: z.string().min(6, t('auth.validation.usernameRequired')),
+    password: z.string().min(6, t('auth.validation.passwordMin', { min: 6 })),
+  });
 
-type LoginSchema = z.infer<typeof loginSchema>;
+type LoginSchema = z.infer<ReturnType<typeof buildLoginSchema>>;
 
 function Login() {
   const [login, { isLoading }] = useLoginMutation();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // `t` changes identity when the language does, which rebuilds the schema.
+  const loginSchema = useMemo(() => buildLoginSchema(t), [t]);
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
-      password: "",
+      username: '',
+      password: '',
     },
   });
 
@@ -58,25 +56,25 @@ function Login() {
         setCredentials({
           token: response.token,
           username: response.username,
-          message: "You are logged in",
-        })
+        }),
       );
       navigate(`/home/${response.username}`);
     } catch (error) {
       // Set error field for login failure
-      form.setError("password", {
-        type: "manual",
-        message: "Invalid username or password. Please try again.",
+      form.setError('password', {
+        type: 'manual',
+        message: t('auth.login.failed'),
       });
-      console.log("Error logging in: ", error);
+      console.log('Error logging in: ', error);
     }
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md">
-        {/* Top bar with toggle */}
-        <div className="flex justify-end">
+        {/* Top bar with toggles */}
+        <div className="flex justify-end gap-2">
+          <LanguageToggle />
           <ModeToggle />
         </div>
 
@@ -95,23 +93,20 @@ function Login() {
         {/* Login Form */}
         <Card className="w-full shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
+            <CardTitle className="text-2xl text-center">{t('auth.login.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleFormSubmit)}
-                className="space-y-6"
-              >
+              <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t('auth.fields.username')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your username"
+                          placeholder={t('auth.fields.usernamePlaceholder')}
                           {...field}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -127,10 +122,10 @@ function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t('auth.fields.password')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your password"
+                          placeholder={t('auth.fields.passwordPlaceholder')}
                           {...field}
                           disabled={isLoading}
                           type="password"
@@ -151,10 +146,10 @@ function Login() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Signing In...
+                      {t('auth.login.submitting')}
                     </>
                   ) : (
-                    "Sign In"
+                    t('auth.login.submit')
                   )}
                 </Button>
               </form>
@@ -167,23 +162,19 @@ function Login() {
           <CardFooter className="flex flex-col gap-4">
             <div className="flex items-center justify-center w-full">
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
-              <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
-                OR
-              </span>
+              <span className="px-4 text-sm text-gray-500 dark:text-gray-400">{t('common.or')}</span>
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
             </div>
 
             <div className="text-center space-y-2">
-              <p className="text-sm text-blue-500 hover:underline cursor-pointer">
-                Forgot Password?
-              </p>
+              <p className="text-sm text-blue-500 hover:underline cursor-pointer">{t('auth.login.forgotPassword')}</p>
               <p className="text-sm">
-                Don't have an account?{" "}
+                {t('auth.login.noAccount')}{' '}
                 <span
                   className="text-blue-500 hover:underline cursor-pointer font-medium"
-                  onClick={() => navigate("/signup")}
+                  onClick={() => navigate('/signup')}
                 >
-                  Sign Up
+                  {t('auth.login.signUpLink')}
                 </span>
               </p>
             </div>

@@ -40,10 +40,12 @@ public class AppUser {
 
    @Email(message = "Email is not valid")
    @NotBlank(message = "Email is required")
+   @Column(nullable = false, unique = true)
    private String email;
 
    @NotBlank(message = "Username is required")
    @Size(min = 8, message = "Username must be at least 8 characters long")
+   @Column(nullable = false, unique = true)
    private String username;
 
    @NotBlank(message = "Password is required")

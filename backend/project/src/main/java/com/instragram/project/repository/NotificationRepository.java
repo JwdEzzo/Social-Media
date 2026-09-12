@@ -8,6 +8,7 @@ import com.instragram.project.enums.NotificationType;
 import com.instragram.project.model.Notification;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
     List<Notification> findByRecipientIdOrderByCreatedAtDesc(Long recipientId);
     List<Notification> findByRecipientIdAndIsRead(Long recipientId, boolean isRead);
     long countByRecipientIdAndIsRead(Long recipientId, boolean isRead);

@@ -1,0 +1,43 @@
+{
+  "common": {
+    "or": "OR",
+    "language": "Language"
+  },
+  "auth": {
+    "fields": {
+      "email": "Email",
+      "emailPlaceholder": "Enter your Email",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password"
+    },
+    "validation": {
+      "emailInvalid": "Email is not valid",
+      "usernameRequired": "Username is required",
+      "usernameMin": "Username must be at least {{min}} characters",
+      "passwordMin": "Password must be at least {{min}} characters"
+    },
+    "login": {
+      "title": "Welcome Back",
+      "submit": "Sign In",
+      "submitting": "Signing In...",
+      "failed": "Invalid username or password. Please try again.",
+      "forgotPassword": "Forgot Password?",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign Up"
+    },
+    "signUp": {
+      "title": "Create New Account",
+      "submit": "Create Account",
+      "submitting": "Creating Account...",
+      "loggingIn": "Logging In...",
+      "loggingInScreen": "Logging you in...",
+      "conflict": "Username or email already exists",
+      "networkError": "Cannot connect to server. Please try again later.",
+      "unknownError": "An error occurred during sign up. Please try again.",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in"
+    }
+  }
+}

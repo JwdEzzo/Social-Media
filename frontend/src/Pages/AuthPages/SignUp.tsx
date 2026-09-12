@@ -20,28 +20,38 @@ import {
 import { Input } from "@/components/ui/input";
 import type { SignUpRequestDto } from "@/types/requestTypes";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "i18next";
 import { Camera, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import z from "zod/v3";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/auth/authSlice";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
-const signUpSchema = z.object({
-  email: z.string().email(),
-  username: z.string().min(6, "Username must be at least 6 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+// Built from `t` rather than declared at module scope, because the messages have to be
+// resolved in the language that is active when validation runs, not when this file loads.
+const buildSignUpSchema = (t: TFunction) =>
+  z.object({
+    email: z.string().email(t("auth.validation.emailInvalid")),
+    username: z.string().min(6, t("auth.validation.usernameMin", { min: 6 })),
+    password: z.string().min(8, t("auth.validation.passwordMin", { min: 8 })),
+  });
 
-type SignUpSchema = z.infer<typeof signUpSchema>;
+type SignUpSchema = z.infer<ReturnType<typeof buildSignUpSchema>>;
 
 function SignUp() {
   const [userSignUp, { isLoading: isSignUpLoading }] = useSignUpMutation();
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // `t` changes identity when the language does, which rebuilds the schema.
+  const signUpSchema = useMemo(() => buildSignUpSchema(t), [t]);
 
   const form = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
@@ -75,7 +85,6 @@ function SignUp() {
         setCredentials({
           token: response.token,
           username: response.username,
-          message: "You are logged in",
         })
       );
 
@@ -86,16 +95,18 @@ function SignUp() {
 
       // Handle different error types
       if (error?.status === 400 || error?.data) {
-        // Backend returned an error message
+        // The backend already resolved this message through MessageSource for the locale we
+        // sent in Accept-Language, so it is displayed as-is. Only the fallback needs t().
         const message =
           typeof error.data === "string"
             ? error.data
-            : error.data?.message || "Username or email already exists";
+            : error.data?.message || t("auth.signUp.conflict");
         setErrorMessage(message);
       } else if (error?.status === "FETCH_ERROR") {
-        setErrorMessage("Cannot connect to server. Please try again later.");
+        // The request never reached the server, so there is no server message to show.
+        setErrorMessage(t("auth.signUp.networkError"));
       } else {
-        setErrorMessage("An error occurred during sign up. Please try again.");
+        setErrorMessage(t("auth.signUp.unknownError"));
       }
     }
   }
@@ -109,7 +120,7 @@ function SignUp() {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
           <p className="text-lg text-gray-700 dark:text-gray-300">
-            Logging you in...
+            {t("auth.signUp.loggingInScreen")}
           </p>
         </div>
       </div>
@@ -119,8 +130,9 @@ function SignUp() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md">
-        {/* Top bar with toggle */}
-        <div className="flex justify-end">
+        {/* Top bar with toggles */}
+        <div className="flex justify-end gap-2">
+          <LanguageToggle />
           <ModeToggle />
         </div>
 
@@ -140,7 +152,7 @@ function SignUp() {
         <Card className="w-full shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">
-              Create New Account
+              {t("auth.signUp.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -161,10 +173,10 @@ function SignUp() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("auth.fields.email")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your Email"
+                          placeholder={t("auth.fields.emailPlaceholder")}
                           {...field}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -180,10 +192,10 @@ function SignUp() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t("auth.fields.username")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your username"
+                          placeholder={t("auth.fields.usernamePlaceholder")}
                           {...field}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -199,10 +211,10 @@ function SignUp() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t("auth.fields.password")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your password"
+                          placeholder={t("auth.fields.passwordPlaceholder")}
                           {...field}
                           disabled={isLoading}
                           type="password"
@@ -223,15 +235,15 @@ function SignUp() {
                   {isSignUpLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Creating Account...
+                      {t("auth.signUp.submitting")}
                     </>
                   ) : isLoginLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Logging In...
+                      {t("auth.signUp.loggingIn")}
                     </>
                   ) : (
-                    "Create Account"
+                    t("auth.signUp.submit")
                   )}
                 </Button>
               </form>
@@ -245,19 +257,19 @@ function SignUp() {
             <div className="flex items-center justify-center w-full">
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
               <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
-                OR
+                {t("common.or")}
               </span>
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
             </div>
 
             <div className="text-center space-y-2">
               <p className="text-sm">
-                Already have an account?{" "}
+                {t("auth.signUp.haveAccount")}{" "}
                 <span
                   className="text-blue-500 hover:underline cursor-pointer font-medium"
                   onClick={() => navigate("/")}
                 >
-                  Sign in
+                  {t("auth.signUp.signInLink")}
                 </span>
               </p>
             </div>

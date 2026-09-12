@@ -2,12 +2,13 @@ package com.instragram.project.service;
 
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.instragram.project.dto.reply.request.WriteReplyRequestDto;
-import com.instragram.project.dto.reply.response.GetReplyResponseDto;
+import com.instragram.project.dto.reply.request.WriteReplyRequest;
+import com.instragram.project.dto.reply.response.GetReplyResponse;
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.ForbiddenException;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods; // You might want to create a specific DTO
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.CommentReply;
@@ -39,15 +40,11 @@ public class CommentReplyService {
 
    // Create Comment Reply
    @Transactional
-   public void createCommentReply(WriteReplyRequestDto requestDto, String username) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-
-      if (appUser == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
+   public void createCommentReply(WriteReplyRequest requestDto, String username) {
+      AppUser appUser = getUserOrThrow(username);
 
       if (requestDto.getCommentId() == null) {
-         throw new RuntimeException("Comment doesnt exist");
+         throw new NotFoundException("comment.notfound", requestDto.getCommentId());
       }
 
       // Create reply
@@ -65,7 +62,7 @@ public class CommentReplyService {
    }
 
    // Get All Replies to a Comment
-   public List<GetReplyResponseDto> findByCommentId(Long commentId) {
+   public List<GetReplyResponse> findByCommentId(Long commentId) {
       List<CommentReply> commentReplies = commentReplyRepository.findByCommentId(commentId);
       return mappingMethods.convertListCommentReplyEntityToListGetCommentReplyResponseDto(commentReplies);
    }
@@ -73,10 +70,9 @@ public class CommentReplyService {
    @Transactional
    public void editCommentReply(Long commentReplyId, String content, String username) {
 
-      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
-               .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
+      CommentReply commentReply = getCommentReplyOrThrow(commentReplyId);
       if (!commentReply.getAppUser().getUsername().equals(username)) {
-         throw new RuntimeException("You do not have permission to update this comment reply");
+         throw new ForbiddenException("comment.reply.forbidden.edit");
       }
       commentReply.setContent(content);
       commentReplyRepository.save(commentReply);
@@ -86,26 +82,18 @@ public class CommentReplyService {
    @Transactional
    public void deleteCommentReplyByPostOrCommentOrReplyOwner(Long commentReplyId, String username) {
       log.info("Started deleting process with comment reply ID: {}", commentReplyId);
-      AppUser appUser = appUserRepository.findByUsername(username);
-      if (appUser == null) {
-         log.error("User not found: {}", username);
-         throw new RuntimeException("User not found: " + username);
-      }
+      AppUser appUser = getUserOrThrow(username);
       log.info("Found user: {}", appUser.getUsername());
 
-      CommentReply commentReply = commentReplyRepository.findById(commentReplyId)
-               .orElseThrow(() -> new RuntimeException("Reply not found: " + commentReplyId));
+      CommentReply commentReply = getCommentReplyOrThrow(commentReplyId);
       log.info("Found reply: {}", commentReply);
 
       boolean isReplyOwner = commentReply.getAppUser().getId().equals(appUser.getId());
-      log.info("Is reply owner: {}", isReplyOwner);
       boolean isCommentOwner = commentReply.getComment().getAppUser().getId().equals(appUser.getId());
-      log.info("Is comment owner: {}", isCommentOwner);
       boolean isPostOwner = commentReply.getComment().getPost().getAppUser().getId().equals(appUser.getId());
-      log.info("Is post owner: {}", isPostOwner);
 
       if (!isReplyOwner && !isCommentOwner && !isPostOwner) {
-         throw new AccessDeniedException("You cannot delete this reply");
+         throw new ForbiddenException("comment.reply.forbidden.delete");
       }
 
       log.info("Deleting notifications");
@@ -123,6 +111,16 @@ public class CommentReplyService {
    // Get number of replies to a comment
    public long getReplyCount(Long commentId) {
       return commentReplyRepository.countByCommentId(commentId);
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private CommentReply getCommentReplyOrThrow(Long id) {
+      return commentReplyRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("comment.reply.notfound", id));
    }
 
 }

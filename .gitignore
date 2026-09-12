@@ -1,3 +1,4 @@
 frontend/src/Trash/TrashCreatePostModal.tsx
 frontend/src/Trash/TrashPostFormModal.tsx
 gitignore
+docs/

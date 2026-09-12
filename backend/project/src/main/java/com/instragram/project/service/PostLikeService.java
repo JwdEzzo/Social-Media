@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.enums.NotificationType;
+import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
 import com.instragram.project.model.PostLike;
@@ -39,14 +40,8 @@ public class PostLikeService {
    // Toggle PostLike
    @Transactional
    public void toggleLike(String username, Long postId) {
-      AppUser user = appUserRepository.findByUsername(username);
-      
-      if (user == null) {
-         throw new RuntimeException("User not found with username: " + username);
-      }
-
-      Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new RuntimeException("Post not found: " + postId));
+      AppUser user = getUserOrThrow(username);
+      Post post = getPostOrThrow(postId);
 
 
       // Check if user already liked the post
@@ -80,26 +75,32 @@ public class PostLikeService {
 
    // Get like count for a post
    public Long getLikeCount(Long postId) {
-      Post post = postRepository.findById(postId).get();
+      Post post = getPostOrThrow(postId);
       return postLikeRepository.countByPost(post);
    }
 
    // Get all likes by a user
    public List<PostLike> getLikesByUser(String username) {
-      AppUser user = appUserRepository.findByUsername(username);
-      if (user == null) {
-         throw new RuntimeException("User not found");
-      }
-
+      AppUser user = getUserOrThrow(username);
       return postLikeRepository.findByAppUser(user);
    }
 
    // Check if a user liked a post
    public boolean isLikedByUser(String username, Long postId) {
-      AppUser appUser = appUserRepository.findByUsername(username);
-      Post post = postRepository.findById(postId).get();
+      AppUser appUser = getUserOrThrow(username);
+      Post post = getPostOrThrow(postId);
 
       return postLikeRepository.existsByAppUserAndPost(appUser, post);
+   }
+
+   private AppUser getUserOrThrow(String username) {
+      return appUserRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+   }
+
+   private Post getPostOrThrow(Long id) {
+      return postRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("post.notfound", id));
    }
 
 }
