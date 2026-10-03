@@ -44,7 +44,7 @@ public class CommentReplyService {
       AppUser appUser = getUserOrThrow(username);
 
       if (requestDto.getCommentId() == null) {
-         throw new NotFoundException("comment.notfound", requestDto.getCommentId());
+         throw new NotFoundException("Comment with id " + requestDto.getCommentId() + " was not found.");
       }
 
       // Create reply
@@ -72,7 +72,7 @@ public class CommentReplyService {
 
       CommentReply commentReply = getCommentReplyOrThrow(commentReplyId);
       if (!commentReply.getAppUser().getUsername().equals(username)) {
-         throw new ForbiddenException("comment.reply.forbidden.edit");
+         throw new ForbiddenException("You do not have permission to edit this reply.");
       }
       commentReply.setContent(content);
       commentReplyRepository.save(commentReply);
@@ -93,7 +93,7 @@ public class CommentReplyService {
       boolean isPostOwner = commentReply.getComment().getPost().getAppUser().getId().equals(appUser.getId());
 
       if (!isReplyOwner && !isCommentOwner && !isPostOwner) {
-         throw new ForbiddenException("comment.reply.forbidden.delete");
+         throw new ForbiddenException("You do not have permission to delete this reply.");
       }
 
       log.info("Deleting notifications");
@@ -115,12 +115,12 @@ public class CommentReplyService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private CommentReply getCommentReplyOrThrow(Long id) {
       return commentReplyRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("comment.reply.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Reply with id " + id + " was not found."));
    }
 
 }

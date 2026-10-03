@@ -92,12 +92,12 @@ public class CommentReplyLikeService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private CommentReply getCommentReplyOrThrow(Long id) {
       return commentReplyRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("comment.reply.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Reply with id " + id + " was not found."));
    }
 
 }

@@ -3,12 +3,9 @@ package com.instragram.project.exception;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -36,21 +33,6 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class GlobalExceptionHandler {
 
-   private final MessageSource messageSource;
-
-   public GlobalExceptionHandler(MessageSource messageSource) {
-      this.messageSource = messageSource;
-   }
-
-   /**
-    * Resolves a message key for the current request's locale. <br>
-    * Missing keys fall back to the key itself, because {@code LocaleConfig} sets {@code useCodeAsDefaultMessage(true)}.
-    */
-	private String resolve(String key, Object[] args) {
-		Locale locale = LocaleContextHolder.getLocale();
-		return messageSource.getMessage(key, args, locale);
-	}
-
    /**
 	 * The Client hits an endpoint to get a user. <br>
 	 * User doesn't exist in the database <br>
@@ -59,7 +41,7 @@ public class GlobalExceptionHandler {
 	*/
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException ex) {
-		String msg = resolve(ex.getMessageKey(), ex.getArgs());
+		String msg = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 							 .body(ApiResponse.error(404, msg));
 	}
@@ -72,7 +54,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(AlreadyExistsException.class)
 	public ResponseEntity<ApiResponse<Void>> handleAlreadyExists(AlreadyExistsException ex) {
-		String msg = resolve(ex.getMessageKey(), ex.getArgs());
+		String msg = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 							 .body(ApiResponse.error(409, msg));
 	}
@@ -91,11 +73,11 @@ public class GlobalExceptionHandler {
 		// Step 2: Populate the errors map with field-specific violations.
 		for (FieldViolation violation : ex.getViolations()) {
 			List<String> messages = errors.computeIfAbsent(violation.getField(), field -> new ArrayList<>());
-			messages.add(resolve(violation.getMessageKey(), violation.getArgs()));
+			messages.add(violation.getMessage());
 		}
 	
 		// Step 3: Log the warning and return the response.
-		log.warn("Conflict [{}] on: {}", ex.getMessageKey(), errors.keySet());
+		log.warn("Conflict [{}] on: {}", ex.getMessage(), errors.keySet());
 	
 		return ResponseEntity.status(HttpStatus.CONFLICT)
 							 .body(ApiResponse.withErrors(409, errors));
@@ -109,7 +91,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
-		String msg = resolve(ex.getMessageKey(), ex.getArgs());
+		String msg = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 							 .body(ApiResponse.error(400, msg));
 	}
@@ -122,7 +104,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(ForbiddenException.class)
 	public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
-		String msg = resolve(ex.getMessageKey(), ex.getArgs());
+		String msg = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.FORBIDDEN)
 							 .body(ApiResponse.error(403, msg));
 	}
@@ -135,7 +117,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
-		String msg = resolve(ex.getMessageKey(), ex.getArgs());
+		String msg = ex.getMessage();
 		return ResponseEntity
 				.status(HttpStatus.UNAUTHORIZED)
 				.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
@@ -163,12 +145,12 @@ public class GlobalExceptionHandler {
 			return ResponseEntity
 					.status(HttpStatus.UNAUTHORIZED)
 					.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
-					.body(ApiResponse.error(401, resolve("error.authentication.required", null)));
+					.body(ApiResponse.error(401, "Authentication is required to access this resource."));
 		}
 
 		log.warn("Access denied for '{}': {}", auth.getName(), ex.getMessage());
 		return ResponseEntity.status(HttpStatus.FORBIDDEN)
-							 .body(ApiResponse.error(403, resolve("error.forbidden", null)));
+							 .body(ApiResponse.error(403, "You are not authorized to perform this action."));
 	}
 
 	/**
@@ -181,7 +163,7 @@ public class GlobalExceptionHandler {
 		log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
-				.body(ApiResponse.error(400, resolve("error.malformed_body", null)));
+				.body(ApiResponse.error(400, "The request body could not be read. Please check the format and try again."));
 	}
 
 	/**
@@ -211,7 +193,7 @@ public class GlobalExceptionHandler {
 		log.warn("Validation failed: {}", errors);
 		
 		return ResponseEntity.badRequest()
-				.body(ApiResponse.validationError(resolve("error.validation", null), errors));
+				.body(ApiResponse.validationError("Validation failed for one or more fields.", errors));
 	}
 
 	/**
@@ -222,7 +204,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MissingServletRequestParameterException.class)
 	public ResponseEntity<ApiResponse<Void>> handleMissingParam(MissingServletRequestParameterException ex) {
 		log.warn("Missing request parameter: {}", ex.getParameterName());
-		String msg = resolve("error.param.missing", new Object[] { ex.getParameterName() });
+		String msg = "The required parameter '" + ex.getParameterName() + "' is missing.";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, msg));
 	}
 
@@ -235,7 +217,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
 		log.warn("Type mismatch for parameter '{}': value [{}] could not be converted to {}",
 				ex.getName(), ex.getValue(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "?");
-		String msg = resolve("error.param.type_mismatch", new Object[] { ex.getName() });
+		String msg = "The parameter '" + ex.getName() + "' has an invalid value.";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, msg));
 	}
 
@@ -247,7 +229,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex) {
 		log.warn("Resource not found: {}", ex.getMessage());
-		String msg = resolve("error.resource.notfound", new Object[] { ex.getMessage() });
+		String msg = "The URL you are trying to call could not be found.";
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, msg));
 	}
 
@@ -258,7 +240,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
 		log.warn("Http Method type not supported: {}", ex.getMethod());
-		String msg = resolve("error.method.notsupported", new Object[] { ex.getMethod() });
+		String msg = "The HTTP method '" + ex.getMethod() + "' is not supported for this endpoint.";
 		return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(ApiResponse.error(405, msg));
 	}
 
@@ -270,6 +252,6 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex) {
 		log.error("Unhandled exception", ex);
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(500, resolve("error.internal", null)));
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(500, "An unexpected error occurred. Please try again later."));
 	}
 }

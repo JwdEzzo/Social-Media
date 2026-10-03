@@ -63,7 +63,7 @@ public class CommentService {
    public void editComment(Long commentId, String content, String username) {
       Comment comment = getCommentOrThrow(commentId);
       if (!comment.getAppUser().getUsername().equals(username)) {
-         throw new ForbiddenException("comment.forbidden.edit");
+         throw new ForbiddenException("You do not have permission to edit this comment.");
       }
       comment.setContent(content);
       commentRepository.save(comment);
@@ -79,7 +79,7 @@ public class CommentService {
       boolean isPostOwner = comment.getPost().getAppUser().getId().equals(appUser.getId());
 
       if (!isCommentOwner && !isPostOwner) {
-         throw new ForbiddenException("comment.forbidden.delete");
+         throw new ForbiddenException("You do not have permission to delete this comment.");
       }
 
       // Sender is always the commenter — regardless of who is performing the deletion
@@ -100,12 +100,12 @@ public class CommentService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private Comment getCommentOrThrow(Long id) {
       return commentRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("comment.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Comment with id " + id + " was not found."));
    }
 
 }

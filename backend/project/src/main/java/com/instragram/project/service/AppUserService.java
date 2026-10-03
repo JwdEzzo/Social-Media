@@ -95,7 +95,7 @@ public class AppUserService {
          // Lost the race: another request claimed this username or email between the
          // checks above and this insert. Which of the two it was would mean parsing the
          // constraint name out of the exception, so the message stays deliberately vague.
-         throw new AlreadyExistsException("signup.conflict", e);
+         throw new AlreadyExistsException("That username or email is already taken.", e);
       }
    }
 
@@ -115,8 +115,6 @@ public class AppUserService {
     *  {@link Page} carries the total count so the caller can render pagination controls.
     */
    public Page<GetUserResponse> getAllUsers(Pageable pageable) {
-      // map() keeps the page metadata (number, size, totalElements) and only
-      // converts the content, so no second count query is issued.
       return appUserRepository
             .findAll(pageable)
             .map(mappingMethods::convertAppUserEntityToGetUserResponse);
@@ -134,12 +132,10 @@ public class AppUserService {
     * Toggle the account status of the caller between PUBLIC and PRIVATE.
     *
     * @param username the caller's own username, resolved from the SecurityContext.
-    *                 Never accept this from the request.
     */
    public AccountStatus toggleAccountStatus(String username) {
 
       // Step 1: Retrieve the caller.
-      // There is no target to authorize against — the principal *is* the target.
       AppUser user = getUserByUsernameOrThrow(username);
 
       // Step 2: Toggle the account status.
@@ -153,47 +149,41 @@ public class AppUserService {
       appUserRepository.save(user);
       return user.getAccountStatus();
    }
-   
-   /**
-    * Find all followers of a certain user and return a list of GetUserResponse.
-    */
-   public List<GetUserResponse> getAllFollowers(Long userId) {
-      
-      getUserByIdOrThrow(userId);
-
-      List<AppUser> followersOfUser = followRepository.findFollowersByUserId(userId);
-      
-      return followersOfUser
-            .stream()
-            .map(follower -> mappingMethods.convertAppUserEntityToGetUserResponse(follower))
-            .collect(Collectors.toList());
-   }
 
    /**
-    * Find the users that are followed by a certain user and return a list of GetUserResponse.
+    * Find a page of followers of a certain user and return it as a page of GetUserResponse.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
     */
-   public List<GetUserResponse> getAllFollowings(Long userId) {
+   public Page<GetUserResponse> getAllFollowers(Long userId, Pageable pageable) {
 
       getUserByIdOrThrow(userId);
 
-      List<AppUser> followingsOfUser = followRepository.findFollowingsByUserId(userId);
-      return followingsOfUser
-            .stream()
-            .map(follower -> mappingMethods.convertAppUserEntityToGetUserResponse(follower))
-            .collect(Collectors.toList());
+      return followRepository
+            .findFollowersByUserId(userId, pageable)
+            .map(mappingMethods::convertAppUserEntityToGetUserResponse);
    }
 
    /**
-    * Search for users by their username and return a list of SearchUserResponse.
+    * Find a page of the users that are followed by a certain user and return it as a page of GetUserResponse.
     */
-   public List<SearchUserResponse> searchUsers(String username) {
+   public Page<GetUserResponse> getAllFollowings(Long userId, Pageable pageable) {
 
-      List<AppUser> users = appUserRepository.findByUsernameContaining(username);
+      getUserByIdOrThrow(userId);
 
-      return users
-            .stream()
-            .map(user -> mappingMethods.convertAppUserEntityToSearchUserResponse(user))
-            .collect(Collectors.toList());
+      return followRepository
+            .findFollowingsByUserId(userId, pageable)
+            .map(mappingMethods::convertAppUserEntityToGetUserResponse);
+   }
+
+   /**
+    * Search for users by their username and return a page of SearchUserResponse.
+    */
+   public Page<SearchUserResponse> searchUsers(String username, Pageable pageable) {
+
+      return appUserRepository
+            .findByUsernameContaining(username, pageable)
+            .map(mappingMethods::convertAppUserEntityToSearchUserResponse);
    }
 
    /**
@@ -213,12 +203,12 @@ public class AppUserService {
 
       // Step 2: The old password proves the caller owns the account; every change below depends on it.
       if (!encoder.matches(newUser.getOldPassword(), user.getPassword())) {
-         throw new BadRequestException("error.old.password.different");
+         throw new BadRequestException("The old password provided does not match the current password.");
       }
       // Step 3: Check and update email if provided
       if (StringUtils.hasText(newUser.getEmail())) {
          if (newUser.getEmail().equalsIgnoreCase(user.getEmail())) {
-            throw new BadRequestException("error.same.email");
+            throw new BadRequestException("The new email must be different from the current email.");
          }
          checkUserExistsByEmailOrThrow(newUser.getEmail());
          user.setEmail(newUser.getEmail());
@@ -226,7 +216,7 @@ public class AppUserService {
       // Step 4: Check and update username if provided
       if (StringUtils.hasText(newUser.getUsername())) {
          if (newUser.getUsername().equals(user.getUsername())) {
-            throw new BadRequestException("error.same.username");
+            throw new BadRequestException("The new username must be different from the current username.");
          }
          checkUserExistsByUsernameOrThrow(newUser.getUsername());
          user.setUsername(newUser.getUsername());
@@ -234,7 +224,7 @@ public class AppUserService {
       // Step 5: Check and update password if provided
       if (StringUtils.hasText(newUser.getNewPassword())) {
          if (encoder.matches(newUser.getNewPassword(), user.getPassword())) {
-            throw new BadRequestException("error.same.password");
+            throw new BadRequestException("The new password must be different from the current password.");
          }
          user.setPassword(encoder.encode(newUser.getNewPassword()));
       }
@@ -249,7 +239,6 @@ public class AppUserService {
     * If a new profile picture URL is provided, any previously uploaded bytes are deleted.
     *
     * @param username the caller's own username, resolved from the SecurityContext.
-    *                 Never accept this from the request.
     */
    @Transactional
    public void updateUserProfileWithUrl(String username, UpdateProfileRequest updateDto) {
@@ -280,7 +269,6 @@ public class AppUserService {
     * If a new image is provided, it replaces any previously uploaded profile picture.
     *
     * @param username the caller's own username, resolved from the SecurityContext.
-    *                 Never accept this from the request.
     */
    @Transactional
    public void updateUserProfileWithUpload(String username, UpdateProfileRequest updateDto, MultipartFile image) {
@@ -305,7 +293,8 @@ public class AppUserService {
 
          // Step 4: Update the timestamp, set profile picture URL, and save the user
          user.setUpdatedAt(LocalDateTime.now());
-         user.setProfilePictureUrl("http://localhost:8080/api/instagram/users/" + user.getId() + "/profile-image/preview");
+         user.setProfilePictureUrl(
+               "http://localhost:8080/api/instagram/users/" + user.getId() + "/profile-image/preview");
          appUserRepository.save(user);
 
          ProfilePicture picture = profilePictureRepository.findByAppUserId(user.getId())
@@ -320,7 +309,6 @@ public class AppUserService {
          throw new RuntimeException("Failed to save uploaded image", e);
       }
    }
-
 
    /**
     * Verify user credentials and generate a JWT token if valid. <br>
@@ -342,7 +330,7 @@ public class AppUserService {
          // Step 3: Catch if Step 1 throws
       } catch (AuthenticationException e) {
          log.warn("Failed login attempt for username: {}", loginRequestDto.getUsername());
-         throw new UnauthorizedException("error.invalid.credentials");
+         throw new UnauthorizedException("The credentials provided are not valid.");
       }
    }
 
@@ -356,7 +344,7 @@ public class AppUserService {
       // Step 1: Retrieve the caller and verify the password
       AppUser user = getUserByUsernameOrThrow(username);
       if (!encoder.matches(password, user.getPassword())) {
-         throw new ForbiddenException("error.invalid.credentials");
+         throw new ForbiddenException("The credentials provided are not valid.");
       }
       // Step 2: Delete the user
       appUserRepository.delete(user);
@@ -371,7 +359,7 @@ public class AppUserService {
    public byte[] getProfileImageBytes(Long id) {
       return profilePictureRepository.findByAppUserId(id)
             .map(ProfilePicture::getImageData)
-            .orElseThrow(() -> new NotFoundException("user.profile.picture.notfound", id));
+            .orElseThrow(() -> new NotFoundException("No profile picture is stored for user with id " + id + "."));
    }
 
    /**
@@ -396,7 +384,7 @@ public class AppUserService {
     */
    private AppUser getUserByUsernameOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    /**
@@ -404,7 +392,7 @@ public class AppUserService {
     */
    private AppUser getUserByIdOrThrow(Long id) {
       return appUserRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("user.notfound.id", id));
+            .orElseThrow(() -> new NotFoundException("User with id " + id + " was not found."));
    }
 
    /**
@@ -412,7 +400,7 @@ public class AppUserService {
     */
    private void checkUserExistsByUsernameOrThrow(String username) {
       if (appUserRepository.existsByUsername(username)) {
-            throw new AlreadyExistsException("user.exists", username);
+         throw new AlreadyExistsException("The username '" + username + "' is already taken.");
       }
    }
 
@@ -421,7 +409,7 @@ public class AppUserService {
     */
    private void checkUserExistsByEmailOrThrow(String email) {
       if (appUserRepository.existsByEmail(email)) {
-         throw new AlreadyExistsException("email.exists", email);
+         throw new AlreadyExistsException("An account with the email '" + email + "' already exists.");
       }
    }
 
@@ -433,13 +421,13 @@ public class AppUserService {
    private void validateSignUpRequestOrThrow(SignUpRequest request) {
       List<FieldViolation> conflicts = new ArrayList<>();
       if (appUserRepository.existsByUsername(request.getUsername())) {
-         conflicts.add(new FieldViolation("username", "user.exists", request.getUsername()));
+         conflicts.add(new FieldViolation("username", "The username '" + request.getUsername() + "' is already taken."));
       }
       if (appUserRepository.existsByEmail(request.getEmail())) {
-         conflicts.add(new FieldViolation("email", "email.exists", request.getEmail()));
+         conflicts.add(new FieldViolation("email", "An account with the email '" + request.getEmail() + "' already exists."));
       }
       if (!conflicts.isEmpty()) {
-         throw new ConflictException("signup.conflict", conflicts);
+         throw new ConflictException("That username or email is already taken.", conflicts);
       }
    }
 }

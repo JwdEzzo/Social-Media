@@ -65,30 +65,5 @@ export const store = configureStore({
 
 setupListeners(store.dispatch);
 
-/**
- * Every RTK Query api in the app, in one place.
- *
- * Cached *data* is language-neutral, but the `message` a response carries was resolved by the
- * backend for whatever Accept-Language was in effect when the request went out. After the user
- * switches language those cached messages are stale, so the caches get dropped and refetched.
- */
-const apis = [
-  authApi,
-  userApi,
-  postApi,
-  commentApi,
-  postLikesApi,
-  commentLikesApi,
-  followApi,
-  commentRepliesApi,
-  commentReplyLikesApi,
-  postSavesApi,
-  notificationApi,
-];
-
-export const resetAllApiState = () => (dispatch: AppDispatch) => {
-  apis.forEach((api) => dispatch(api.util.resetApiState()));
-};
-
 export type RootState = ReturnType<typeof appReducer>;
 export type AppDispatch = typeof store.dispatch;

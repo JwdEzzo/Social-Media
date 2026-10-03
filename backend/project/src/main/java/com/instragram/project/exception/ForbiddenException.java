@@ -7,17 +7,16 @@ package com.instragram.project.exception;
  * credentials would not change the outcome.
  * <p>
  * Prefer this over {@code org.springframework.security.access.AccessDeniedException} for checks
- * made inside a service. Spring's type carries a plain string and is translated by the filter
- * chain, which {@code GlobalExceptionHandler} pre-empts; this one carries a message key and is
- * localized like every other application error.
+ * made inside a service. Spring's type is translated by the filter chain, which
+ * {@code GlobalExceptionHandler} pre-empts; this one is handled like every other application error.
  */
 public class ForbiddenException extends BaseException {
 
-    public ForbiddenException(String messageKey, Object... args) {
-        super(messageKey, args);
+    public ForbiddenException(String message) {
+        super(message);
     }
 
-    public ForbiddenException(String messageKey, Throwable cause, Object... args) {
-        super(messageKey, cause, args);
+    public ForbiddenException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -9,11 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Messages are {@code {key}} references rather than literals, so they resolve against the same
- * localization bundle the rest of the API uses - {@code LocaleConfig} points Bean Validation's
- * interpolator at it. {@code {min}} and {@code {max}} are filled in from the constraint itself. <br>
  * Hibernate Validator does not fail fast, so every constraint below is evaluated on every request
- * and the caller is told about all of its problems at once.
+ * and the caller is told about all of its problems at once. {@code {min}} and {@code {max}} in the
+ * messages are filled in from the constraint itself.
  */
 @Data
 @AllArgsConstructor
@@ -22,19 +20,19 @@ public class SignUpRequest {
 
    // @Email and @Size both treat a blank value as valid, so @NotBlank is what catches a missing
    // one. Without it, an empty field would pass every other constraint here and report nothing.
-   @NotBlank(message = "{validation.email.required}")
-   @Email(message = "{validation.email.invalid}")
-   @Size(max = 254, message = "{validation.email.size}")
+   @NotBlank(message = "Email is required.")
+   @Email(message = "Email is not valid.")
+   @Size(max = 254, message = "Email must be at most {max} characters.")
    private String email;
 
-   @NotBlank(message = "{validation.username.required}")
-   @Size(min = 8, max = 20, message = "{validation.username.size}")
-   @Pattern(regexp = "^[a-zA-Z0-9._]+$", message = "{validation.username.charset}")
+   @NotBlank(message = "Username is required.")
+   @Size(min = 8, max = 20, message = "Username must be between {min} and {max} characters.")
+   @Pattern(regexp = "^[a-zA-Z0-9._]+$", message = "Username can only contain letters, numbers, dots, and underscores.")
    private String username;
 
-   @NotBlank(message = "{validation.password.required}")
-   @Size(min = 8, max = 20, message = "{validation.password.size}")
-   // @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$", message = "{validation.password.strength}")
+   @NotBlank(message = "Password is required.")
+   @Size(min = 8, max = 20, message = "Password must be between {min} and {max} characters.")
+   // @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$", message = "Password must contain at least one lowercase letter, one uppercase letter, and one digit.")
    private String password;
 
 }

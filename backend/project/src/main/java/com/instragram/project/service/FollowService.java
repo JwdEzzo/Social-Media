@@ -53,7 +53,7 @@ public class FollowService {
       AppUser following = getUserOrThrow(followingUsername);
 
       if (followerUsername.equals(followingUsername)) {
-         throw new BadRequestException("follow.self");
+         throw new BadRequestException("You cannot follow yourself.");
       }
 
       if (followRepository.existsByFollowerAndFollowing(follower, following)) {
@@ -91,7 +91,7 @@ public class FollowService {
                            follower.getId(), following.getId(), FollowRequestStatus.PENDING);
 
          if (alreadyRequested) {
-               throw new AlreadyExistsException("follow.request.exists", followingUsername);
+               throw new AlreadyExistsException("You have already sent a follow request to '" + followingUsername + "'.");
          }
 
          FollowRequest followRequest = new FollowRequest();
@@ -116,7 +116,7 @@ public class FollowService {
       FollowRequest followRequest = getFollowRequestOrThrow(requestId);
 
       if (!followRequest.getTarget().getUsername().equals(targetUsername)) {
-         throw new ForbiddenException("follow.request.forbidden.respond");
+         throw new ForbiddenException("You cannot respond to this follow request.");
       }
 
       if (followRequest.getStatus() != FollowRequestStatus.PENDING) {
@@ -159,7 +159,7 @@ public class FollowService {
 
       // Only the requester can cancel the follow request
       if (!followRequest.getRequester().getUsername().equals(requesterUsername)) {
-         throw new ForbiddenException("follow.request.forbidden.cancel");
+         throw new ForbiddenException("You cannot cancel this follow request.");
       }
       // Delete the follow request notification from the target's inbox
       notificationService.deleteFollowNotification(
@@ -263,11 +263,11 @@ public class FollowService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private FollowRequest getFollowRequestOrThrow(Long id) {
       return followRequestRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("follow.request.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Follow request " + id + " was not found."));
    }
 }

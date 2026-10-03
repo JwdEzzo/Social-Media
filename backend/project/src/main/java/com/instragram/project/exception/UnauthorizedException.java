@@ -12,11 +12,11 @@ package com.instragram.project.exception;
  */
 public class UnauthorizedException extends BaseException {
 
-    public UnauthorizedException(String messageKey, Object... args) {
-        super(messageKey, args);
+    public UnauthorizedException(String message) {
+        super(message);
     }
 
-    public UnauthorizedException(String messageKey, Throwable cause, Object... args) {
-        super(messageKey, cause, args);
+    public UnauthorizedException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

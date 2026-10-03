@@ -72,11 +72,11 @@ public class PostSaveService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private Post getPostOrThrow(Long id) {
       return postRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("post.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Post with id " + id + " was not found."));
    }
 }

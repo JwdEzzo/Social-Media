@@ -1,6 +1,5 @@
 // store/apis/baseApi.ts - Base query with auth
 import { logout } from "@/auth/authSlice";
-import { currentLanguage } from "@/i18n";
 import type { RootState } from "@/store/store";
 import {
   fetchBaseQuery,
@@ -17,9 +16,6 @@ const baseQuery = fetchBaseQuery({
     if (token) {
       headers.set("authorization", `Bearer ${token}`); // Give the request a header with the token
     }
-    // Drives AcceptHeaderLocaleResolver on the backend, so error and validation messages come
-    // back in the language the user picked here - not the one their browser happens to prefer.
-    headers.set("Accept-Language", currentLanguage());
     return headers; // We are attaching the access token to the headers with every request, likewise with the cookie, we are attaching the credentials in the cookie everytime
   },
 });

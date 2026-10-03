@@ -118,28 +118,37 @@ public class AppUserController {
         return ResponseEntity.ok(users);
     }
 
-    // GET: All followers of a user
+    // GET: All followers of a user, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/followers/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GetUserResponse>> getAllFollowers(@PathVariable Long userId) {
-        List<GetUserResponse> followers = appUserService.getAllFollowers(userId);
-        return ResponseEntity.ok(followers);
+    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllFollowers(
+            @PathVariable Long userId,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        Page<GetUserResponse> page = appUserService.getAllFollowers(userId, pageable);
+        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched followers successfully!");
+        return ResponseEntity.ok(response);
     }
 
-    // GET: All users that a user follows
+    // GET: All users that a user follows, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/followings/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GetUserResponse>> getAllFollowings(@PathVariable Long userId) {
-        List<GetUserResponse> followings = appUserService.getAllFollowings(userId);
-        return ResponseEntity.ok(followings);
+    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllFollowings(
+            @PathVariable Long userId,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        Page<GetUserResponse> page = appUserService.getAllFollowings(userId, pageable);
+        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched followings successfully!");
+        return ResponseEntity.ok(response);
     }
 
-    // GET: Search users by username
+    // GET: Search users by username, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/search/{username}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<SearchUserResponse>> searchUsers(@PathVariable String username) {
-        List<SearchUserResponse> users = appUserService.searchUsers(username);
-        return ResponseEntity.ok(users);
+    public ResponseEntity<ApiResponse<PagedModel<SearchUserResponse>>> searchUsers(
+            @PathVariable String username,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        Page<SearchUserResponse> page = appUserService.searchUsers(username, pageable);
+        ApiResponse<PagedModel<SearchUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched search results successfully!");
+        return ResponseEntity.ok(response);
     }
 
     // GET: serve image bytes for a post

@@ -3,6 +3,8 @@ package com.instragram.project.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,10 +32,15 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
    // Get all follows for a user
    List<Follow> findByFollower(AppUser follower);
 
-   @Query("SELECT f.follower FROM Follow f WHERE f.following.id = :userId")
-   List<AppUser> findFollowersByUserId(@Param("userId") Long userId);
+   // A separate countQuery is supplied because the projection selects an
+   // association (f.follower / f.following), which Spring Data cannot reliably
+   // rewrite into a count query on its own.
+   @Query(value = "SELECT f.follower FROM Follow f WHERE f.following.id = :userId",
+         countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.following.id = :userId")
+   Page<AppUser> findFollowersByUserId(@Param("userId") Long userId, Pageable pageable);
 
-   @Query("SELECT f.following FROM Follow f WHERE f.follower.id = :userId")
-   List<AppUser> findFollowingsByUserId(@Param("userId") Long userId);
+   @Query(value = "SELECT f.following FROM Follow f WHERE f.follower.id = :userId",
+         countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :userId")
+   Page<AppUser> findFollowingsByUserId(@Param("userId") Long userId, Pageable pageable);
 
 }

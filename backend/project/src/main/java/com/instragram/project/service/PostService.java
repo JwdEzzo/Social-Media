@@ -211,7 +211,7 @@ public class PostService {
    public byte[] getPostImageBytes(Long postId) {
       Post post = getPostOrThrow(postId);
       if (post.getImageData() == null) {
-         throw new NotFoundException("post.image.notfound", postId);
+         throw new NotFoundException("No image data is stored for post " + postId + ".");
       }
       return post.getImageData();
    }
@@ -232,17 +232,17 @@ public class PostService {
 
    private AppUser getUserOrThrow(String username) {
       return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("user.notfound", username));
+            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private AppUser getUserOrThrow(Long id) {
       return appUserRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("user.notfound.id", id));
+            .orElseThrow(() -> new NotFoundException("User with id " + id + " was not found."));
    }
 
    private Post getPostOrThrow(Long id) {
       return postRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("post.notfound", id));
+            .orElseThrow(() -> new NotFoundException("Post with id " + id + " was not found."));
    }
 
 }

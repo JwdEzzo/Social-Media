@@ -62,13 +62,13 @@ public class JwtFilter extends OncePerRequestFilter {
       } catch (ExpiredJwtException ex) {
          logger.warn("Expired JWT on " + request.getRequestURI());
          handlerExceptionResolver.resolveException(request, response, null,
-               new UnauthorizedException("error.token.expired"));
+               new UnauthorizedException("Your session has expired. Please log in again."));
          return; // must not continue the chain because it failed.
 
       } catch (JwtException | IllegalArgumentException ex) {
          logger.warn("Rejected JWT on " + request.getRequestURI() + ": " + ex.getMessage());
          handlerExceptionResolver.resolveException(request, response, null,
-               new UnauthorizedException("error.token.invalid"));
+               new UnauthorizedException("The provided token is invalid. Please log in again."));
          return;
       }
 

@@ -1,31 +1,17 @@
 package com.instragram.project.exception;
 
 /**
- * The BaseException class serves as a foundational exception type for the application, and handles errors with localized messages. <br>
- * It extends {@link RuntimeException} and includes a message key and optional arguments for dynamic message formatting. <BR>
+ * The BaseException class serves as a foundational exception type for the application. <br>
+ * It extends {@link RuntimeException} and carries the message that is returned to the client. <BR>
  * All custom exceptions extends BaseException.
  */
 public class BaseException extends RuntimeException {
-	private final String messageKey;
-	private final Object[] args;
 
-	public BaseException(String messageKey, Object... args) {
-		super(messageKey);
-		this.messageKey = messageKey;
-		this.args = args;
+	public BaseException(String message) {
+		super(message);
 	}
 
-	public BaseException(String messageKey, Throwable cause, Object... args) {
-		super(messageKey, cause);
-		this.messageKey = messageKey;
-		this.args = args;
-	}
-
-	public String getMessageKey() {
-		return messageKey;
-	}
-
-	public Object[] getArgs() {
-		return args;
+	public BaseException(String message, Throwable cause) {
+		super(message, cause);
 	}
 }

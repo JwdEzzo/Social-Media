@@ -72,7 +72,7 @@ public class NotificationService {
     public void markAsRead(Long notificationId, Long requestingUserId) {
         // Single query — checks existence and ownership together
         if (!notificationRepository.existsByIdAndRecipientId(notificationId, requestingUserId)) {
-            throw new ForbiddenException("notification.forbidden.access");
+            throw new ForbiddenException("You do not have permission to access these notifications.");
         }
 
         Notification notification = getNotificationOrThrow(notificationId);
@@ -100,7 +100,7 @@ public class NotificationService {
     // Helper Method
     private void verifyOwnership(Long recipientId, Long requestingUserId) {
         if (!recipientId.equals(requestingUserId)) {
-            throw new ForbiddenException("notification.forbidden.access");
+            throw new ForbiddenException("You do not have permission to access these notifications.");
         }
     }
 
@@ -121,7 +121,7 @@ public class NotificationService {
 
     private Notification getNotificationOrThrow(Long id) {
         return notificationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("notification.notfound", id));
+                .orElseThrow(() -> new NotFoundException("Notification with id " + id + " was not found."));
     }
 
 }

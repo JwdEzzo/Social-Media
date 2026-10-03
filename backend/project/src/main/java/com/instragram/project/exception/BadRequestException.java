@@ -9,11 +9,11 @@ package com.instragram.project.exception;
  */
 public class BadRequestException extends BaseException {
 
-    public BadRequestException(String messageKey, Object... args) {
-        super(messageKey, args);
+    public BadRequestException(String message) {
+        super(message);
     }
 
-    public BadRequestException(String messageKey, Throwable cause, Object... args) {
-        super(messageKey, cause, args);
+    public BadRequestException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

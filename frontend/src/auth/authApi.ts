@@ -1,4 +1,3 @@
-import { currentLanguage } from "@/i18n";
 import type { ApiSuccessResponse } from "@/types/apiResponse";
 import type { LoginRequest } from "@/types/requestTypes";
 import type { LoginResponse } from "@/types/responseTypes";
@@ -14,12 +13,6 @@ export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "http://localhost:8080/api/instagram/users",
-    // This api builds its own baseQuery instead of reusing baseQueryWithReauth, so it needs
-    // its own Accept-Language - otherwise a failed login reports in the browser's language.
-    prepareHeaders: (headers) => {
-      headers.set("Accept-Language", currentLanguage());
-      return headers;
-    },
   }),
   endpoints(builder) {
     return {

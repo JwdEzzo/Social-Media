@@ -20,38 +20,28 @@ import {
 import { Input } from "@/components/ui/input";
 import type { SignUpRequestDto } from "@/types/requestTypes";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { TFunction } from "i18next";
 import { Camera, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import z from "zod/v3";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/auth/authSlice";
-import { LanguageToggle } from "@/components/LanguageToggle";
 
-// Built from `t` rather than declared at module scope, because the messages have to be
-// resolved in the language that is active when validation runs, not when this file loads.
-const buildSignUpSchema = (t: TFunction) =>
-  z.object({
-    email: z.string().email(t("auth.validation.emailInvalid")),
-    username: z.string().min(6, t("auth.validation.usernameMin", { min: 6 })),
-    password: z.string().min(8, t("auth.validation.passwordMin", { min: 8 })),
-  });
+const signUpSchema = z.object({
+  email: z.string().email("Email is not valid"),
+  username: z.string().min(6, "Username must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
-type SignUpSchema = z.infer<ReturnType<typeof buildSignUpSchema>>;
+type SignUpSchema = z.infer<typeof signUpSchema>;
 
 function SignUp() {
   const [userSignUp, { isLoading: isSignUpLoading }] = useSignUpMutation();
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  // `t` changes identity when the language does, which rebuilds the schema.
-  const signUpSchema = useMemo(() => buildSignUpSchema(t), [t]);
 
   const form = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
@@ -95,18 +85,17 @@ function SignUp() {
 
       // Handle different error types
       if (error?.status === 400 || error?.data) {
-        // The backend already resolved this message through MessageSource for the locale we
-        // sent in Accept-Language, so it is displayed as-is. Only the fallback needs t().
+        // The backend sends a human-readable message, so it is displayed as-is.
         const message =
           typeof error.data === "string"
             ? error.data
-            : error.data?.message || t("auth.signUp.conflict");
+            : error.data?.message || "Username or email already exists";
         setErrorMessage(message);
       } else if (error?.status === "FETCH_ERROR") {
         // The request never reached the server, so there is no server message to show.
-        setErrorMessage(t("auth.signUp.networkError"));
+        setErrorMessage("Cannot connect to server. Please try again later.");
       } else {
-        setErrorMessage(t("auth.signUp.unknownError"));
+        setErrorMessage("An error occurred during sign up. Please try again.");
       }
     }
   }
@@ -120,7 +109,7 @@ function SignUp() {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
           <p className="text-lg text-gray-700 dark:text-gray-300">
-            {t("auth.signUp.loggingInScreen")}
+            Logging you in...
           </p>
         </div>
       </div>
@@ -130,9 +119,8 @@ function SignUp() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md">
-        {/* Top bar with toggles */}
+        {/* Top bar with theme toggle */}
         <div className="flex justify-end gap-2">
-          <LanguageToggle />
           <ModeToggle />
         </div>
 
@@ -152,7 +140,7 @@ function SignUp() {
         <Card className="w-full shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">
-              {t("auth.signUp.title")}
+              Create New Account
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -173,10 +161,10 @@ function SignUp() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("auth.fields.email")}</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("auth.fields.emailPlaceholder")}
+                          placeholder="Enter your Email"
                           {...field}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -192,10 +180,10 @@ function SignUp() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("auth.fields.username")}</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("auth.fields.usernamePlaceholder")}
+                          placeholder="Enter your username"
                           {...field}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -211,10 +199,10 @@ function SignUp() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("auth.fields.password")}</FormLabel>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("auth.fields.passwordPlaceholder")}
+                          placeholder="Enter your password"
                           {...field}
                           disabled={isLoading}
                           type="password"
@@ -235,15 +223,15 @@ function SignUp() {
                   {isSignUpLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      {t("auth.signUp.submitting")}
+                      Creating Account...
                     </>
                   ) : isLoginLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      {t("auth.signUp.loggingIn")}
+                      Logging In...
                     </>
                   ) : (
-                    t("auth.signUp.submit")
+                    "Create Account"
                   )}
                 </Button>
               </form>
@@ -257,19 +245,19 @@ function SignUp() {
             <div className="flex items-center justify-center w-full">
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
               <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
-                {t("common.or")}
+                OR
               </span>
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
             </div>
 
             <div className="text-center space-y-2">
               <p className="text-sm">
-                {t("auth.signUp.haveAccount")}{" "}
+                Already have an account?{" "}
                 <span
                   className="text-blue-500 hover:underline cursor-pointer font-medium"
                   onClick={() => navigate("/")}
                 >
-                  {t("auth.signUp.signInLink")}
+                  Sign in
                 </span>
               </p>
             </div>
