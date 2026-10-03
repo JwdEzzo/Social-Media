@@ -41,14 +41,13 @@ public class MappingMethods {
 
    private final CommentRepository commentRepository;
 
-
    public MappingMethods(AppUserRepository appUserRepository,
-        PostRepository postRepository, CommentRepository commentRepository) {
+         PostRepository postRepository, CommentRepository commentRepository) {
       this.appUserRepository = appUserRepository;
       this.postRepository = postRepository;
       this.commentRepository = commentRepository;
    }
-   
+
    /**
     * Map to ApiResponse<T> with data and message
     */
@@ -135,16 +134,6 @@ public class MappingMethods {
       return post;
    }
 
-   // Convert List<Post> to List<GetPostResponse> responses by username; 
-   public List<GetPostResponse> convertListPostEntityToListGetPostResponseByUsername(List<Post> posts,
-         String username) {
-      return posts
-            .stream()
-            .filter(post -> post.getAppUser().getUsername().equals(username))
-            .map(this::convertPostEntityToGetPostResponse)
-            .collect(Collectors.toList());
-   }
-
    // Convert WriteCommentRequest to Comment Entity
    public Comment convertWriteCommentRequestToCommentEntity(AppUser appUser, WriteCommentRequest request) {
       Post post = getPostOrThrow(request.getPostId());
@@ -165,14 +154,6 @@ public class MappingMethods {
       response.setCreatedAt(comment.getCreatedAt());
       response.setAppUser(convertAppUserEntityToGetUserResponse(comment.getAppUser()));
       return response;
-   }
-
-   // Convert List<Comment> to List<GetCommentResponse> responses; 
-   public List<GetCommentResponse> convertListCommentEntityToListGetCommentResponse(List<Comment> comments) {
-      return comments
-            .stream()
-            .map(this::convertCommentEntityToGetCommentResponse)
-            .collect(Collectors.toList());
    }
 
    // Convert WriteReplyRequest to CommentReply Entity 
@@ -196,15 +177,6 @@ public class MappingMethods {
       response.setCreatedAt(commentReply.getCreatedAt());
       response.setAppUser(convertAppUserEntityToGetUserResponse(commentReply.getAppUser()));
       return response;
-   }
-
-   // Convert List<CommentReply> to List<GetReplyResponse> responses; 
-   public List<GetReplyResponse> convertListCommentReplyEntityToListGetCommentReplyResponse(
-         List<CommentReply> commentReplies) {
-      return commentReplies
-            .stream()
-            .map(this::convertCommentReplyEntityToGetCommentReplyResponse)
-            .collect(Collectors.toList());
    }
 
    // Convert FollowRequest To FollowRequestResponse
@@ -232,7 +204,8 @@ public class MappingMethods {
       return request;
    }
 
-   public List<NotificationResponse> convertListNotificationToListNotificationResponse(List<Notification> notifications) {
+   public List<NotificationResponse> convertListNotificationToListNotificationResponse(
+         List<Notification> notifications) {
       return notifications
             .stream()
             .map(this::convertNotificationToNotificationResponse)

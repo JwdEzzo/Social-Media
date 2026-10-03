@@ -1,11 +1,15 @@
 package com.instragram.project.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -71,14 +75,16 @@ public class PostController {
    }
 
    // GET : Get posts of a private account followed by the current user , show null to non-followers
+   //        paginated — ?page=0&size=20&sort=createdAt,desc
    @GetMapping("/private-account/{privateAccountUsername}")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponse>> getPostsByPrivateAccountTheUserFollows(
+   public ResponseEntity<PagedModel<GetPostResponse>> getPostsByPrivateAccountTheUserFollows(
          @PathVariable String privateAccountUsername,
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
          Authentication authentication) {
             String followerUsername = authentication.getName();
-            List<GetPostResponse> posts = postService.getPostsByPrivateAccountTheUserFollows(followerUsername, privateAccountUsername);
-            return ResponseEntity.ok(posts);
+            Page<GetPostResponse> posts = postService.getPostsByPrivateAccountTheUserFollows(followerUsername, privateAccountUsername, pageable);
+            return ResponseEntity.ok(new PagedModel<>(posts));
    }
 
    // GET : Get post by id
@@ -88,44 +94,54 @@ public class PostController {
       return ResponseEntity.status(HttpStatus.OK).body(responseDto);
    }
 
-   // GET : Get posts by username
+   // GET : Get posts by username, paginated — ?page=0&size=20&sort=createdAt,desc
    @GetMapping("/{username}")
-   public ResponseEntity<List<GetPostResponse>> getPostsByUsername(@PathVariable String username) {
-      List<GetPostResponse> responseDtos = postService.getPostsByUsername(username);
-      return ResponseEntity.status(HttpStatus.OK).body(responseDtos);
+   public ResponseEntity<PagedModel<GetPostResponse>> getPostsByUsername(
+         @PathVariable String username,
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+      Page<GetPostResponse> responseDtos = postService.getPostsByUsername(username, pageable);
+      return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(responseDtos));
    }
 
-   // GET : Get posts excluding the current logged in user
+   // GET : Get posts excluding the current logged in user, paginated
    @GetMapping("/excluded")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponse>> getAllPostsExcludingTheCurrentUser(Authentication authentication) {
+   public ResponseEntity<PagedModel<GetPostResponse>> getAllPostsExcludingTheCurrentUser(
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+         Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponse> posts = postService.getAllPostsExcludingUser(username);
-      return ResponseEntity.ok(posts);
+      Page<GetPostResponse> posts = postService.getAllPostsExcludingUser(username, pageable);
+      return ResponseEntity.ok(new PagedModel<>(posts));
    }
 
-   // GET : Get all Posts liked by the logged in user
+   // GET : Get all Posts liked by the logged in user, paginated
    @GetMapping("/liked-by-me")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponse>> getPostsLikedByCurrentUser(Authentication authentication) {
+   public ResponseEntity<PagedModel<GetPostResponse>> getPostsLikedByCurrentUser(
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+         Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponse> likedPosts = postService.getPostslikedByUser(username);
-      return ResponseEntity.ok(likedPosts);
+      Page<GetPostResponse> likedPosts = postService.getPostslikedByUser(username, pageable);
+      return ResponseEntity.ok(new PagedModel<>(likedPosts));
    }
 
-   // GET : Get all Posts saved by the logged in user
+   // GET : Get all Posts saved by the logged in user, paginated
    @GetMapping("/saved-by-me")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponse>> getPostsSavedByCurrentUser(Authentication authentication) {
+   public ResponseEntity<PagedModel<GetPostResponse>> getPostsSavedByCurrentUser(
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+         Authentication authentication) {
       String username = authentication.getName();
-      List<GetPostResponse> savedPosts = postService.getPostsSavedByUser(username);
-      return ResponseEntity.ok(savedPosts);
+      Page<GetPostResponse> savedPosts = postService.getPostsSavedByUser(username, pageable);
+      return ResponseEntity.ok(new PagedModel<>(savedPosts));
    }
 
-   // GET : Get all Posts liked by the logged in user
+   // GET : Get the feed of posts by the users the logged in user follows, paginated
    @GetMapping("/my-followers")
    @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<List<GetPostResponse>> getFollowingPosts(Authentication authentication) {
+   public ResponseEntity<PagedModel<GetPostResponse>> getFollowingPosts(
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+         Authentication authentication) {
       String username = authentication.getName();
       // Deliberately not the fetch-or-throw-NotFound pattern: an authenticated principal whose
       // row is gone means a stale token, which this endpoint answers with 401, not 404.
@@ -133,8 +149,8 @@ public class PostController {
       if (user.isEmpty()) {
          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
       }
-      List<GetPostResponse> followingPosts = postService.getPostsByFollowings(user.get().getId());
-      return ResponseEntity.ok().body(followingPosts);
+      Page<GetPostResponse> followingPosts = postService.getPostsByFollowings(user.get().getId(), pageable);
+      return ResponseEntity.ok().body(new PagedModel<>(followingPosts));
    }
 
    // GET :  Get post count of a user
@@ -144,11 +160,13 @@ public class PostController {
       return ResponseEntity.ok(count);
    }
 
-   // GET : Get posts by searching description
+   // GET : Get posts by searching description, paginated
    @GetMapping("/search-posts/containing/{description}")
-   public ResponseEntity<List<GetPostResponse>> getPostsByDescription(@PathVariable String description) {
-      List<GetPostResponse> posts = postService.getPostsByDescription(description);
-      return ResponseEntity.status(HttpStatus.OK).body(posts);
+   public ResponseEntity<PagedModel<GetPostResponse>> getPostsByDescription(
+         @PathVariable String description,
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+      Page<GetPostResponse> posts = postService.getPostsByDescription(description, pageable);
+      return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(posts));
    }
 
    // GET : serve image bytes for a post

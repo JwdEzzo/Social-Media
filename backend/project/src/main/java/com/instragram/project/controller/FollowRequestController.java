@@ -1,7 +1,10 @@
 package com.instragram.project.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -28,14 +31,15 @@ public class FollowRequestController {
         this.followService = followService;
     }
 
-    // GET: Get all outgoing follow requests (the notification list)
+    // GET: Get all outgoing follow requests (the notification list), paginated
     @GetMapping("/outgoing")
-    public ResponseEntity<List<FollowRequestResponse>> getOutgoingRequests(
+    public ResponseEntity<PagedModel<FollowRequestResponse>> getOutgoingRequests(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
 
-        List<FollowRequestResponse> requests =
-                followService.getAllOutgoingRequests(authentication.getName());
-        return ResponseEntity.ok(requests);
+        Page<FollowRequestResponse> requests =
+                followService.getAllOutgoingRequests(authentication.getName(), pageable);
+        return ResponseEntity.ok(new PagedModel<>(requests));
     }
 
     // GET: Get count of outgoing follow requests
@@ -45,14 +49,15 @@ public class FollowRequestController {
         return ResponseEntity.ok(count);
     }
 
-    // GET: Get all pending incoming follow requests (the notification list)
+    // GET: Get all pending incoming follow requests (the notification list), paginated
     @GetMapping("/incoming")
-    public ResponseEntity<List<FollowRequestResponse>> getIncomingRequests(
+    public ResponseEntity<PagedModel<FollowRequestResponse>> getIncomingRequests(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
 
-        List<FollowRequestResponse> requests =
-                followService.getAllPendingIncomingRequests(authentication.getName());
-        return ResponseEntity.ok(requests);
+        Page<FollowRequestResponse> requests =
+                followService.getAllPendingIncomingRequests(authentication.getName(), pageable);
+        return ResponseEntity.ok(new PagedModel<>(requests));
     }
 
     // GET: Get count of follow requests for an account

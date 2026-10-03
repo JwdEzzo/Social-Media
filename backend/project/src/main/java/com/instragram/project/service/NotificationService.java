@@ -2,6 +2,8 @@ package com.instragram.project.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.dto.notification.NotificationResponse;
@@ -49,12 +51,19 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    // Read operations : query by id directly, no AppUser fetch needed , to avoid heavy DB calls
-    public List<NotificationResponse> getNotificationsForUser(Long recipientId, Long requestingUserId) {
+    /**
+     * Get a page of a user's notifications.
+     * The {@code Pageable} carries the page number, size and sort, and the returned
+     * {@link Page} carries the total count so the caller can render pagination controls.
+     * <p>
+     * Read operations query by id directly, no AppUser fetch needed, to avoid heavy DB calls.
+     */
+    public Page<NotificationResponse> getNotificationsForUser(Long recipientId, Long requestingUserId, Pageable pageable) {
         verifyOwnership(recipientId, requestingUserId);
 
-        List<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
-        return mappingMethods.convertListNotificationToListNotificationResponseDto(notifications);
+        return notificationRepository
+                .findByRecipientId(recipientId, pageable)
+                .map(mappingMethods::convertNotificationToNotificationResponse);
     }
 
     public long getUnreadCount(Long recipientId, Long requestingUserId) {
@@ -62,10 +71,15 @@ public class NotificationService {
         return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
     }
 
+    /**
+     * The notification bell dropdown: a fixed top-3, so it stays a {@code List}.
+     * The query is already bounded, and a page number/size would have no meaning here.
+     * Callers that need to walk the whole inbox use {@link #getNotificationsForUser} instead.
+     */
     public List<NotificationResponse> getLatest3Notifications(Long recipientId, Long requestingUserId) {
         verifyOwnership(recipientId, requestingUserId);
         List<Notification> notifications = notificationRepository.findFirst3ByRecipientIdOrderByCreatedAtDesc(recipientId);
-        return mappingMethods.convertListNotificationToListNotificationResponseDto(notifications);
+        return mappingMethods.convertListNotificationToListNotificationResponse(notifications);
     }
 
     // Mark as read operations

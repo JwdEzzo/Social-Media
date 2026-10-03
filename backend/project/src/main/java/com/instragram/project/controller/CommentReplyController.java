@@ -1,7 +1,10 @@
 package com.instragram.project.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -56,12 +59,14 @@ public class CommentReplyController {
       }
    }
 
-   // Get Replies By CommentId
+   // Get Replies By CommentId, paginated — ?page=0&size=20&sort=createdAt,desc
    @GetMapping("/comment/{commentId}")
-   public ResponseEntity<List<GetReplyResponse>> getRepliesByCommentId(@PathVariable Long commentId) {
+   public ResponseEntity<PagedModel<GetReplyResponse>> getRepliesByCommentId(
+         @PathVariable Long commentId,
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
       try {
-         List<GetReplyResponse> commentReplies = commentReplyService.findByCommentId(commentId);
-         return ResponseEntity.status(HttpStatus.OK).body(commentReplies);
+         Page<GetReplyResponse> commentReplies = commentReplyService.findByCommentId(commentId, pageable);
+         return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(commentReplies));
       } catch (Exception e) {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }

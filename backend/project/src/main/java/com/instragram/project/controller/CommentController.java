@@ -1,7 +1,10 @@
 package com.instragram.project.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.dto.comment.response.GetCommentResponse;
 import com.instragram.project.mapper.MappingMethods;
-import com.instragram.project.model.Comment;
 import com.instragram.project.repository.PostRepository;
 import com.instragram.project.service.CommentService;
 
@@ -66,13 +68,15 @@ public class CommentController {
       return ResponseEntity.ok(count);
    }
 
-   // Get Comments By PostId
+   // Get Comments By PostId, paginated — ?page=0&size=20&sort=createdAt,desc
    @GetMapping("/{postId:\\d+}")
-   public ResponseEntity<List<GetCommentResponse>> getCommentsByPostId(@PathVariable Long postId) {
-      List<Comment> comments = commentService.findByPostId(postId);
-      List<GetCommentResponse> commentResponseDtos = mappingMethods
-            .convertListCommentEntityToListGetCommentResponseDto(comments);
-      return ResponseEntity.status(HttpStatus.OK).body(commentResponseDtos);
+   public ResponseEntity<PagedModel<GetCommentResponse>> getCommentsByPostId(
+         @PathVariable Long postId,
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+      Page<GetCommentResponse> commentResponseDtos = commentService
+            .findByPostId(postId, pageable)
+            .map(mappingMethods::convertCommentEntityToGetCommentResponse);
+      return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(commentResponseDtos));
    }
 
    // Update Comment

@@ -1,6 +1,7 @@
 package com.instragram.project.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -48,7 +49,7 @@ public class CommentReplyService {
       }
 
       // Create reply
-      CommentReply commentReply = mappingMethods.convertWriteReplyRequestDtoToCommentReplyEntity(appUser, requestDto);
+      CommentReply commentReply = mappingMethods.convertWriteReplyRequestToCommentReplyEntity(appUser, requestDto);
 
       commentReplyRepository.save(commentReply);
 
@@ -61,10 +62,15 @@ public class CommentReplyService {
       );
    }
 
-   // Get All Replies to a Comment
-   public List<GetReplyResponse> findByCommentId(Long commentId) {
-      List<CommentReply> commentReplies = commentReplyRepository.findByCommentId(commentId);
-      return mappingMethods.convertListCommentReplyEntityToListGetCommentReplyResponseDto(commentReplies);
+   /**
+    * Get a page of the replies to a comment.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<GetReplyResponse> findByCommentId(Long commentId, Pageable pageable) {
+      return commentReplyRepository
+            .findByCommentId(commentId, pageable)
+            .map(mappingMethods::convertCommentReplyEntityToGetCommentReplyResponse);
    }
 
    @Transactional

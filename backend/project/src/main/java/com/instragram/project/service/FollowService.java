@@ -1,8 +1,7 @@
 package com.instragram.project.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.instragram.project.dto.follow.response.FollowRequestResponse;
@@ -173,20 +172,20 @@ public class FollowService {
                 requesterUsername, followRequest.getTarget().getUsername());
    }
 
-   // Get all pending incoming requests for a private account
-   public List<FollowRequestResponse> getAllPendingIncomingRequests(String targetUsername) {
-      
-      // Find the target User 
+   /**
+    * Get a page of the pending incoming requests for a private account.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<FollowRequestResponse> getAllPendingIncomingRequests(String targetUsername, Pageable pageable) {
+
+      // Find the target User
       AppUser targetUser = getUserOrThrow(targetUsername);
 
       // Get the requests
-      List<FollowRequestResponse> responseDtos = followRequestRepository
-                .findAllByTargetIdAndStatus(targetUser.getId(), FollowRequestStatus.PENDING)
-                .stream()
-                .map(mappingMethods::convertFollowRequestToResponseDto)
-                .collect(Collectors.toList());
-
-      return responseDtos;
+      return followRequestRepository
+                .findAllByTargetIdAndStatus(targetUser.getId(), FollowRequestStatus.PENDING, pageable)
+                .map(mappingMethods::convertFollowRequestToResponse);
 
    }
 
@@ -242,16 +241,17 @@ public class FollowService {
       return count;
    }
 
-   // Get all outgoing requests for a user
-   public List<FollowRequestResponse> getAllOutgoingRequests(String requesterUsername) {
+   /**
+    * Get a page of the pending outgoing requests a user has sent.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<FollowRequestResponse> getAllOutgoingRequests(String requesterUsername, Pageable pageable) {
 
       AppUser user = getUserOrThrow(requesterUsername);
-      List<FollowRequestResponse> responseDtos = followRequestRepository
-                .findAllByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING)
-                .stream()
-                .map(mappingMethods::convertFollowRequestToResponseDto)
-                .collect(Collectors.toList());
-      return responseDtos;
+      return followRequestRepository
+                .findAllByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING, pageable)
+                .map(mappingMethods::convertFollowRequestToResponse);
    }
 
    // Get count of the requests that the user sent

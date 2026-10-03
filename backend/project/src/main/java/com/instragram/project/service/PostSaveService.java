@@ -1,6 +1,7 @@
 package com.instragram.project.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -56,10 +57,14 @@ public class PostSaveService {
       return postSaveRepository.countByPost(post);
    }
 
-   // Get all saves by a user
-   public List<PostSave> getSavesByUser(String username) {
+   /**
+    * Get a page of the posts a user has saved.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<PostSave> getSavesByUser(String username, Pageable pageable) {
       AppUser user = getUserOrThrow(username);
-      return postSaveRepository.findByAppUser(user);
+      return postSaveRepository.findByAppUser(user, pageable);
    }
 
    // Check if a user saved a post

@@ -3,6 +3,8 @@ package com.instragram.project.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.instragram.project.model.AppUser;
@@ -17,8 +19,8 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
    // Get all likes for a specific post
    List<PostLike> findByPost(Post post);
 
-   // Get all likes by a specific user
-   List<PostLike> findByAppUser(AppUser appUser);
+   // Get all likes by a specific user, one page at a time
+   Page<PostLike> findByAppUser(AppUser appUser, Pageable pageable);
 
    // Count likes for a specific post
    long countByPost(Post post);

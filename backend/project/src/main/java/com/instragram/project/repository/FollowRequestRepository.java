@@ -3,6 +3,8 @@ package com.instragram.project.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.instragram.project.enums.FollowRequestStatus;
@@ -13,11 +15,14 @@ public interface FollowRequestRepository extends JpaRepository<FollowRequest, Lo
     // Check if a pending request already exists between two users
     boolean existsByRequesterIdAndTargetIdAndStatus(Long requesterId, Long targetId, FollowRequestStatus status);
 
-    // Get all incoming requests for a private account owner
+    // Get all incoming requests for a private account owner, one page at a time
+    Page<FollowRequest> findAllByTargetIdAndStatus(Long targetId, FollowRequestStatus status, Pageable pageable);
+
+    // Unpaged variant: acceptAllPendingRequests has to walk every pending request, not one page
     List<FollowRequest> findAllByTargetIdAndStatus(Long targetId, FollowRequestStatus status);
 
-    // Get all outgoing requests made by a user
-    List<FollowRequest> findAllByRequesterIdAndStatus(Long requesterId, FollowRequestStatus status);
+    // Get all outgoing requests made by a user, one page at a time
+    Page<FollowRequest> findAllByRequesterIdAndStatus(Long requesterId, FollowRequestStatus status, Pageable pageable);
 
     // Used when cancelling a request or checking before following
     Optional<FollowRequest> findByRequesterIdAndTargetId(Long requesterId, Long targetId);

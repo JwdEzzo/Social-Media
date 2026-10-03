@@ -2,8 +2,9 @@ package com.instragram.project.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +47,7 @@ public class PostService {
       getUserOrThrow(username);
 
       // Convert post request to entity
-      Post post = mappingMethods.convertCreatePostRequestDtoToPostEntity(requestDto, username);
+      Post post = mappingMethods.convertCreatePostRequestToPostEntity(requestDto, username);
 
       // Save entity
       postRepository.save(post);
@@ -81,49 +82,66 @@ public class PostService {
       }
    }
 
-   // Get Posts from a private account that is followed by the current user
-   public List<GetPostResponse> getPostsByPrivateAccountTheUserFollows(String followerUsername, String privateAccountUsername) {
-      List<Post> posts = postRepository.findPrivateAccountPostsIfFollowing(followerUsername, privateAccountUsername);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
+   /**
+    * Get a page of the posts of a private account that is followed by the current user.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<GetPostResponse> getPostsByPrivateAccountTheUserFollows(String followerUsername,
+         String privateAccountUsername, Pageable pageable) {
+      return postRepository
+            .findPrivateAccountPostsIfFollowing(followerUsername, privateAccountUsername, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
    // Get Post By Id
    public GetPostResponse getPostById(Long id) {
       Post post = getPostOrThrow(id);
-      return mappingMethods.convertPostEnttityToGetPostResponseDto(post);
+      return mappingMethods.convertPostEntityToGetPostResponse(post);
    }
 
-   // Get Posts by username
-   public List<GetPostResponse> getPostsByUsername(String username) {
-      List<Post> posts = postRepository.findByAppUserUsername(username);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDtoByUsername(posts, username);
+   /**
+    * Get a page of a user's posts.
+    * <p>
+    * Maps each post directly rather than going through the by-username list mapper: the query
+    * already restricts to {@code username}, so that mapper's extra filter is a no-op here — and
+    * filtering after the page is fetched would make the page contents disagree with the count.
+    */
+   public Page<GetPostResponse> getPostsByUsername(String username, Pageable pageable) {
+      return postRepository
+            .findByAppUserUsername(username, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
-   // Get All Posts Excluding User
-   public List<GetPostResponse> getAllPostsExcludingUser(String username) {
-      List<Post> posts = postRepository.findAllPostsExceptByCurrentUser(username);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDto(posts);
+   // Get a page of all posts excluding the given user's own
+   public Page<GetPostResponse> getAllPostsExcludingUser(String username, Pageable pageable) {
+      return postRepository
+            .findAllPostsExceptByCurrentUser(username, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
-   // Get all Posts liked by a specified user 
-   public List<GetPostResponse> getPostslikedByUser(String username) {
+   // Get a page of the posts liked by a specified user
+   public Page<GetPostResponse> getPostslikedByUser(String username, Pageable pageable) {
       getUserOrThrow(username);
-      List<Post> likedPosts = postRepository.findPostsLikedByUser(username);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDto(likedPosts);
+      return postRepository
+            .findPostsLikedByUser(username, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
-   // Get all posts saved by a specified user
-   public List<GetPostResponse> getPostsSavedByUser(String username) {
+   // Get a page of the posts saved by a specified user
+   public Page<GetPostResponse> getPostsSavedByUser(String username, Pageable pageable) {
       getUserOrThrow(username);
-      List<Post> savedPosts = postRepository.findPostsSavedByUser(username);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDto(savedPosts);
+      return postRepository
+            .findPostsSavedByUser(username, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
-   // Get all Posts by users followers
-   public List<GetPostResponse> getPostsByFollowings(Long id) {
+   // Get a page of the posts by the users that a user follows
+   public Page<GetPostResponse> getPostsByFollowings(Long id, Pageable pageable) {
       getUserOrThrow(id);
-      List<Post> followingPosts = postRepository.findPostsByFollowing(id);
-      return mappingMethods.convertListPostEntityToListGetPostResponseDto(followingPosts);
+      return postRepository
+            .findPostsByFollowing(id, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
    // Get posts count
@@ -222,12 +240,11 @@ public class PostService {
       return post.getImageType() != null ? post.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
    }
 
-   // Search post by description (not case sensitive)
-   public List<GetPostResponse> getPostsByDescription(String description) {
-      List<Post> foundPosts = postRepository.findByDescriptionContaining(description);
-      List<GetPostResponse> postResponseDtos = mappingMethods
-            .convertListPostEntityToListGetPostResponseDto(foundPosts);
-      return postResponseDtos;
+   // Search post by description (not case sensitive), one page at a time
+   public Page<GetPostResponse> getPostsByDescription(String description, Pageable pageable) {
+      return postRepository
+            .findByDescriptionContaining(description, pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
    private AppUser getUserOrThrow(String username) {

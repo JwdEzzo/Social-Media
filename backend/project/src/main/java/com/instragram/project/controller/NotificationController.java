@@ -2,6 +2,11 @@ package com.instragram.project.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -31,15 +36,16 @@ public class NotificationController {
         this.appUserService = appUserService;
     }
 
-    // GET: All notifications for the logged in user
+    // GET: All notifications for the logged in user, paginated — ?page=0&size=20&sort=createdAt,desc
     @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getNotifications(
+    public ResponseEntity<PagedModel<NotificationResponse>> getNotifications(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
 
         Long userId = getAuthenticatedUserId(authentication);
-        List<NotificationResponse> notifications =
-                notificationService.getNotificationsForUser(userId, userId);
-        return ResponseEntity.ok(notifications);
+        Page<NotificationResponse> notifications =
+                notificationService.getNotificationsForUser(userId, userId, pageable);
+        return ResponseEntity.ok(new PagedModel<>(notifications));
     }
 
     // GET: 3 latest notifications for the logged in user

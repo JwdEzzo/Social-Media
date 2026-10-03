@@ -1,6 +1,7 @@
 package com.instragram.project.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class CommentService {
    public void createComment(WriteCommentRequest requestDto, String username) {
       AppUser appUser = getUserOrThrow(username);
 
-      Comment comment = mappingMethods.convertWriteCommentRequestDtoToCommentEntity(appUser, requestDto);
+      Comment comment = mappingMethods.convertWriteCommentRequestToCommentEntity(appUser, requestDto);
       commentRepository.save(comment);
 
       notificationService.createNotification(
@@ -53,9 +54,13 @@ public class CommentService {
       );
    }
 
-   // Get All Comments of a Post
-   public List<Comment> findByPostId(Long postId) {
-      return commentRepository.findByPostId(postId);
+   /**
+    * Get a page of the comments on a post.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<Comment> findByPostId(Long postId, Pageable pageable) {
+      return commentRepository.findByPostId(postId, pageable);
    }
 
    // Update a comment

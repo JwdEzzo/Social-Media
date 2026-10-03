@@ -1,7 +1,6 @@
 package com.instragram.project.controller;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -32,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.instragram.project.dto.security.request.LoginRequest;
 import com.instragram.project.dto.security.request.SignUpRequest;
 import com.instragram.project.dto.security.response.LoginResponse;
+import com.instragram.project.dto.user.request.DeleteAccountRequest;
 import com.instragram.project.dto.user.request.SearchUserResponse;
 import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
 import com.instragram.project.dto.user.request.UpdateProfileRequest;
@@ -110,12 +110,15 @@ public class AppUserController {
         return ResponseEntity.ok(response);
     }
 
-    // GET: All users except the currently logged in user
+    // GET: All users except the currently logged in user, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/excluded")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GetUserResponse>> getAllUsersExcludingCurrentUser(Authentication authentication) {
-        List<GetUserResponse> users = appUserService.getAllUsersExcludingCurrentUser(authentication.getName());
-        return ResponseEntity.ok(users);
+    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllUsersExcludingCurrentUser(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable,
+            Authentication authentication) {
+        Page<GetUserResponse> page = appUserService.getAllUsersExcludingCurrentUser(authentication.getName(), pageable);
+        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched users successfully!");
+        return ResponseEntity.ok(response);
     }
 
     // GET: All followers of a user, paginated — ?page=0&size=20&sort=username,asc
@@ -188,7 +191,13 @@ public class AppUserController {
         @RequestBody UpdateProfileRequest request,
         Authentication authentication
     ){
-        appUserService.updateUserProfileWithUrl(actorUsername, authentication.getName(), request);
+        // The service edits the caller's own profile only, so the path variable has to agree
+        // with the authenticated principal. Mirrors the upload endpoint below.
+        if (!authentication.getName().equals(actorUsername)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        appUserService.updateUserProfileWithUrl(authentication.getName(), request);
         return ResponseEntity.noContent().build();
     }
 
@@ -219,13 +228,14 @@ public class AppUserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteUser(
             @PathVariable String username,
+            @Valid @RequestBody DeleteAccountRequest request,
             Authentication authentication) {
 
         if (!authentication.getName().equals(username)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        appUserService.deleteUser(username);
+        appUserService.deleteUser(username, request.getPassword());
         return ResponseEntity.noContent().build();
     }
 

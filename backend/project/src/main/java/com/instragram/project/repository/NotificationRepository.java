@@ -2,6 +2,8 @@ package com.instragram.project.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.instragram.project.enums.NotificationType;
@@ -9,7 +11,8 @@ import com.instragram.project.model.Notification;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    List<Notification> findByRecipientIdOrderByCreatedAtDesc(Long recipientId);
+    // Ordering comes from the Pageable so the caller can sort, hence no OrderBy in the name
+    Page<Notification> findByRecipientId(Long recipientId, Pageable pageable);
     List<Notification> findByRecipientIdAndIsRead(Long recipientId, boolean isRead);
     long countByRecipientIdAndIsRead(Long recipientId, boolean isRead);
     boolean existsByIdAndRecipientId(Long notificationId, Long recipientId);

@@ -3,6 +3,8 @@ package com.instragram.project.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -22,9 +24,10 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
    @Query("SELECT cl FROM CommentLike cl WHERE cl.comment = :comment")
    List<CommentLike> findByComment(@Param("comment") Comment comment);
 
-   // Get all likes by a specific user
-   @Query("SELECT cl FROM CommentLike cl WHERE cl.appUser = :appUser")
-   List<CommentLike> findByAppUser(@Param("appUser") AppUser appUser);
+   // Get all likes by a specific user, one page at a time
+   @Query(value = "SELECT cl FROM CommentLike cl WHERE cl.appUser = :appUser",
+         countQuery = "SELECT COUNT(cl) FROM CommentLike cl WHERE cl.appUser = :appUser")
+   Page<CommentLike> findByAppUser(@Param("appUser") AppUser appUser, Pageable pageable);
 
    // Count likes for a specific comment
    @Query("SELECT COUNT(cl) FROM CommentLike cl WHERE cl.comment = :comment")

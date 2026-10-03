@@ -1,6 +1,7 @@
 package com.instragram.project.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -79,10 +80,14 @@ public class PostLikeService {
       return postLikeRepository.countByPost(post);
    }
 
-   // Get all likes by a user
-   public List<PostLike> getLikesByUser(String username) {
+   /**
+    * Get a page of the likes a user has left on posts.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    */
+   public Page<PostLike> getLikesByUser(String username, Pageable pageable) {
       AppUser user = getUserOrThrow(username);
-      return postLikeRepository.findByAppUser(user);
+      return postLikeRepository.findByAppUser(user, pageable);
    }
 
    // Check if a user liked a post

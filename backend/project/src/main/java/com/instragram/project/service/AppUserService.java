@@ -120,12 +120,17 @@ public class AppUserService {
             .map(mappingMethods::convertAppUserEntityToGetUserResponse);
    }
 
-   public List<GetUserResponse> getAllUsersExcludingCurrentUser(String username) {
-      List<AppUser> users = appUserRepository.findByUsernameNot(username);
-      return users
-            .stream()
-            .map(user -> mappingMethods.convertAppUserEntityToGetUserResponse(user))
-            .collect(Collectors.toList());
+   /**
+    * Get a page of every user except the caller, as a page of GetUserResponse.
+    * The {@code Pageable} carries the page number, size and sort, and the returned
+    * {@link Page} carries the total count so the caller can render pagination controls.
+    *
+    * @param username the caller's own username, resolved from the SecurityContext.
+    */
+   public Page<GetUserResponse> getAllUsersExcludingCurrentUser(String username, Pageable pageable) {
+      return appUserRepository
+            .findByUsernameNot(username, pageable)
+            .map(mappingMethods::convertAppUserEntityToGetUserResponse);
    }
 
    /**
