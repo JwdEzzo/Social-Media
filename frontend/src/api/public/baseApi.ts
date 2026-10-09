@@ -7,6 +7,37 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
+import { z as zod } from "zod";
+
+export type ApiError = {
+  status: number | string;
+  message: string;
+  fieldErrors: Record<string, string[]>;
+};
+
+const envelopeSchema = zod.object({
+  message: zod.string().optional(),
+  errors: zod.record(zod.array(zod.string())).optional(),
+});
+
+function toApiError(error: FetchBaseQueryError): ApiError {
+  if (error.status === "FETCH_ERROR" || error.status === "TIMEOUT_ERROR") {
+    return {
+      status: error.status,
+      message: "Cannot connect to server. Please try again later.",
+      fieldErrors: {},
+    };
+  }
+  // An HTML page or other junk body fails the parse and falls back to the generic message.
+  const body = envelopeSchema.safeParse(error.data);
+  return {
+    status: error.status,
+    message:
+      (body.success && body.data.message) ||
+      "Something went wrong. Please try again.",
+    fieldErrors: (body.success && body.data.errors) || {},
+  };
+}
 
 const baseQuery = fetchBaseQuery({
   baseUrl: "http://localhost:8080/api/instagram",
@@ -24,14 +55,13 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
-  FetchBaseQueryError
+  ApiError
 > = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
-
-  if (result.error && result.error.status === 401) {
-    api.dispatch(logout());
+  if (result.error) {
+    if (result.error.status === 401) api.dispatch(logout());
+    return { ...result, error: toApiError(result.error) };
   }
-
   return result;
 };
 export { baseQueryWithReauth };

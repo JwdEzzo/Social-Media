@@ -1,21 +1,34 @@
-import { Camera, Loader2 } from 'lucide-react';
-import { useLoginMutation } from '@/api/auth/authApi';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod/v3';
-import type { LoginRequest } from '@/types/request-types';
-import { setCredentials } from '@/auth/authSlice';
-import { ModeToggle } from '@/components/ModeToggle';
+import { Camera, Loader2 } from "lucide-react";
+import { useLoginMutation } from "@/api/auth/authApi";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod/v3";
+import type { LoginRequest } from "@/types/request-types";
+import { setCredentials } from "@/auth/authSlice";
+import { ModeToggle } from "@/components/ModeToggle";
 
 const loginSchema = z.object({
-  username: z.string().min(6, 'Username is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  username: z.string(),
+  password: z.string(),
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;
@@ -28,10 +41,14 @@ function Login() {
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: '',
-      password: '',
+      username: "",
+      password: "",
     },
   });
+
+  const [username, password] = form.watch(["username", "password"]);
+  const isEmptyInput = !username.trim() || !password;
+  const isDisabledButton = isEmptyInput || isLoading;
 
   async function handleFormSubmit(data: LoginSchema) {
     try {
@@ -50,11 +67,11 @@ function Login() {
       navigate(`/home/${response.username}`);
     } catch (error) {
       // Set error field for login failure
-      form.setError('password', {
-        type: 'manual',
-        message: 'Invalid username or password. Please try again.',
+      form.setError("password", {
+        type: "manual",
+        message: "Invalid username or password. Please try again.",
       });
-      console.log('Error logging in: ', error);
+      console.log("Error logging in: ", error);
     }
   }
 
@@ -85,7 +102,10 @@ function Login() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(handleFormSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="username"
@@ -128,7 +148,7 @@ function Login() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isDisabledButton}
                   className="w-full py-6 text-lg bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 transition-all duration-300 text-white"
                 >
                   {isLoading ? (
@@ -137,7 +157,7 @@ function Login() {
                       Signing In...
                     </>
                   ) : (
-                    'Sign In'
+                    "Log In"
                   )}
                 </Button>
               </form>
@@ -150,17 +170,21 @@ function Login() {
           <CardFooter className="flex flex-col gap-4">
             <div className="flex items-center justify-center w-full">
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
-              <span className="px-4 text-sm text-gray-500 dark:text-gray-400">OR</span>
+              <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
+                OR
+              </span>
               <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
             </div>
 
             <div className="text-center space-y-2">
-              <p className="text-sm text-blue-500 hover:underline cursor-pointer">Forgot Password?</p>
+              <p className="text-sm text-blue-500 hover:underline cursor-pointer">
+                Forgot Password?
+              </p>
               <p className="text-sm">
-                Don&apos;t have an account?{' '}
+                Don&apos;t have an account?{" "}
                 <span
                   className="text-blue-500 hover:underline cursor-pointer font-medium"
-                  onClick={() => navigate('/signup')}
+                  onClick={() => navigate("/signup")}
                 >
                   Sign Up
                 </span>

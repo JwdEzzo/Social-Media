@@ -21,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import type { SignUpRequest } from "@/types/request-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Loader2 } from "lucide-react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import z from "zod/v3";
@@ -55,14 +54,12 @@ type SignUpSchema = z.infer<typeof signUpSchema>;
 function SignUp() {
   const [userSignUp, { isLoading: isSignUpLoading }] = useSignUpMutation();
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Set when sign-up succeeded but auto-login did not, so the banner can offer a way forward.
-  const [accountCreated, setAccountCreated] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const form = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
+    mode: "onTouched",
     defaultValues: {
       email: "",
       username: "",
@@ -70,10 +67,11 @@ function SignUp() {
     },
   });
 
-  async function handleSignUp(data: SignUpSchema) {
-    setErrorMessage(null); // Clear previous errors
-    setAccountCreated(false);
+  const isLoading = isSignUpLoading || isLoginLoading;
+  const isDisabledButton = !form.formState.isValid || isLoading;
+  const serverError = form.formState.errors.root?.server;
 
+  async function handleSignUp(data: SignUpSchema) {
     // Step 1: Define the request
     const signUpRequest: SignUpRequest = {
       email: data.email,
@@ -86,18 +84,8 @@ function SignUp() {
       await userSignUp(signUpRequest).unwrap();
     } catch (error) {
       console.error("Sign up error:", error);
-
-      // A taken username and a rejected password are both per-field, and the backend keys
-      // them by the same names this form uses, so each lands under the input it belongs to.
       // Step 3: Map the errors back onto the form
-      setErrorMessage(
-        applyServerErrors(
-          error,
-          form.setError,
-          Object.keys(signUpSchema.shape),
-          "An error occurred during sign up. Please try again.",
-        ),
-      );
+      applyServerErrors(error, form, Object.keys(signUpSchema.shape));
       return;
     }
 
@@ -119,14 +107,14 @@ function SignUp() {
       navigate(`/userprofile/${response.username}/set-profile`);
     } catch (error) {
       console.error("Auto login after sign up failed:", error);
-      setAccountCreated(true);
-      setErrorMessage(
-        "Your account was created, but we could not sign you in automatically. Please log in.",
-      );
+      // Typed so the banner can offer a way forward instead of only reporting the failure.
+      form.setError("root.server", {
+        type: "accountCreated",
+        message:
+          "Your account was created, but we could not sign you in automatically. Please log in.",
+      });
     }
   }
-
-  const isLoading = isSignUpLoading || isLoginLoading;
 
   // Show loading screen while logging in
   if (isLoginLoading) {
@@ -176,13 +164,13 @@ function SignUp() {
                 className="space-y-6"
               >
                 {/* Error Message */}
-                {errorMessage && (
+                {serverError && (
                   <div
                     role="alert"
                     className="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg"
                   >
-                    <p className="text-sm">{errorMessage}</p>
-                    {accountCreated && (
+                    <p className="text-sm">{serverError.message}</p>
+                    {serverError.type === "accountCreated" && (
                       <button
                         type="button"
                         onClick={() => navigate("/")}
@@ -204,6 +192,9 @@ function SignUp() {
                         <Input
                           placeholder="Enter your Email"
                           {...field}
+                          onBlur={() => {
+                            if (field.value) field.onBlur();
+                          }}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
                         />
@@ -223,6 +214,9 @@ function SignUp() {
                         <Input
                           placeholder="Enter your username"
                           {...field}
+                          onBlur={() => {
+                            if (field.value) field.onBlur();
+                          }}
                           disabled={isLoading}
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
                         />
@@ -242,6 +236,9 @@ function SignUp() {
                         <Input
                           placeholder="Enter your password"
                           {...field}
+                          onBlur={() => {
+                            if (field.value) field.onBlur();
+                          }}
                           disabled={isLoading}
                           type="password"
                           className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
@@ -255,7 +252,7 @@ function SignUp() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isDisabledButton}
                   className="w-full py-6 text-lg bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 transition-all duration-300 text-white"
                 >
                   {isSignUpLoading ? (

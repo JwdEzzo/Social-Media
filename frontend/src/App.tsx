@@ -3,7 +3,6 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { store } from "./store/store";
 import { Provider } from "react-redux";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import SignUp from "@/Pages/AuthPages/SignUp";
 import Login from "@/Pages/AuthPages/Login";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import EditCredentials from "@/Pages/ProfilePages/EditCredentials";
@@ -20,6 +19,7 @@ import { UserFollowerListRouted } from "./Pages/FollowPages/Followers/UserFollow
 import { UserFollowingListRouted } from "./Pages/FollowPages/Followings/UserFollowingList";
 import { YourFollowingListRouted } from "./Pages/FollowPages/Followings/YourFollowingList";
 import NotificationPage from "@/Pages/NotificationPages/NotificationPage";
+import SignUp from "./Pages/AuthPages/SignUp";
 
 function App() {
   return (
