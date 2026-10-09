@@ -6,6 +6,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code Long} requestId <br>
+ * {@code String} requesterUsername <br>
+ * {@code String} requesterProfilePictureUrl <br>
+ * {@code String} targetUsername <br>
+ * {@code String} targetProfilePictureUrl <br>
+ * {@code String} status <br>
+ * {@code LocalDateTime} createdAt <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

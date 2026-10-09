@@ -23,10 +23,10 @@ import {
 import type {
   EditPostWithUploadRequestDto,
   EditPostWithUrlRequestDto,
-} from "@/types/requestTypes";
+} from "@/types/request-types";
 import { useState, useRef } from "react";
 import { useDispatch } from "react-redux";
-import type { GetPostResponseDto } from "@/types/responseTypes";
+import type { GetPostResponseDto } from "@/types/response-types";
 import { useNavigate, useParams } from "react-router-dom";
 import PostFormModal, {
   type PostFormData,

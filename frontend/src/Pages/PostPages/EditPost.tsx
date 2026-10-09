@@ -6,7 +6,7 @@ import {
 import type {
   EditPostWithUploadRequestDto,
   EditPostWithUrlRequestDto,
-} from "@/types/requestTypes";
+} from "@/types/request-types";
 import { useNavigate, useParams } from "react-router-dom";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 

@@ -1,4 +1,4 @@
-import { useLoginMutation } from "@/auth/authApi";
+import { useLoginMutation } from "@/api/auth/authApi";
 import { useSignUpMutation } from "@/api/users/userApi";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { SignUpRequestDto } from "@/types/requestTypes";
+import type { SignUpRequest } from "@/types/request-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -27,11 +27,27 @@ import { useNavigate } from "react-router-dom";
 import z from "zod/v3";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/auth/authSlice";
+import { applyServerErrors } from "@/utils/errors";
 
+// Mirrors the constraints on the backend's SignUpRequest, so most mistakes are caught before a
+// round trip. The backend still validates, and its field errors are mapped back onto these inputs.
 const signUpSchema = z.object({
-  email: z.string().email("Email is not valid"),
-  username: z.string().min(6, "Username must be at least 6 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z
+    .string()
+    .email("Email is not valid.")
+    .max(254, "Email must be at most 254 characters."),
+  username: z
+    .string()
+    .min(8, "Username must be between 8 and 20 characters.")
+    .max(20, "Username must be between 8 and 20 characters.")
+    .regex(
+      /^[a-zA-Z0-9._]+$/,
+      "Username can only contain letters, numbers, dots, and underscores.",
+    ),
+  password: z
+    .string()
+    .min(8, "Password must be between 8 and 20 characters.")
+    .max(20, "Password must be between 8 and 20 characters."),
 });
 
 type SignUpSchema = z.infer<typeof signUpSchema>;
@@ -40,6 +56,8 @@ function SignUp() {
   const [userSignUp, { isLoading: isSignUpLoading }] = useSignUpMutation();
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Set when sign-up succeeded but auto-login did not, so the banner can offer a way forward.
+  const [accountCreated, setAccountCreated] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -54,49 +72,57 @@ function SignUp() {
 
   async function handleSignUp(data: SignUpSchema) {
     setErrorMessage(null); // Clear previous errors
+    setAccountCreated(false);
 
+    // Step 1: Define the request
+    const signUpRequest: SignUpRequest = {
+      email: data.email,
+      username: data.username,
+      password: data.password,
+    };
+
+    // Step 2: Sign up the user
     try {
-      const signUpRequest: SignUpRequestDto = {
-        email: data.email,
-        username: data.username,
-        password: data.password,
-      };
-
-      // Sign up the user
       await userSignUp(signUpRequest).unwrap();
+    } catch (error) {
+      console.error("Sign up error:", error);
 
-      // Automatically log them in
+      // A taken username and a rejected password are both per-field, and the backend keys
+      // them by the same names this form uses, so each lands under the input it belongs to.
+      // Step 3: Map the errors back onto the form
+      setErrorMessage(
+        applyServerErrors(
+          error,
+          form.setError,
+          Object.keys(signUpSchema.shape),
+          "An error occurred during sign up. Please try again.",
+        ),
+      );
+      return;
+    }
+
+    // Step 4: Auto log them in
+    try {
       const response = await login({
         username: signUpRequest.username,
         password: signUpRequest.password,
       }).unwrap();
 
+      // Step 5: dispatch credentials
       dispatch(
         setCredentials({
           token: response.token,
           username: response.username,
-        })
+        }),
       );
 
       navigate(`/userprofile/${response.username}/set-profile`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error("Sign up error:", error);
-
-      // Handle different error types
-      if (error?.status === 400 || error?.data) {
-        // The backend sends a human-readable message, so it is displayed as-is.
-        const message =
-          typeof error.data === "string"
-            ? error.data
-            : error.data?.message || "Username or email already exists";
-        setErrorMessage(message);
-      } else if (error?.status === "FETCH_ERROR") {
-        // The request never reached the server, so there is no server message to show.
-        setErrorMessage("Cannot connect to server. Please try again later.");
-      } else {
-        setErrorMessage("An error occurred during sign up. Please try again.");
-      }
+    } catch (error) {
+      console.error("Auto login after sign up failed:", error);
+      setAccountCreated(true);
+      setErrorMessage(
+        "Your account was created, but we could not sign you in automatically. Please log in.",
+      );
     }
   }
 
@@ -151,8 +177,20 @@ function SignUp() {
               >
                 {/* Error Message */}
                 {errorMessage && (
-                  <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
+                  <div
+                    role="alert"
+                    className="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg"
+                  >
                     <p className="text-sm">{errorMessage}</p>
+                    {accountCreated && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/")}
+                        className="mt-2 text-sm font-medium underline"
+                      >
+                        Go to sign in
+                      </button>
+                    )}
                   </div>
                 )}
 

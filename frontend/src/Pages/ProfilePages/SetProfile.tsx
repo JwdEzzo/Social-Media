@@ -21,7 +21,7 @@ import {
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/ModeToggle";
-import type { UpdateProfileRequestDto } from "@/types/requestTypes";
+import type { UpdateProfileRequestDto } from "@/types/request-types";
 import { useEffect, useState, useRef } from "react";
 
 const updateProfileSchema = z.object({

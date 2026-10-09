@@ -1,10 +1,12 @@
-import type { AccountStatus, NotificationType } from './enums';
+import type { AccountStatus, NotificationType } from "@/types/enums";
 
+// ================ LOGIN =================
 export interface LoginResponse {
   token: string;
   username: string;
 }
 
+// =============== USER =================
 export interface GetUserResponseDto {
   id: number;
   email: string;
@@ -17,6 +19,21 @@ export interface GetUserResponseDto {
   posts: GetPostResponseDto[];
 }
 
+export interface SearchUserResponseDto {
+  id: number;
+  username: string;
+  bioText: string;
+  profilePictureUrl: string;
+}
+
+export interface SignUpResponse {
+  id: number;
+  username: string;
+  email: string;
+  createdAt: string;
+}
+
+// ================ POST =================
 export interface GetPostResponseDto {
   id: number;
   username: string;
@@ -28,6 +45,7 @@ export interface GetPostResponseDto {
   comments: GetCommentResponseDto[];
 }
 
+// ================ COMMENTS =================
 export interface GetCommentResponseDto {
   id: number;
   content: string;
@@ -35,6 +53,7 @@ export interface GetCommentResponseDto {
   appUser: GetUserResponseDto;
 }
 
+// ================ REPLIES =================
 export interface GetReplyResponseDto {
   id: number;
   content: string;
@@ -42,23 +61,18 @@ export interface GetReplyResponseDto {
   appUser: GetUserResponseDto;
 }
 
-export interface SearchUserResponseDto {
-  id: number;
-  username: string;
-  bioText: string;
-  profilePictureUrl: string;
-}
-
+// ================ FOLLOW =================
 export interface FollowRequestResponseDto {
   requestId: number;
   requesterUsername: string;
   requesterProfilePictureUrl: string | null;
   targetUsername: string;
   targetProfilePictureUrl: string | null;
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  status: "PENDING" | "ACCEPTED" | "DECLINED";
   createdAt: string;
 }
 
+// ================ NOTIFICATIONS =================
 export interface NotificationResponseDto {
   id: number;
   sender: GetUserResponseDto;

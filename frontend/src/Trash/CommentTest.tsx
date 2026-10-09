@@ -6,7 +6,7 @@ import {
   useGetCommentReplyCountQuery,
   useGetRepliesByCommentIdQuery,
 } from "@/api/comments/commentRepliesApi";
-import type { GetCommentResponseDto } from "@/types/responseTypes";
+import type { GetCommentResponseDto } from "@/types/response-types";
 import { Heart, MessageCircle } from "lucide-react";
 import { type Dispatch, type SetStateAction } from "react";
 import ReplyCard from "../Pages/ReplyPages/ReplyCard";

@@ -8,11 +8,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code Long} id <br>
+ * {@code GetUserResponse} sender <br>
+ * {@code String} notificationType <br>
+ * {@code Long} entityId <br>
+ * {@code boolean} isRead <br>
+ * {@code LocalDateTime} createdAt <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationResponse {
-    
+
     private Long id;
 
     private GetUserResponse sender;

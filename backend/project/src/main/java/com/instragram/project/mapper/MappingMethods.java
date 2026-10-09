@@ -28,7 +28,6 @@ import com.instragram.project.model.Post;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
-import com.instragram.project.utils.ApiResponse;
 
 @Component
 public class MappingMethods {
@@ -46,13 +45,6 @@ public class MappingMethods {
       this.appUserRepository = appUserRepository;
       this.postRepository = postRepository;
       this.commentRepository = commentRepository;
-   }
-
-   /**
-    * Map to ApiResponse<T> with data and message
-    */
-   public <T> ApiResponse<T> mapToApiResponse(T data, String message) {
-      return ApiResponse.success(data, message);
    }
 
    // Convert AppUser Entity to CreateUserResponse

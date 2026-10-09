@@ -30,7 +30,7 @@ import {
 } from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
-import type { GetUserResponseDto } from "@/types/responseTypes";
+import type { GetUserResponseDto } from "@/types/response-types";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,

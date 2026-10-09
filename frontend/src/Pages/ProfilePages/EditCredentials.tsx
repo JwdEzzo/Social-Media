@@ -15,7 +15,7 @@ import { Loader2, Undo } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner"; // or use your preferred toast library
 import { z } from "zod";
-import type { UpdateCredentialsRequestDto } from "@/types/requestTypes";
+import type { UpdateCredentialsRequestDto } from "@/types/request-types";
 import {
   useGetUserByUsernameQuery,
   useUpdateUserCredentialsMutation,

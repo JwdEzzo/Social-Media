@@ -3,7 +3,7 @@ import {
   useIsReplyLikedQuery,
   useToggleReplyLikeMutation,
 } from "@/api/comments/commentReplyLikesApi";
-import type { GetReplyResponseDto } from "@/types/responseTypes";
+import type { GetReplyResponseDto } from "@/types/response-types";
 import { Heart } from "lucide-react";
 
 interface ReplyCardProps {

@@ -9,6 +9,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code Long} id <br>
+ * {@code String} username <br>
+ * {@code String} profilePictureUrl <br>
+ * {@code String} imageUrl <br>
+ * {@code String} description <br>
+ * {@code LocalDateTime} createdAt <br>
+ * {@code LocalDateTime} updatedAt <br>
+ * {@code List<GetCommentResponse>} comments <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from '@/api/public/baseApi';
-import type { FollowRequestResponseDto } from '@/types/responseTypes';
+import type { FollowRequestResponseDto } from '@/types/response-types';
 
 export const followApi = createApi({
   reducerPath: 'followerApi',

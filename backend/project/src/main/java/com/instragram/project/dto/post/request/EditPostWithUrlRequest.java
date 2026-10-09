@@ -4,6 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code String} description <br>
+ * {@code String} imageUrl <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

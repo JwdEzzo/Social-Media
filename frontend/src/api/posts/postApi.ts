@@ -4,8 +4,8 @@ import type {
   CreatePostRequestDto,
   EditPostWithUploadRequestDto,
   EditPostWithUrlRequestDto,
-} from '@/types/requestTypes';
-import type { GetPostResponseDto } from '@/types/responseTypes';
+} from '@/types/request-types';
+import type { GetPostResponseDto } from '@/types/response-types';
 
 export const postApi = createApi({
   reducerPath: 'postApi',

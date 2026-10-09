@@ -1,7 +1,5 @@
 package com.instragram.project.controller;
 
-import java.net.URI;
-
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -10,7 +8,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,60 +35,58 @@ import com.instragram.project.dto.user.request.UpdateProfileRequest;
 import com.instragram.project.dto.user.response.GetUserResponse;
 import com.instragram.project.dto.user.response.SignUpResponse;
 import com.instragram.project.enums.AccountStatus;
-import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.service.AppUserService;
-import com.instragram.project.utils.ApiResponse;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Successful responses carry their payload directly - no envelope. The status line already
+ * reports success, so wrapping it adds a nesting level the client has to unwrap for nothing.
+ * Failures are the exception: {@code GlobalExceptionHandler} renders every one of them as an
+ * {@code ApiResponse}, which is where the per-field {@code errors} map earns its place.
+ */
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/users")
 @Slf4j
 public class AppUserController {
 
-   private final AppUserService appUserService;
-   private final MappingMethods mappingMethods;
+    private final AppUserService appUserService;
 
-    public AppUserController(AppUserService appUserService, MappingMethods mappingMethods) {
+    public AppUserController(AppUserService appUserService) {
         this.appUserService = appUserService;
-        this.mappingMethods = mappingMethods;
     }
 
     // POST: Login
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
-        LoginResponse data = appUserService.verify(loginRequest);
-        ApiResponse<LoginResponse> response = mappingMethods.mapToApiResponse(data, "Logged in successfully!");
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        LoginResponse response = appUserService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
 
     // POST: Sign Up
     @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
-        SignUpResponse data = appUserService.signUp(request);
-        ApiResponse<SignUpResponse> response = mappingMethods.mapToApiResponse(data, "User registered successfully!");
+    public ResponseEntity<SignUpResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+        SignUpResponse response = appUserService.signUp(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // PATCH: Toggle the caller's own account status
     @PatchMapping("/toggle-account-status")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<AccountStatus>> toggleAccountStatus(Authentication authentication) {
+    public ResponseEntity<AccountStatus> toggleAccountStatus(Authentication authentication) {
         AccountStatus newStatus = appUserService.toggleAccountStatus(authentication.getName());
-        ApiResponse<AccountStatus> response = mappingMethods.mapToApiResponse(newStatus, "Account status toggled successfully!");
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.ok(newStatus);
     }
 
-   // GET: All users, paginated — ?page=0&size=20&sort=username,asc
+    // GET: All users, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllUsers(
+    public ResponseEntity<PagedModel<GetUserResponse>> getAllUsers(
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         Page<GetUserResponse> page = appUserService.getAllUsers(pageable);
-        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched users successfully!");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     // GET: User by username
@@ -113,45 +108,41 @@ public class AppUserController {
     // GET: All users except the currently logged in user, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/excluded")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllUsersExcludingCurrentUser(
+    public ResponseEntity<PagedModel<GetUserResponse>> getAllUsersExcludingCurrentUser(
             @PageableDefault(size = 10, sort = "id") Pageable pageable,
             Authentication authentication) {
         Page<GetUserResponse> page = appUserService.getAllUsersExcludingCurrentUser(authentication.getName(), pageable);
-        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched users successfully!");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     // GET: All followers of a user, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/followers/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllFollowers(
+    public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowers(
             @PathVariable Long userId,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         Page<GetUserResponse> page = appUserService.getAllFollowers(userId, pageable);
-        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched followers successfully!");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     // GET: All users that a user follows, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/followings/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedModel<GetUserResponse>>> getAllFollowings(
+    public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowings(
             @PathVariable Long userId,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         Page<GetUserResponse> page = appUserService.getAllFollowings(userId, pageable);
-        ApiResponse<PagedModel<GetUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched followings successfully!");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     // GET: Search users by username, paginated — ?page=0&size=20&sort=username,asc
     @GetMapping("/search/{username}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedModel<SearchUserResponse>>> searchUsers(
+    public ResponseEntity<PagedModel<SearchUserResponse>> searchUsers(
             @PathVariable String username,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         Page<SearchUserResponse> page = appUserService.searchUsers(username, pageable);
-        ApiResponse<PagedModel<SearchUserResponse>> response = mappingMethods.mapToApiResponse(new PagedModel<>(page), "Fetched search results successfully!");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     // GET: serve image bytes for a post
@@ -163,7 +154,7 @@ public class AppUserController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
                 .contentType(MediaType
-                    .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                        .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
                 .body(resource);
     }
 
@@ -186,11 +177,10 @@ public class AppUserController {
     // PUT: Update profile with URL
     @PutMapping(value = "/{actorUsername}/update-profile-url", consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Void>> updateUserProfileWithUrl(
-        @PathVariable String actorUsername,
-        @RequestBody UpdateProfileRequest request,
-        Authentication authentication
-    ){
+    public ResponseEntity<Void> updateUserProfileWithUrl(
+            @PathVariable String actorUsername,
+            @RequestBody UpdateProfileRequest request,
+            Authentication authentication) {
         // The service edits the caller's own profile only, so the path variable has to agree
         // with the authenticated principal. Mirrors the upload endpoint below.
         if (!authentication.getName().equals(actorUsername)) {
@@ -238,6 +228,5 @@ public class AppUserController {
         appUserService.deleteUser(username, request.getPassword());
         return ResponseEntity.noContent().build();
     }
-
 
 }

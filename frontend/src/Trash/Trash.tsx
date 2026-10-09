@@ -1,4 +1,4 @@
-import type { GetPostResponseDto } from "@/types/responseTypes";
+import type { GetPostResponseDto } from "@/types/response-types";
 import { useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import HomePagePostCard from "../HomePagePostCard";

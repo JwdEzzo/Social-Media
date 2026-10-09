@@ -1,6 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../public/baseApi";
-import type { NotificationResponseDto } from "@/types/responseTypes";
+import type { NotificationResponseDto } from "@/types/response-types";
 
 export const notificationApi = createApi({
   reducerPath: "notificationApi",

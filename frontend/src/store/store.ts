@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { authApi } from "@/auth/authApi";
+import { authApi } from "@/api/auth/authApi";
 import { postApi } from "@/api/posts/postApi";
 import { userApi } from "@/api/users/userApi";
 import authSlice, { logout } from "@/auth/authSlice";

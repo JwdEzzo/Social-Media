@@ -18,7 +18,7 @@ import {
 import { useGetUserByUsernameQuery, useToggleAccountStatusMutation } from '@/api/users/userApi';
 import { useTogglePostLikeMutation } from '@/api/posts/postLikesApi';
 import { useTogglePostSaveMutation } from '@/api/posts/postSavesApi';
-import type { GetPostResponseDto } from '@/types/responseTypes';
+import type { GetPostResponseDto } from '@/types/response-types';
 
 // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
 // We call the state from Redux store in both components

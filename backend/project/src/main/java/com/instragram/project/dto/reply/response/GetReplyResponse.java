@@ -8,6 +8,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code Long} id <br>
+ * {@code String} content <br>
+ * {@code LocalDateTime} createdAt <br>
+ * {@code GetUserResponse} appUser <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -80,7 +80,7 @@ public class GlobalExceptionHandler {
 		log.warn("Conflict [{}] on: {}", ex.getMessage(), errors.keySet());
 	
 		return ResponseEntity.status(HttpStatus.CONFLICT)
-							 .body(ApiResponse.withErrors(409, errors));
+							 .body(ApiResponse.withErrors(409, ex.getMessage(), errors));
 	}
 
 	/**

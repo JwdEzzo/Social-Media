@@ -1,5 +1,5 @@
 import { Camera, Loader2 } from 'lucide-react';
-import { useLoginMutation } from '@/auth/authApi';
+import { useLoginMutation } from '@/api/auth/authApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import type { LoginRequest } from '@/types/requestTypes';
+import type { LoginRequest } from '@/types/request-types';
 import { setCredentials } from '@/auth/authSlice';
 import { ModeToggle } from '@/components/ModeToggle';
 

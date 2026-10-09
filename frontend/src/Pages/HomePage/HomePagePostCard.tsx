@@ -3,7 +3,7 @@ import { postApi } from '@/api/posts/postApi';
 import { useGetPostLikeCountQuery, useIsPostLikedQuery } from '@/api/posts/postLikesApi';
 import { useGetPostSaveCountQuery, useIsPostSavedQuery } from '@/api/posts/postSavesApi';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { GetPostResponseDto } from '@/types/responseTypes';
+import type { GetPostResponseDto } from '@/types/response-types';
 import { Bookmark, Heart, MessageCircle, Send } from 'lucide-react';
 import { memo } from 'react';
 import { useDispatch } from 'react-redux';

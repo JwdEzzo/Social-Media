@@ -1,11 +1,13 @@
 package com.instragram.project.service;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -76,27 +78,33 @@ public class AppUserService {
     */
    @Transactional
    public SignUpResponse signUp(SignUpRequest request) {
-
       // Step 1: Validate request
       validateSignUpRequestOrThrow(request);
 
       // Step 2: Convert the request DTO to an AppUser entity
       AppUser appUser = mappingMethods.convertSignUpRequestToAppUserEntity(request);
 
-      // TODO: needs locking
       try {
-         // saveAndFlush forces the INSERT here, inside the try, so a constraint violation
-         // is thrown where we can translate it. Plain save() defers the flush to commit,
-         // after this method has returned. It also guarantees the generated id and the
-         // @PrePersist createdAt are populated before we map the response.
          AppUser saved = appUserRepository.saveAndFlush(appUser);
          return mappingMethods.convertAppUserEntityToSignUpResponse(saved);
       } catch (DataIntegrityViolationException e) {
-         // Lost the race: another request claimed this username or email between the
-         // checks above and this insert. Which of the two it was would mean parsing the
-         // constraint name out of the exception, so the message stays deliberately vague.
+         // Only a unique violation means "taken" - the race where another sign-up claimed the
+         // name between validateSignUpRequestOrThrow and this insert. A not-null or length
+         // failure is a bug, and rethrowing lets it surface as a logged 500 instead.
+         if (!isUniqueViolation(e)) {
+            throw e;
+         }
          throw new AlreadyExistsException("That username or email is already taken.", e);
       }
+   }
+
+   /**
+    * SQLState {@code 23505} is the SQL-standard code for a unique violation, which keeps this
+    * independent of the constraint names Hibernate generates under {@code ddl-auto=update}.
+    */
+   private static boolean isUniqueViolation(DataIntegrityViolationException e) {
+      return NestedExceptionUtils.getMostSpecificCause(e) instanceof SQLException sql
+            && "23505".equals(sql.getSQLState());
    }
 
    public GetUserResponse getUserByUsername(String username) {
@@ -247,7 +255,6 @@ public class AppUserService {
     */
    @Transactional
    public void updateUserProfileWithUrl(String username, UpdateProfileRequest updateDto) {
-
       // Step 1: Get the caller
       AppUser user = getUserByUsernameOrThrow(username);
 
@@ -258,9 +265,8 @@ public class AppUserService {
 
       // Step 3: Update profile picture URL if provided
       if (StringUtils.hasText(updateDto.getProfilePictureUrl())) {
-
          user.setProfilePictureUrl(updateDto.getProfilePictureUrl());
-         // Switching to an external URL — drop any previously uploaded bytes.
+         // Switching to an external URL -> drop any previously uploaded bytes.
          profilePictureRepository.deleteByAppUserId(user.getId());
       }
 
@@ -322,7 +328,7 @@ public class AppUserService {
     * AppUserDetailsService, which throws UsernameNotFoundException (an
     * AuthenticationException), gets caught. <br> 
     */
-   public LoginResponse verify(LoginRequest loginRequestDto) {
+   public LoginResponse login(LoginRequest loginRequestDto) {
       try {
          // Step 1: Authenticate the user with the provided credentials
          authenticationManager.authenticate(
@@ -426,13 +432,16 @@ public class AppUserService {
    private void validateSignUpRequestOrThrow(SignUpRequest request) {
       List<FieldViolation> conflicts = new ArrayList<>();
       if (appUserRepository.existsByUsername(request.getUsername())) {
-         conflicts.add(new FieldViolation("username", "The username '" + request.getUsername() + "' is already taken."));
+         conflicts
+               .add(new FieldViolation("username", "The username '" + request.getUsername() + "' is already taken."));
       }
       if (appUserRepository.existsByEmail(request.getEmail())) {
-         conflicts.add(new FieldViolation("email", "An account with the email '" + request.getEmail() + "' already exists."));
+         conflicts.add(
+               new FieldViolation("email", "An account with the email '" + request.getEmail() + "' already exists."));
       }
       if (!conflicts.isEmpty()) {
          throw new ConflictException("That username or email is already taken.", conflicts);
       }
    }
+
 }

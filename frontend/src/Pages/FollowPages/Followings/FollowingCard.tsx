@@ -1,6 +1,6 @@
 import { postApi } from '@/api/posts/postApi';
 import FollowButton from '@/components/custom/follow-button';
-import type { GetUserResponseDto } from '@/types/responseTypes';
+import type { GetUserResponseDto } from '@/types/response-types';
 import { useDispatch } from 'react-redux';
 
 interface FollowingCardProps {

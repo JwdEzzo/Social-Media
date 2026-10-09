@@ -1,6 +1,24 @@
+// ================ POST =================
 export interface CreatePostRequestDto {
   description: string;
   imageUrl: string;
+}
+
+export interface EditPostWithUrlRequestDto {
+  description: string;
+  imageUrl: string;
+}
+
+export interface EditPostWithUploadRequestDto {
+  description: string;
+  image: File;
+}
+
+// ================ SIGN UP =================
+export interface SignUpRequest {
+  email: string;
+  username: string;
+  password: string;
 }
 
 export interface LoginRequest {
@@ -8,12 +26,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface SignUpRequest {
-  email: string;
-  username: string;
-  password: string;
-}
-
+// =============== UPDATE USER =================
 export interface UpdateCredentialsRequestDto {
   email: string;
   username: string;
@@ -26,22 +39,14 @@ export interface UpdateProfileRequestDto {
   profilePictureUrl: string;
 }
 
+// =============== COMMENTS =================
 export interface WriteCommentRequestDto {
   content: string;
   postId: number;
 }
 
+// =============== REPLIES =================
 export interface WriteReplyRequestDto {
   content: string;
   commentId: number;
-}
-
-export interface EditPostWithUrlRequestDto {
-  description: string;
-  imageUrl: string;
-}
-
-export interface EditPostWithUploadRequestDto {
-  description: string;
-  image: File;
 }

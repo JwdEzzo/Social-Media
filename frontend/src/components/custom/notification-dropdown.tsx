@@ -22,7 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/errors";
 import { Button } from "../ui/button";
 import { formatTimeAgo } from "@/utils/helpers";
 

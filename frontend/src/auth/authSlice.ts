@@ -1,6 +1,6 @@
-import type { LoginResponse } from "@/types/responseTypes";
+import type { LoginResponse } from "@/types/response-types";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { AuthState } from "./authApi";
+import type { AuthState } from "@/api/auth/authApi";
 
 // Loading auth credentials from storage if the user had already logged in before
 const loadAuthFromStorage = (): AuthState => {

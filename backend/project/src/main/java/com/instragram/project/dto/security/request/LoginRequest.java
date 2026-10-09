@@ -6,6 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code String} username <br>
+ * {@code String} password <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

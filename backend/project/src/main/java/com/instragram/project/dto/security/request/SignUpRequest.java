@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
  * Hibernate Validator does not fail fast, so every constraint below is evaluated on every request
  * and the caller is told about all of its problems at once. {@code {min}} and {@code {max}} in the
  * messages are filled in from the constraint itself.
+ * {@code String} email <br>
+ * {@code String} username <br>
+ * {@code String} password <br>
  */
 @Data
 @AllArgsConstructor

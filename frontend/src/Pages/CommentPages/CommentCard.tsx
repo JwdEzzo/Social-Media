@@ -9,7 +9,7 @@ import {
 import type {
   GetCommentResponseDto,
   GetUserResponseDto,
-} from "@/types/responseTypes";
+} from "@/types/response-types";
 import { Heart, MessageCircle } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";

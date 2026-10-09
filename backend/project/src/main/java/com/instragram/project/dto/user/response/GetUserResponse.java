@@ -10,6 +10,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * {@code Long} id <br>
+ * {@code String} email <br>
+ * {@code String} username <br>
+ * {@code String} bioText <br>
+ * {@code String} profilePictureUrl <br>
+ * {@code AccountStatus} accountStatus <br>
+ * {@code LocalDateTime} createdAt <br>
+ * {@code LocalDateTime} updatedAt <br>
+ * {@code List<GetPostResponse>} posts <br>
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

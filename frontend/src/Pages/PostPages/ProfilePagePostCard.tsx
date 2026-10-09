@@ -2,7 +2,7 @@ import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
 import { useGetPostLikeCountQuery } from "@/api/posts/postLikesApi";
 import { openPostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
-import type { GetPostResponseDto } from "@/types/responseTypes";
+import type { GetPostResponseDto } from "@/types/response-types";
 import { Heart, MessageCircle } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";

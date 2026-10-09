@@ -79,7 +79,8 @@ public class JwtFilter extends OncePerRequestFilter {
    @Override
    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
       String path = request.getRequestURI();
-      // Allow login/register endpoints to bypass JWT
-      return path.startsWith("/api/instagram/users/login") || path.startsWith("/api/instagram/users/signup");
+      // Allow login/register endpoints to bypass JWT. These must match the controller mappings
+      // exactly, or a stale token left in the client turns a sign-up into a 401.
+      return path.startsWith("/api/instagram/users/login") || path.startsWith("/api/instagram/users/sign-up");
    }
 }

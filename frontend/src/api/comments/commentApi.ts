@@ -1,7 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/api/public/baseApi";
-import { type WriteCommentRequestDto } from "@/types/requestTypes";
-import { type GetCommentResponseDto } from "@/types/responseTypes";
+import { type WriteCommentRequestDto } from "@/types/request-types";
+import { type GetCommentResponseDto } from "@/types/response-types";
 
 export const commentApi = createApi({
   reducerPath: "commentApi",

@@ -3,7 +3,7 @@ import {
   useCreatePostMutation,
   useUploadPostMutation,
 } from "@/api/posts/postApi";
-import type { CreatePostRequestDto } from "@/types/requestTypes";
+import type { CreatePostRequestDto } from "@/types/request-types";
 import { useDispatch } from "react-redux";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 

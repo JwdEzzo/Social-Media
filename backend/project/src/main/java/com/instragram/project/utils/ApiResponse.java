@@ -7,11 +7,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * {@code boolean} success <br>
- * {@code String} message <br>
- * {@code T} data <br>
- * {@code int} status <br>
- * {@code LocalDateTime} timestamp <br>
+ * The error body for every failed request, rendered centrally by
+ * {@code GlobalExceptionHandler} - controllers never build one.
+ *
+ * Successful responses are not wrapped: they carry their payload directly, because the status
+ * line already reports success and an envelope would only add a level for clients to unwrap.
+ * What HTTP cannot express on its own is per-field detail, which is why {@code errors} exists
+ * and why this type is still worth having on the failure path.
+ *
+ * {@code boolean} success - always false <br>
+ * {@code int} status - mirrors the HTTP status <br>
+ * {@code String} message - omitted when the detail is entirely per-field <br>
+ * {@code Map<String, List<String>>} errors - keyed by field; {@code _form} for the rest <br>
+ * {@code T} data - unused on this path, kept so the type stays generic
  */
 @Getter
 @Setter
@@ -32,16 +40,6 @@ public class ApiResponse<T>
 	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private Map<String, List<String>> errors;
 
-	public static <T> ApiResponse<T> success(T data, String message)
-	{
-		ApiResponse<T> res = new ApiResponse<>();
-		res.success = true;
-		res.data = data;
-		res.message = message;
-		res.status = 200;
-		return res;
-	}
-
 	public static <T> ApiResponse<T> error(int status, String message)
 	{
 		ApiResponse<T> res = new ApiResponse<>();
@@ -59,14 +57,6 @@ public class ApiResponse<T>
 		ApiResponse<T> res = error(status, message);
 		res.errors = errors;
 		return res;
-	}
-
-	/**
-	 * An error whose detail is per-field, with no message <br>
-	 * The caller is advised to fix on each field.
-	 */
-	public static <T> ApiResponse<T> withErrors(int status, Map<String, List<String>> errors) {
-		return withErrors(status, null, errors);
 	}
 
 	public static <T> ApiResponse<T> validationError(String message, Map<String, List<String>> errors) {

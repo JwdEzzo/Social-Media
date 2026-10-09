@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/errors";
 import { NotificationType } from "@/types/enums";
-import type { NotificationResponseDto } from "@/types/responseTypes";
+import type { NotificationResponseDto } from "@/types/response-types";
 import NavigateBack from "@/components/custom/navigate-back";
 
 function NotificationPage() {
