@@ -41,20 +41,20 @@ function IncomingRequestsCard() {
   }
 
   return (
-    <div className=" mb-10">
-      <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+    <div className="mx-auto mb-4 w-full max-w-lg">
+      <Card className="w-full gap-4 rounded-xl border-border shadow-none">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-semibold leading-tight tracking-tight">
+          <CardTitle className="text-base font-semibold">
             Incoming Requests
           </CardTitle>
         </CardHeader>
         <CardContent>
           {followRequests.map((followRequest) => (
             <div key={followRequest.requestId}>
-              <div className="flex items-center justify-between pb-1">
-                <div className="flex items-center justify-start py-2 gap-1">
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex min-w-0 items-center gap-3">
                   <img
-                    className="h-10 w-10 rounded-full cursor-pointer"
+                    className="size-11 shrink-0 cursor-pointer rounded-full object-cover ring-1 ring-border"
                     src={followRequest.requesterProfilePictureUrl ?? ""}
                     alt={`${followRequest.requesterUsername} pic`}
                     onClick={() =>
@@ -63,14 +63,14 @@ function IncomingRequestsCard() {
                       )
                     }
                   />
-                  <span className="mx-3">
+                  <span className="truncate text-sm font-semibold">
                     {followRequest.requesterUsername}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    className="bg-green-400 hover:bg-green-500"
+                    className="h-8 rounded-lg bg-sky-500 px-4 font-semibold text-white shadow-none hover:bg-sky-600"
                     onClick={() =>
                       acceptOneFollowRequest({
                         requestId: followRequest.requestId,
@@ -81,7 +81,7 @@ function IncomingRequestsCard() {
                     Accept
                   </Button>
                   <Button
-                    className="bg-red-400 hover:bg-red-500"
+                    className="h-8 rounded-lg bg-secondary px-4 font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80"
                     size="sm"
                     onClick={() =>
                       declineOneFollowRequest({
@@ -94,14 +94,14 @@ function IncomingRequestsCard() {
                   </Button>
                 </div>
               </div>
-              <div className="border-t border-gray-600" />
+              <div className="border-t border-border" />
             </div>
           ))}
           {hasNextPage && (
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2 w-full"
+              className="mt-2 w-full text-sm font-semibold text-sky-500 hover:text-sky-600"
               disabled={isFetchingNextPage}
               onClick={loadMore}
             >

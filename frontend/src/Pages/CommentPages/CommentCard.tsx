@@ -96,15 +96,13 @@ const CommentCard = memo(
       loggedInUser?.username === postUsername;
 
     return (
-      <div
-        className={`py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0  transition-all `}
-      >
+      <div className={`py-2.5`}>
         <div className="flex items-start gap-3">
           {/* Profile Picture */}
           <img
             src={comment.appUser.profilePictureUrl}
             alt={comment.appUser.username}
-            className="w-8 h-8 rounded-full object-cover"
+            className="size-8 shrink-0 cursor-pointer rounded-full object-cover ring-1 ring-border"
             loading="lazy"
             decoding="async"
             onClick={() => {
@@ -113,18 +111,18 @@ const CommentCard = memo(
           />
 
           {/* Comment Content */}
-          <div className="flex-1 min-w-0 pr-4">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex min-w-0 items-baseline gap-2">
                 <span
-                  className="font-bold text-[12px] dark:text-white font-sans"
+                  className="cursor-pointer text-sm font-semibold hover:opacity-70"
                   onClick={() => {
                     navigateToSelectedUserProfile(comment.appUser.username);
                   }}
                 >
                   {comment.appUser.username}
                 </span>
-                <span className="text-[10px] pt-1 text-gray-500 dark:text-gray-400 hidden [@media(min-width:745px)]:block">
+                <span className="hidden text-xs text-muted-foreground [@media(min-width:745px)]:block">
                   {comment.createdAt.substring(0, 10)}
                 </span>
               </div>
@@ -136,8 +134,8 @@ const CommentCard = memo(
               />
             </div>
 
-            <div className="mb-1">
-              <span className="text-[12px] dark:text-white break-words font-normal">
+            <div className="mb-1.5">
+              <span className="whitespace-pre-line break-words text-sm leading-snug text-foreground">
                 {comment.content}
               </span>
             </div>
@@ -145,7 +143,7 @@ const CommentCard = memo(
             {/* Comment Actions */}
             <div className="flex items-center">
               <Heart
-                className={`h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+                className={`size-3.5 cursor-pointer text-muted-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
                   isCommentLiked
                     ? "fill-current text-red-500 dark:text-red-500"
                     : ""
@@ -154,18 +152,18 @@ const CommentCard = memo(
                 }`}
                 onClick={() => handleToggleCommentLike(comment.id)}
               />
-              <span className="text-gray-700 dark:text-gray-300 text-sm pl-1 pr-2">
+              <span className="pr-3 pl-1 text-xs font-medium text-muted-foreground">
                 {commentLikeCount}
               </span>
               <MessageCircle
-                className="h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                className="size-3.5 -scale-x-100 cursor-pointer text-muted-foreground transition-opacity hover:opacity-60"
                 onClick={() => {
                   onReply(comment.id, comment.appUser.username);
                   setShowReplies(true);
                   focusRef.current?.focus();
                 }}
               />
-              <span className="text-gray-700 dark:text-gray-300 text-sm pl-1">
+              <span className="pl-1 text-xs font-medium text-muted-foreground">
                 {commentReplyCount}
               </span>
             </div>
@@ -174,7 +172,7 @@ const CommentCard = memo(
             {commentReplyCount! > 0 && (
               <button
                 onClick={() => setShowReplies(!showReplies)}
-                className="text-[12px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mt-2"
+                className="mt-2 flex items-center gap-3 text-xs font-semibold text-muted-foreground before:h-px before:w-6 before:bg-muted-foreground/50 hover:text-foreground"
               >
                 {showReplies
                   ? "Hide replies"
@@ -192,7 +190,7 @@ const CommentCard = memo(
             {showReplies && (
               <div>
                 {isRepliesLoading ? (
-                  <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
+                  <div className="mt-2 text-xs text-muted-foreground">
                     Loading replies...
                   </div>
                 ) : replies.length > 0 ? (
@@ -215,7 +213,7 @@ const CommentCard = memo(
                       <button
                         onClick={loadMoreReplies}
                         disabled={isFetchingMoreReplies}
-                        className="text-[12px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mt-2 ml-8"
+                        className="mt-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
                       >
                         {isFetchingMoreReplies
                           ? "Loading replies..."
@@ -224,7 +222,7 @@ const CommentCard = memo(
                     )}
                   </>
                 ) : (
-                  <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
+                  <div className="mt-2 text-xs text-muted-foreground">
                     No replies yet
                   </div>
                 )}

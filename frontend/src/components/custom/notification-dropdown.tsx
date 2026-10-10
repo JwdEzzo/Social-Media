@@ -37,26 +37,26 @@ function NotificationDropdown() {
       case NotificationType.POST_LIKE:
         return {
           message: "liked your post",
-          icon: <Heart className="h-2 w-2 fill-current text-red-500" />,
+          icon: <Heart className="size-2.5 fill-current text-red-500" />,
           bgColor: "bg-red-100 dark:bg-red-950/50",
         };
       case NotificationType.COMMENT_LIKE:
         return {
           message: "liked your comment",
-          icon: <Heart className="h-2 w-2 fill-current text-red-500" />,
+          icon: <Heart className="size-2.5 fill-current text-red-500" />,
           bgColor: "bg-red-100 dark:bg-red-950/50",
         };
       case NotificationType.REPLY_LIKE:
         return {
           message: "liked your reply",
-          icon: <Heart className="h-2 w-2 fill-current text-red-500" />,
+          icon: <Heart className="size-2.5 fill-current text-red-500" />,
           bgColor: "bg-red-100 dark:bg-red-950/50",
         };
       case NotificationType.COMMENT:
         return {
           message: "commented on your post",
           icon: (
-            <MessageCircle className="h-2 w-2 fill-current text-blue-500" />
+            <MessageCircle className="size-2.5 fill-current text-blue-500" />
           ),
           bgColor: "bg-blue-100 dark:bg-blue-950/50",
         };
@@ -64,7 +64,7 @@ function NotificationDropdown() {
         return {
           message: "replied to your comment",
           icon: (
-            <MessageCircle className="h-2 w-2 fill-current text-purple-500" />
+            <MessageCircle className="size-2.5 fill-current text-purple-500" />
           ),
           bgColor: "bg-purple-100 dark:bg-purple-950/50",
         };
@@ -72,7 +72,7 @@ function NotificationDropdown() {
         return {
           message: "started following you",
           icon: (
-            <UserPlus className="h-2 w-2 text-green-600 dark:text-green-400" />
+            <UserPlus className="size-2.5 text-green-600 dark:text-green-400" />
           ),
           bgColor: "bg-green-100 dark:bg-green-950/50",
         };
@@ -80,7 +80,7 @@ function NotificationDropdown() {
         return {
           message: "sent you a follow request",
           icon: (
-            <UserPlus className="h-2 w-2 text-yellow-600 dark:text-yellow-400" />
+            <UserPlus className="size-2.5 text-yellow-600 dark:text-yellow-400" />
           ),
           bgColor: "bg-yellow-100 dark:bg-yellow-950/50",
         };
@@ -88,15 +88,15 @@ function NotificationDropdown() {
         return {
           message: "accepted your follow request",
           icon: (
-            <UserPlus className="h-2 w-2 text-indigo-600 dark:text-indigo-400" />
+            <UserPlus className="size-2.5 text-indigo-600 dark:text-indigo-400" />
           ),
           bgColor: "bg-indigo-100 dark:bg-indigo-950/50",
         };
       default:
         return {
           message: "interacted with you",
-          icon: <BellOff className="h-2 w-2 text-gray-500" />,
-          bgColor: "bg-gray-100 dark:bg-gray-950/50",
+          icon: <BellOff className="size-2.5 text-muted-foreground" />,
+          bgColor: "bg-muted",
         };
     }
   };
@@ -108,14 +108,14 @@ function NotificationDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-[320px] md:w-[380px] p-2 dark:bg-gray-950 dark:border-gray-800 shadow-2xl rounded-xl transition-all duration-200"
+        className="w-[min(92vw,360px)] rounded-xl p-2 shadow-lg"
       >
-        <DropdownMenuLabel className="flex items-center justify-between px-3 pt-2 pb-1">
+        <DropdownMenuLabel className="flex items-center justify-between gap-3 px-2 pt-1.5 pb-2">
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-sm text-gray-900 dark:text-white">
+            <span className="text-base font-semibold text-foreground">
               Notifications
             </span>
-            <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-normal text-muted-foreground">
               Recent activity on your account
             </span>
           </div>
@@ -123,18 +123,18 @@ function NotificationDropdown() {
             onClick={() => markAllAsRead()}
             variant="ghost"
             size="sm"
-            className="h-6 text-[10px] font-normal dark:bg-gray-900 dark:text-gray-500 dark:text-gray-400 bg-gray-100 hover:bg-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+            className="h-7 cursor-pointer px-2 text-xs font-semibold text-sky-500 hover:bg-accent hover:text-sky-600 dark:hover:text-sky-400"
           >
             Mark all as read
           </Button>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1" />
+        <DropdownMenuSeparator className="-mx-2 my-1" />
 
         {isLoading ? (
           <div className="flex flex-col gap-3 p-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3">
-                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="size-9 rounded-full" />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-3 w-3/4" />
                   <Skeleton className="h-2 w-1/4" />
@@ -144,18 +144,18 @@ function NotificationDropdown() {
           </div>
         ) : !latest3Notifications || latest3Notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <div className="h-10 w-10 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center mb-3">
-              <BellOff className="h-5 w-5 text-gray-400" />
+            <div className="mb-3 flex size-12 items-center justify-center rounded-full border border-border">
+              <BellOff className="size-5 text-muted-foreground" />
             </div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+            <p className="text-sm font-semibold text-foreground">
               All caught up!
             </p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 max-w-[200px]">
+            <p className="mt-1 max-w-[220px] text-xs text-muted-foreground">
               No new notifications have arrived yet.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto pr-1">
+          <div className="flex max-h-[300px] flex-col gap-0.5 overflow-y-auto">
             {latest3Notifications.slice(0, 3).map((notification) => {
               const details = getNotificationDetails(
                 notification.notificationType,
@@ -164,25 +164,24 @@ function NotificationDropdown() {
                 <DropdownMenuItem
                   key={notification.id}
                   className={cn(
-                    "flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer focus:bg-gray-100 dark:focus:bg-gray-900",
-                    !notification.isRead &&
-                      "bg-purple-500/5 dark:bg-purple-500/10",
+                    "flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors focus:bg-accent",
+                    !notification.isRead && "bg-sky-500/5 dark:bg-sky-500/10",
                   )}
                 >
-                  <div className="relative shrink-0 mt-0.5">
-                    <Avatar className="h-8 w-8">
+                  <div className="relative shrink-0">
+                    <Avatar className="size-9 ring-1 ring-border">
                       <AvatarImage
                         src={notification.sender.profilePictureUrl}
                         alt={notification.sender.username}
                         className="object-cover"
                       />
-                      <AvatarFallback className="bg-gradient-to-tr from-purple-500 to-pink-500 text-white font-bold text-xs uppercase">
+                      <AvatarFallback className="bg-muted text-xs font-semibold uppercase text-muted-foreground">
                         {notification.sender.username.substring(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     <span
                       className={cn(
-                        "absolute -bottom-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full p-[3px] border border-white dark:border-gray-950",
+                        "absolute -right-1 -bottom-1 flex size-[18px] items-center justify-center rounded-full border-2 border-popover",
                         details.bgColor,
                       )}
                     >
@@ -190,18 +189,18 @@ function NotificationDropdown() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <p className="text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 break-words">
-                      <span className="font-bold text-gray-900 dark:text-white mr-1">
+                    <p className="break-words text-[13px] leading-snug text-foreground">
+                      <span className="mr-1 font-semibold">
                         {notification.sender.username}
                       </span>
                       {details.message}
                     </p>
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400 font-medium">
+                    <span className="text-xs text-muted-foreground">
                       {formatTimeAgo(notification.createdAt)}
                     </span>
                   </div>
                   {!notification.isRead && (
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 animate-pulse mt-3 ml-auto" />
+                    <span className="ml-auto size-2 shrink-0 rounded-full bg-sky-500" />
                   )}
                 </DropdownMenuItem>
               );
@@ -209,14 +208,14 @@ function NotificationDropdown() {
           </div>
         )}
 
-        <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1" />
+        <DropdownMenuSeparator className="-mx-2 my-1" />
         <div className="p-1">
           <button
             onClick={() => navigate("/notifications")}
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-white rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <span>View All Notifications</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="size-4" />
           </button>
         </div>
       </DropdownMenuContent>

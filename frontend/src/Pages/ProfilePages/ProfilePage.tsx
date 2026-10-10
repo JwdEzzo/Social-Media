@@ -40,10 +40,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   // Loading state
   if (!state.profileUser || state.isUserLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4">Loading profile...</p>
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Loading profile...
+          </p>
         </div>
       </div>
     );
@@ -52,11 +54,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   // Error states
   if (state.isUserError || state.isPostsError) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-gray-700 rounded-lg">
-          <h2 className="text-xl font-bold text-red-600">Error</h2>
-          <p className="text-red-500">Could not load profile</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-1 text-lg font-semibold text-destructive">Error</h2>
+          <p className="text-sm text-muted-foreground">
+            Could not load profile
+          </p>
+          <Button onClick={() => window.location.reload()} className="mt-6">
             Try Again
           </Button>
         </div>
@@ -67,10 +71,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   // User not found
   if (!profileUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-gray-700 rounded-lg">
-          <h2 className="text-xl font-bold">User Not Found</h2>
-          <p>The requested user does not exist</p>
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-1 text-lg font-semibold">User Not Found</h2>
+          <p className="text-sm text-muted-foreground">
+            The requested user does not exist
+          </p>
         </div>
       </div>
     );
@@ -81,10 +87,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   function renderProfilePicture() {
     return (
       <div
-        className={`relative ${isOwnProfile ? "cursor-pointer" : ""}`}
+        className={`group/avatar relative shrink-0 ${isOwnProfile ? "cursor-pointer" : ""}`}
         onClick={isOwnProfile ? actions.navigateToEditProfile : undefined}
       >
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+        <div className="size-24 overflow-hidden rounded-full border border-border bg-muted sm:size-36">
           <img
             src={profileUser?.profilePictureUrl}
             alt={profileUser?.username}
@@ -92,8 +98,8 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           />
         </div>
         {isOwnProfile && (
-          <button className="absolute bottom-2 right-2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow">
-            <Camera className="h-4 w-4 text-gray-600" />
+          <button className="absolute right-1 bottom-1 rounded-full border-2 border-background bg-foreground p-1.5 shadow-sm transition-transform group-hover/avatar:scale-110 sm:right-2 sm:bottom-2">
+            <Camera className="size-3.5 text-background" />
           </button>
         )}
       </div>
@@ -102,36 +108,36 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   function renderActionButtons() {
     return (
-      <div className="flex gap-2 max-md:justify-center">
+      <div className="flex flex-wrap items-center gap-2 max-md:justify-center">
         {isOwnProfile ? (
           <div>
             <Button
               onClick={() =>
                 actions.navigate(`/home/${state.loggedInUsername}`)
               }
-              className="cursor-pointer mr-2"
+              className="mr-2 h-8 cursor-pointer rounded-lg border-0 bg-secondary px-4 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80"
             >
-              <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
+              <MoveLeft className="size-4" />
               Home Page
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="cursor-pointer">
-                  <Edit3 className="h-4 w-4 mr-2" />
+                <Button
+                  variant="outline"
+                  className="h-8 cursor-pointer rounded-lg border-0 bg-secondary px-4 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80"
+                >
+                  <Edit3 className="size-4" />
                   Settings
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
-                align="start"
-              >
-                <DropdownMenuLabel className="text-gray-700 dark:text-gray-300 font-bold">
+              <DropdownMenuContent className="w-56 rounded-lg" align="start">
+                <DropdownMenuLabel className="truncate font-semibold">
                   {profileUser?.username}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer transition-colors duration-100 ease-in-out"
+                    className="cursor-pointer"
                     onClick={() =>
                       actions.navigate(
                         `/userprofile/${profileUser?.username}/edit-profile`,
@@ -146,12 +152,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                         `/userprofile/${profileUser?.username}/edit-credentials`,
                       )
                     }
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
+                    className="cursor-pointer"
                   >
                     Edit Credentials
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
+                    className="cursor-pointer"
                     onClick={() => {
                       if (profileUser?.id) {
                         actions.toggleAccountStatus({
@@ -164,19 +170,19 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                       ? "Set Account to Public"
                       : "Set Account to Private"}
                     {profileUser?.accountStatus === "PRIVATE" ? (
-                      <Unlock className="ml-2 text-green-400" />
+                      <Unlock className="ml-auto text-muted-foreground" />
                     ) : (
-                      <Lock className="ml-2 text-red-400" />
+                      <Lock className="ml-auto text-muted-foreground" />
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={actions.handleLogout}
-                  className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:bg-red-100 dark:focus:bg-red-900/30 cursor-pointer"
+                  className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span className="font-bold">Log out</span>
+                  <LogOut className="text-destructive" />
+                  <span className="font-semibold">Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -184,9 +190,9 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         ) : (
           <Button
             onClick={() => actions.navigate(`/home/${state.loggedInUsername}`)}
-            className="cursor-pointer"
+            className="h-8 cursor-pointer rounded-lg border-0 bg-secondary px-4 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80"
           >
-            <MoveLeft className="hover:bg-gray-200 dark:hover:bg-gray-700" />
+            <MoveLeft className="size-4" />
             Home Page
           </Button>
         )}
@@ -197,8 +203,8 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   function renderBio() {
     return (
-      <div className="text-left max-w-md">
-        <p className="font-light text-sm max-md:text-center">
+      <div className="max-w-md text-left">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground max-md:text-center">
           {profileUser?.bioText || "No bio available"}
         </p>
       </div>
@@ -210,7 +216,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       isOwnProfile && (
         <div className="flex items-center justify-start max-md:justify-center">
           <Button
-            className="bg-black hover:bg-gray-600 dark:bg-white hover:cursor-pointer dark:hover:bg-gray-400 dark:text-black hover:text-white"
+            className="h-8 cursor-pointer rounded-lg bg-sky-500 px-4 text-sm font-semibold text-white shadow-none hover:bg-sky-600"
             onClick={() => actions.setShowCreatePostModal(true)}
           >
             Create Post
@@ -222,14 +228,14 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   function renderPrivateAccountPlaceholder() {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center  border-gray-200 dark:border-gray-700 mt-2">
-        <div className="rounded-full border-2 border-gray-900 dark:border-gray-100 p-4 mb-4">
-          <Lock className="h-10 w-10 text-gray-900 dark:text-gray-100" />
+      <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div className="mb-4 rounded-full border-2 border-foreground p-4">
+          <Lock className="size-10 text-foreground" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-semibold text-foreground">
           This account is private
         </h2>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
           Follow this account to see their photos and videos.
         </p>
       </div>
@@ -243,13 +249,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       state.isFollowStatusLoading
     ) {
       return (
-        <div className="grid grid-cols-3 gap-1 mt-6">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
           {[...Array(9)].map((_, index) => (
             <div
               key={`loading-${index}`}
-              className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
+              className="relative flex aspect-square items-center justify-center bg-muted"
             >
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"></div>
             </div>
           ))}
         </div>
@@ -266,13 +272,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
     if (state.isPostsLoading && viewMode === "posts") {
       return (
-        <div className="grid grid-cols-3 gap-1 mt-6">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
           {[...Array(9)].map((_, index) => (
             <div
               key={`loading-${index}`}
-              className="aspect-square bg-gray-200 dark:bg-gray-700 rounded relative flex items-center justify-center"
+              className="relative flex aspect-square items-center justify-center bg-muted"
             >
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"></div>
             </div>
           ))}
         </div>
@@ -288,7 +294,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         return renderGrid(state.sortedLikedPosts);
       } else {
         return (
-          <div className="col-span-full text-center py-8 text-gray-500">
+          <div className="col-span-full py-16 text-center text-sm text-muted-foreground">
             No liked posts yet
           </div>
         );
@@ -300,7 +306,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         return renderGrid(state.sortedSavedPosts);
       } else {
         return (
-          <div className="col-span-full text-center py-8 text-gray-500">
+          <div className="col-span-full py-16 text-center text-sm text-muted-foreground">
             No saved posts yet
           </div>
         );
@@ -314,7 +320,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   function renderGrid(posts: GetPostResponse[]) {
     return (
       <>
-        <div className="grid grid-cols-3 gap-1 mt-6">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
           {posts.map((post) => (
             <div key={post.id} className="group relative aspect-square">
               <ProfilePagePostCard post={post} />
@@ -331,20 +337,20 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-svh bg-background">
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+      <div className="bg-background">
+        <div className="mx-auto max-w-4xl px-4 pt-8 pb-6 sm:pt-10">
+          <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-16 md:px-8">
             {/* Profile Picture */}
             {renderProfilePicture()}
 
             {/* Profile Info */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="w-full min-w-0 flex-1 text-center md:text-left">
+              <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <div className="md:flex gap-2 ">
-                    <h1 className="text-2xl font-bold md:text-center">
+                  <div className="mb-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                    <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
                       {profileUser.username}
                     </h1>
                     {!isOwnProfile ? (
@@ -368,41 +374,35 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
               </div>
 
               {/* User Stats - Following, Followers */}
-              <div className="flex gap-4 mb-4 items-center justify-center md:justify-start transition-colors">
+              <div className="mb-5 flex items-center justify-center gap-2 border-y border-border py-2 md:justify-start md:gap-6 md:border-0 md:py-0">
                 {/* Number of Posts */}
-                <div className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all">
-                  <div className="font-bold text-xl">
+                <div className="flex-1 cursor-pointer rounded-md px-3 py-1 text-center transition-colors hover:bg-accent md:flex-none">
+                  <div className="text-base font-semibold">
                     {state.stats.postCount || 0}
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    Posts
-                  </p>
+                  <p className="text-sm text-muted-foreground">Posts</p>
                 </div>
 
                 {/* Number of Followers */}
                 <div
-                  className="text-center hover:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1 rounded-md cursor-pointer transition-all"
+                  className="flex-1 cursor-pointer rounded-md px-3 py-1 text-center transition-colors hover:bg-accent md:flex-none"
                   onClick={actions.navigateToFollowers}
                 >
-                  <div className="font-bold text-xl">
+                  <div className="text-base font-semibold">
                     {state.stats.followerCount || 0}
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs tracking-wide">
-                    Followers
-                  </p>
+                  <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
 
                 {/* Number of Following */}
                 <div
-                  className="text-center hover:bg-gray-800 px-3 py-1 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-all"
+                  className="flex-1 cursor-pointer rounded-md px-3 py-1 text-center transition-colors hover:bg-accent md:flex-none"
                   onClick={actions.navigateToFollowing}
                 >
-                  <div className="font-bold text-xl">
+                  <div className="text-base font-semibold">
                     {state.stats.followingCount || 0}
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    Following
-                  </p>
+                  <p className="text-sm text-muted-foreground">Following</p>
                 </div>
               </div>
 
@@ -414,20 +414,20 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       </div>
 
       {/* View Mode Tabs */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex border-b border-gray-200 dark:border-gray-700 md:justify-start md:items-stretch">
+      <div className="mx-auto max-w-4xl pb-10 sm:px-4">
+        <div className="flex border-t border-border">
           <div
             onClick={() => actions.setViewMode("posts")}
-            className={`flex items-center gap-2 py-4 px-6 transition-colors cursor-pointer flex-1 justify-center md:flex-none md:justify-start
+            className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-xs font-semibold transition-colors
         ${
           viewMode === "posts"
-            ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-            : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+            ? "border-foreground text-foreground"
+            : "border-transparent text-muted-foreground hover:text-foreground"
         }`}
           >
-            <button>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Grid3X3 className="h-5 w-5" />
+            <button className="cursor-pointer rounded-sm tracking-widest uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+              <div className="flex cursor-pointer items-center gap-1.5">
+                <Grid3X3 className="size-3.5 sm:size-4" />
                 <span>Posts</span>
               </div>
             </button>
@@ -437,32 +437,32 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             <>
               <div
                 onClick={() => actions.setViewMode("liked")}
-                className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+                className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-xs font-semibold transition-colors
             ${
               viewMode === "liked"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
               >
-                <button>
-                  <div className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-5 w-5 " />
+                <button className="cursor-pointer rounded-sm tracking-widest uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                  <div className="flex cursor-pointer items-center gap-1.5">
+                    <Heart className="size-3.5 sm:size-4" />
                     <span>Likes</span>
                   </div>
                 </button>
               </div>
               <div
                 onClick={() => actions.setViewMode("saved")}
-                className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+                className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-xs font-semibold transition-colors
             ${
               viewMode === "saved"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
               >
-                <button>
-                  <div className="flex items-center gap-2 cursor-pointer">
-                    <Bookmark className="h-5 w-5 " />
+                <button className="cursor-pointer rounded-sm tracking-widest uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                  <div className="flex cursor-pointer items-center gap-1.5">
+                    <Bookmark className="size-3.5 sm:size-4" />
                     <span>Saved</span>
                   </div>
                 </button>
@@ -471,16 +471,16 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
           ) : (
             <div
               onClick={() => actions.setViewMode("liked")}
-              className={`flex items-center gap-2 py-4 px-6 transition-colors flex-1 justify-center md:flex-none md:justify-start
+              className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-xs font-semibold transition-colors
             ${
               viewMode === "liked"
-                ? "border-black dark:border-white text-black dark:text-white font-semibold border-b-2"
-                : " text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
             >
-              <button>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <Heart className="h-5 w-5 " />
+              <button className="cursor-pointer rounded-sm tracking-widest uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                <div className="flex cursor-pointer items-center gap-1.5">
+                  <Heart className="size-3.5 sm:size-4" />
                   <span>Likes</span>
                 </div>
               </button>

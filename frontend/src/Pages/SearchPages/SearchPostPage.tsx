@@ -104,10 +104,10 @@ function SearchPostPage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="flex min-h-svh items-center justify-center bg-background px-4">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">
+              <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+              <p className="mt-4 text-sm text-muted-foreground">
                 Searching for "{searchQuery}"...
               </p>
             </div>
@@ -123,16 +123,16 @@ function SearchPostPage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-              <h2 className="text-xl font-bold text-red-500 mb-4">
+          <div className="flex min-h-svh items-center justify-center bg-background px-4">
+            <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+              <h2 className="mb-2 text-lg font-semibold text-destructive">
                 Error Loading Search Results
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="mb-6 text-sm text-muted-foreground">
                 Failed to search for "{searchQuery}"
               </p>
               <Button onClick={() => refetchSearchedPosts()}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+                <RotateCcw className="size-4" /> Try Again
               </Button>
             </div>
           </div>
@@ -146,10 +146,10 @@ function SearchPostPage() {
       <AppSidebar />
       <SidebarInset>
         {/* Navbar */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-          <div className="flex items-center justify-between p-4">
-            <SidebarTrigger className="h-8 w-8" />
-            <h1 className="text-4xl tracking-tight font-[GreatVibes] bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md">
+          <div className="flex h-16 items-center justify-between px-3 sm:px-4">
+            <SidebarTrigger className="size-9 rounded-full" />
+            <h1 className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text px-1 pb-1 font-['Great_Vibes'] text-4xl leading-tight text-transparent">
               Social Media
             </h1>
             <ModeToggle />
@@ -157,19 +157,21 @@ function SearchPostPage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center">
-          <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
+        <main className="flex flex-1 flex-col items-center bg-background py-0 sm:py-8">
+          <div className="flex w-full max-w-[470px] flex-col items-center justify-center">
             {/* Search Header */}
-            <div className="w-full mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <div className="w-full px-4 pt-6 pb-4 sm:px-0 sm:pt-0">
+              <h2 className="mb-1 text-xl font-semibold text-foreground">
                 Search Results
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Showing results for:{" "}
-                <span className="font-semibold">"{searchQuery}"</span>
+                <span className="font-semibold text-foreground">
+                  "{searchQuery}"
+                </span>
               </p>
               {searchedPosts.length > 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {totalMatches} {totalMatches === 1 ? "post" : "posts"} found
                 </p>
               )}
@@ -188,11 +190,11 @@ function SearchPostPage() {
                 isFetchingMore={isFetchingMoreSearchedPosts}
               />
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-600 dark:text-gray-400 text-lg">
+              <div className="w-full py-16 text-center">
+                <p className="text-base font-semibold text-foreground">
                   No posts found matching "{searchQuery}"
                 </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Try searching with different keywords
                 </p>
               </div>

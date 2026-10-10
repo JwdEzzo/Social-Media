@@ -60,10 +60,12 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   // Loading state
   if (isFollowingsLoading || isLoggedInUserLoading || isProfileUserLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen ">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4">Loading profile...</p>
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Loading profile...
+          </p>
         </div>
       </div>
     );
@@ -72,10 +74,12 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   // User not found
   if (!loggedInUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-gray-100 rounded-lg">
-          <h2 className="text-xl font-bold">User Not Found</h2>
-          <p>The requested user does not exist</p>
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-1 text-lg font-semibold">User Not Found</h2>
+          <p className="text-sm text-muted-foreground">
+            The requested user does not exist
+          </p>
         </div>
       </div>
     );
@@ -84,11 +88,13 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   // Error state
   if (isFollowingsError || isLoggedInUserError || isProfileUserError) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center p-6 bg-red-100 rounded-lg">
-          <h2 className="text-xl font-bold text-red-600">Error</h2>
-          <p className="text-red-500">Could not load profile</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-1 text-lg font-semibold text-destructive">Error</h2>
+          <p className="text-sm text-muted-foreground">
+            Could not load profile
+          </p>
+          <Button onClick={() => window.location.reload()} className="mt-6">
             Try Again
           </Button>
         </div>
@@ -97,14 +103,14 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   }
 
   return (
-    <div className="w-full h-screen dark:bg-gray-900 bg-white pt-10">
+    <div className="min-h-svh w-full bg-background px-4 pt-16 pb-10">
       <NavigateBack />
       <CancellingRequestsCard />
-      <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+      <Card className="mx-auto w-full max-w-lg gap-4 rounded-xl border-border shadow-none">
         {/* Header with username and back button */}
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
+          <div className="flex items-center justify-center">
+            <CardTitle className="text-center text-base font-semibold">
               {loggedInUsername === profileUsername
                 ? "Your Following"
                 : `${profileUsername}'s Followings`}
@@ -113,9 +119,13 @@ function FollowingList({ profileUsername }: FollowingListProps) {
         </CardHeader>
         <CardContent>
           {followingCount === 0 && profileUsername === loggedInUsername ? (
-            <div>You are not following anyone.</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              You are not following anyone.
+            </div>
           ) : followingCount === 0 ? (
-            <div>{profileUsername} is not following anyone.</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              {profileUsername} is not following anyone.
+            </div>
           ) : (
             <>
               {followings.map((following) => (

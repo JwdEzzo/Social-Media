@@ -20,7 +20,6 @@ import {
   useUpdateUserProfileWithUploadMutation,
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/ModeToggle";
 import type { UpdateProfileRequestDto } from "@/types/request-types";
 import { useEffect, useState, useRef } from "react";
 
@@ -177,20 +176,22 @@ function EditProfile() {
   }, [previewUrl]);
 
   return (
-    <div className="dark:bg-gray-800 min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-xl w-full">
-        <Card className="w-full dark:bg-gray-900">
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-lg">
+        <Card className="w-full gap-6 rounded-xl border-border shadow-none">
           <CardHeader>
-            <div className="flex justify-between">
-              <CardTitle className="text-xl font-bold">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-lg font-semibold">
                 Update Profile
               </CardTitle>
-              <div className="flex items-center justify-around gap-2">
-                <Button onClick={() => navigate(`/userprofile/${username}`)}>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  className="h-8 cursor-pointer rounded-lg border-0 bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80"
+                  onClick={() => navigate(`/userprofile/${username}`)}
+                >
                   <Undo />
                   Back
                 </Button>
-                <ModeToggle />
               </div>
             </div>
           </CardHeader>
@@ -198,7 +199,7 @@ function EditProfile() {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleUpdateProfile)}
-                className="space-y-6"
+                className="space-y-5"
               >
                 {/* Bio Field */}
                 <FormField
@@ -222,7 +223,7 @@ function EditProfile() {
                 />
 
                 {/* Upload Mode Toggle */}
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant={uploadMode === "url" ? "default" : "outline"}
@@ -276,15 +277,15 @@ function EditProfile() {
                   <div className="space-y-2">
                     <FormLabel>Upload Profile Picture</FormLabel>
                     <div
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer"
+                      className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
                       onDrop={handleDrop}
                       onDragOver={handleDragOver}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       {selectedFile ? (
                         <div className="space-y-2">
-                          <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <ImageIcon className="mx-auto size-10 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
                             {selectedFile.name}
                           </p>
                           <Button
@@ -296,17 +297,17 @@ function EditProfile() {
                               removeSelectedFile();
                             }}
                           >
-                            <X className="h-4 w-4 mr-1" />
+                            <X className="size-4" />
                             Remove
                           </Button>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <Upload className="mx-auto size-10 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
                             Drag and drop an image here, or click to select
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                          <p className="text-xs text-muted-foreground/80">
                             PNG, JPG, GIF up to 10MB
                           </p>
                         </div>
@@ -325,7 +326,7 @@ function EditProfile() {
                 {/* Image Preview */}
                 {(uploadMode === "url" && form.watch("profilePictureUrl")) ||
                 (uploadMode === "file" && previewUrl) ? (
-                  <div className="mt-2">
+                  <div className="flex justify-center pt-1">
                     <img
                       src={
                         uploadMode === "url"
@@ -333,7 +334,7 @@ function EditProfile() {
                           : previewUrl!
                       }
                       alt="Preview"
-                      className="w-full h-48 object-cover rounded"
+                      className="size-32 rounded-full border border-border object-cover"
                     />
                   </div>
                 ) : null}
@@ -342,11 +343,11 @@ function EditProfile() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full dark:bg-gray-300 hover:cursor-pointer"
+                  className="h-10 w-full cursor-pointer rounded-lg bg-sky-500 font-semibold text-white hover:bg-sky-600"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" />
                       {uploadMode === "url" ? "Updating..." : "Uploading..."}
                     </>
                   ) : (
@@ -355,13 +356,13 @@ function EditProfile() {
                 </Button>
 
                 {isError && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                     Failed to update profile. Please try again.
                   </div>
                 )}
 
                 {isSuccess && (
-                  <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                  <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
                     Profile updated successfully!
                   </div>
                 )}

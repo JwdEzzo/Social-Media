@@ -7,7 +7,7 @@ function NavigateBack() {
       <Button
         onClick={() => history.back()}
         size="icon"
-        className="dark:bg-gray-400 dark:hover:bg-gray-500 hover:bg-gray-200 bg-gray-300 text-black fixed top-2 left-2 z-50"
+        className="fixed top-3 left-3 z-50 rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur hover:bg-accent"
         //
       >
         <Undo />

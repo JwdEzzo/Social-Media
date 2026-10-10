@@ -159,10 +159,10 @@ function HomePage() {
   // Loading state
   if (isPostsLoading || isFollowingPostsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -171,16 +171,16 @@ function HomePage() {
   // Error state
   if (isPostsError || isFollowingPostsError) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold text-red-500 mb-4">
+      <div className="flex min-h-svh items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-2 text-lg font-semibold text-destructive">
             Error Loading Posts
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="mb-6 text-sm text-muted-foreground">
             Failed to load posts
           </p>
           <Button onClick={refetchPosts}>
-            <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+            <RotateCcw className="size-4" /> Try Again
           </Button>
         </div>
       </div>
@@ -192,10 +192,10 @@ function HomePage() {
       <AppSidebar />
       <SidebarInset>
         {/* Navbar */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-          <div className="flex items-center justify-between p-4">
-            <SidebarTrigger className="h-8 w-8" />
-            <h1 className="text-4xl tracking-tight font-[GreatVibes] bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md">
+          <div className="flex h-16 items-center justify-between px-3 sm:px-4">
+            <SidebarTrigger className="size-9 rounded-full" />
+            <h1 className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text px-1 pb-1 font-['Great_Vibes'] text-4xl leading-tight text-transparent">
               Social Media
             </h1>
             <div className="flex items-center gap-1">
@@ -204,31 +204,31 @@ function HomePage() {
             </div>
           </div>
           {/* FYP Or Following */}
-          <div className="flex items-center justify-center text-center transition-colors cursor-pointer">
+          <div className="mx-auto flex max-w-[470px] cursor-pointer items-stretch justify-center text-center">
             <div
-              className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
+              className={`flex-1 border-b-2 py-3 transition-colors ${
                 viewMode === "For You"
-                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black "
-                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
+                  ? "border-b-foreground text-foreground"
+                  : "border-b-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setViewMode("For You")}
             >
-              <div className="flex mx-auto justify-center text-center gap-10 ">
-                <CardTitle className={`text-xl cursor-pointer`}>
+              <div className="flex justify-center">
+                <CardTitle className={`cursor-pointer text-sm font-semibold`}>
                   For You
                 </CardTitle>
               </div>
             </div>
             <div
-              className={`bg-white dark:bg-gray-800 border-t-1 justify-end p-2 flex-1 ${
+              className={`flex-1 border-b-2 py-3 transition-colors ${
                 viewMode === "Following"
-                  ? "dark:border-b-2 dark:border-b-gray-500 border-b-2 border-b-black"
-                  : "dark:border-b-2 dark:border-b-gray-800 border-b-2 border-b-white"
+                  ? "border-b-foreground text-foreground"
+                  : "border-b-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setViewMode("Following")}
             >
-              <div className="flex mx-auto justify-center text-center gap-10">
-                <CardTitle className={`text-xl cursor-pointer flex-1`}>
+              <div className="flex justify-center">
+                <CardTitle className={`cursor-pointer text-sm font-semibold`}>
                   Following
                 </CardTitle>
               </div>
@@ -239,9 +239,9 @@ function HomePage() {
         {/* Main Content */}
         <main
           ref={mainRef}
-          className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col items-center"
+          className="flex flex-1 flex-col items-center bg-background py-0 sm:py-8"
         >
-          <div className="flex flex-col items-center justify-center max-w-2xl w-full px-4 space-y-4">
+          <div className="flex w-full max-w-[470px] flex-col items-center justify-center">
             {/* Map over posts - now using HomePagePostCard component */}
             {viewMode === "For You" ? (
               <RenderedPosts

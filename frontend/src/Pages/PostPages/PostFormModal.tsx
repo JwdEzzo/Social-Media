@@ -187,15 +187,15 @@ function PostFormModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-4"
       onClick={handleClose}
     >
       <Card
-        className="w-full max-w-md bg-white dark:bg-gray-900 shadow-lg"
+        className="my-auto w-full max-w-md gap-5 rounded-xl border-border shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="text-center text-base font-semibold">
             {title || `${mode === "create" ? "Create" : "Edit"} Post`}
           </CardTitle>
         </CardHeader>
@@ -206,7 +206,7 @@ function PostFormModal({
               className="space-y-4"
             >
               {/* Upload Mode Toggle */}
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant={uploadMode === "url" ? "default" : "outline"}
@@ -253,15 +253,15 @@ function PostFormModal({
                 <div className="space-y-2">
                   <FormLabel>Upload Image</FormLabel>
                   <div
-                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer"
+                    className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {selectedFile ? (
                       <div className="space-y-2">
-                        <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <ImageIcon className="mx-auto size-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
                           {selectedFile.name}
                         </p>
                         <Button
@@ -273,17 +273,17 @@ function PostFormModal({
                             removeSelectedFile();
                           }}
                         >
-                          <X className="h-4 w-4 mr-1" />
+                          <X className="size-4" />
                           Remove
                         </Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <Upload className="mx-auto size-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
                           Drag and drop an image here, or click to select
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                        <p className="text-xs text-muted-foreground/80">
                           PNG, JPG, GIF up to 10MB
                         </p>
                       </div>
@@ -310,7 +310,7 @@ function PostFormModal({
                         : previewUrl!
                     }
                     alt="Preview"
-                    className="w-full h-48 object-cover rounded-md"
+                    className="h-56 w-full rounded-lg border border-border object-cover"
                   />
                 </div>
               ) : null}
@@ -356,7 +356,7 @@ function PostFormModal({
                 <FormMessage>{form.formState.errors.root.message}</FormMessage>
               )}
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -365,10 +365,14 @@ function PostFormModal({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-sky-500 font-semibold text-white hover:bg-sky-600"
+                >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" />
                       {mode === "create" ? "Creating..." : "Updating..."}
                     </>
                   ) : mode === "create" ? (

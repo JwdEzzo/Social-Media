@@ -132,8 +132,8 @@ function NotificationPage() {
       default:
         return {
           message: "interacted with you",
-          icon: <Bell className="h-3 w-3 text-gray-500" />,
-          bgColor: "bg-gray-100 dark:bg-gray-950/50",
+          icon: <Bell className="h-3 w-3 text-muted-foreground" />,
+          bgColor: "bg-muted",
         };
     }
   };
@@ -162,21 +162,18 @@ function NotificationPage() {
   // Loading state
   if (isNotificationsLoading) {
     return (
-      <div className="min-h-screen dark:bg-gray-900 bg-gray-50 transition-colors">
+      <div className="min-h-svh bg-background">
         <NavigateBack />
-        <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors">
-          <div className="max-w-2xl mx-auto px-4">
+        <main className="flex-1 bg-background pt-16 pb-10">
+          <div className="mx-auto max-w-[600px] px-4">
             <div className="flex items-center justify-between mb-6">
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-8 w-32" />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-1">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                  <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                <div key={i} className="flex items-center gap-3 px-2 py-3">
+                  <Skeleton className="size-11 shrink-0 rounded-full" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/4" />
@@ -193,18 +190,18 @@ function NotificationPage() {
   // Error state
   if (isNotificationsError) {
     return (
-      <div className="min-h-screen dark:bg-gray-900 bg-gray-50 transition-colors">
+      <div className="min-h-svh bg-background">
         <NavigateBack />
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-          <div className="flex items-center justify-between p-4"></div>
+        <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md">
+          <div className="flex h-14 items-center justify-between px-4"></div>
         </header>
-        <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors">
+        <main className="flex-1 bg-background pt-16 pb-10">
           <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 max-w-sm">
-              <h2 className="text-xl font-bold text-red-500 mb-2">
+            <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
+              <h2 className="mb-2 text-lg font-semibold text-destructive">
                 Error Loading Notifications
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+              <p className="mb-6 text-sm text-muted-foreground">
                 We couldn't retrieve your notifications. Please check your
                 network connection and try again.
               </p>
@@ -222,18 +219,18 @@ function NotificationPage() {
   }
 
   return (
-    <div className="min-h-screen dark:bg-gray-900 bg-gray-50 transition-colors">
+    <div className="min-h-svh bg-background">
       <NavigateBack />
       {/* Main Content */}
-      <main className="flex-1 py-10 bg-gray-50 dark:bg-gray-900 transition-colors">
-        <div className="max-w-2xl mx-auto px-4">
+      <main className="flex-1 bg-background pt-16 pb-10">
+        <div className="mx-auto max-w-[600px] px-4">
           {/* Header section with count and mark as read */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <h2 className="mb-0.5 text-xl font-semibold text-foreground">
                 Notifications
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Stay updated on recent likes, comments, and follows.
               </p>
             </div>
@@ -243,7 +240,7 @@ function NotificationPage() {
                 disabled={isMarkingAll}
                 variant="outline"
                 size="sm"
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border-purple-200 dark:border-purple-900 text-purple-600 dark:text-purple-400 font-semibold cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 border-transparent bg-transparent font-semibold text-sky-500 shadow-none hover:bg-sky-500/10 hover:text-sky-600 sm:w-auto dark:border-transparent dark:bg-transparent dark:hover:bg-sky-500/10 dark:hover:text-sky-400"
               >
                 <CheckCheck className="h-4 w-4" />
                 <span>Mark all as read</span>
@@ -253,20 +250,20 @@ function NotificationPage() {
 
           {/* List details */}
           {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 text-center px-4">
-              <div className="h-16 w-16 rounded-full bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-4 select-none">
-                <BellOff className="h-8 w-8 text-purple-500 dark:text-purple-400" />
+            <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
+              <div className="mb-4 flex size-16 select-none items-center justify-center rounded-full border-2 border-foreground">
+                <BellOff className="size-7 text-foreground" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="mb-1 text-lg font-semibold text-foreground">
                 All caught up!
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[280px]">
+              <p className="max-w-[280px] text-sm text-muted-foreground">
                 You have no notifications yet. Interaction activity will be
                 displayed here as it happens.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1">
               {notifications.map((notification) => {
                 const details = getNotificationDetails(
                   notification.notificationType,
@@ -276,28 +273,28 @@ function NotificationPage() {
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
                     className={cn(
-                      "bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border flex items-center justify-between gap-4 group",
+                      "group flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-accent/60",
                       notification.isRead
-                        ? "border-gray-200 dark:border-gray-700"
-                        : "border-purple-300 dark:border-purple-900 bg-purple-500/[0.03] dark:bg-purple-500/[0.05] border-l-4 border-l-purple-600 dark:border-l-purple-500",
+                        ? "bg-transparent"
+                        : "bg-sky-500/5 dark:bg-sky-500/10",
                     )}
                   >
-                    <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex min-w-0 items-center gap-3">
                       {/* Avatar container with relative badge placement */}
                       <div className="relative shrink-0">
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="size-11 ring-1 ring-border">
                           <AvatarImage
                             src={notification.sender.profilePictureUrl}
                             alt={notification.sender.username}
                             className="object-cover"
                           />
-                          <AvatarFallback className="bg-gradient-to-tr from-purple-500 to-pink-500 text-white font-bold uppercase">
+                          <AvatarFallback className="bg-muted font-semibold uppercase text-muted-foreground">
                             {notification.sender.username.substring(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <span
                           className={cn(
-                            "absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full p-1 border-2 border-white dark:border-gray-800 shadow-sm",
+                            "absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 border-background",
                             details.bgColor,
                           )}
                         >
@@ -307,13 +304,13 @@ function NotificationPage() {
 
                       {/* Text descriptions */}
                       <div className="min-w-0 flex flex-col gap-0.5">
-                        <p className="text-sm text-gray-700 dark:text-gray-300 break-words leading-snug">
-                          <span className="font-bold text-gray-900 dark:text-white mr-1 hover:underline">
+                        <p className="break-words text-sm leading-snug text-foreground">
+                          <span className="mr-1 font-semibold hover:underline">
                             {notification.sender.username}
                           </span>
                           {details.message}
                         </p>
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                        <span className="text-xs text-muted-foreground">
                           {formatTimeAgo(notification.createdAt)}
                         </span>
                       </div>
@@ -322,9 +319,9 @@ function NotificationPage() {
                     {/* Right hand action / unread dots */}
                     <div className="flex items-center gap-2 shrink-0">
                       {!notification.isRead && (
-                        <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 animate-pulse" />
+                        <span className="size-2 rounded-full bg-sky-500" />
                       )}
-                      <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-[-4px] group-hover:translate-x-0" />
+                      <ArrowRight className="size-4 -translate-x-1 text-muted-foreground opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
                     </div>
                   </div>
                 );

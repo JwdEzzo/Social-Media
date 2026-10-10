@@ -39,14 +39,14 @@ function FollowButton({ username, onFollowToggled }: FollowButtonProps) {
 
   return (
     <Button
-      className={`ml-3 cursor-pointer transition-colors ${
+      className={`ml-2 h-8 cursor-pointer rounded-lg px-4 text-sm font-semibold shadow-none transition-colors ${
         isPending && isHoveringPending
-          ? "bg-red-600 hover:bg-red-700 text-white"
+          ? "bg-destructive text-white hover:bg-destructive/90"
           : isPending
-            ? "bg-gray-300 dark:bg-gray-700 text-black dark:text-white"
+            ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
             : isFollowed
-              ? "bg-black dark:bg-gray-900 text-white hover:bg-red-700 dark:hover:bg-red-700"
-              : "bg-gray-300 hover:bg-gray-400 dark:hover:bg-gray-600 dark:hover:text-white text-black"
+              ? "bg-secondary text-secondary-foreground hover:bg-destructive/10 hover:text-destructive"
+              : "bg-sky-500 text-white hover:bg-sky-600"
       }`}
       onClick={handleFollowClick}
       onMouseEnter={() => isPending && setIsHoveringPending(true)}

@@ -34,30 +34,32 @@ function CancellingRequestsCard() {
   }
 
   return (
-    <div className="mb-10">
-      <Card className="bg-white dark:bg-gray-800 mx-auto w-1/2">
+    <div className="mx-auto mb-4 w-full max-w-lg">
+      <Card className="w-full gap-4 rounded-xl border-border shadow-none">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold leading-tight tracking-tight">
+          <CardTitle className="text-base font-semibold">
             Outgoing Requests
           </CardTitle>
         </CardHeader>
         <CardContent>
           {outgoingRequests.map((request) => (
             <div key={request.requestId}>
-              <div className="flex items-center justify-between pb-1">
-                <div className="flex items-center justify-start py-2">
+              <div className="flex items-center justify-between gap-3 py-2">
+                <div className="flex min-w-0 items-center gap-3">
                   <img
-                    className="h-10 w-10 rounded-full"
+                    className="size-11 shrink-0 rounded-full object-cover ring-1 ring-border"
                     src={request.targetProfilePictureUrl ?? ""}
                     alt={`${request.targetUsername} pic`}
                   />
-                  <span className="px-3">{request.targetUsername}</span>
+                  <span className="truncate text-sm font-semibold">
+                    {request.targetUsername}
+                  </span>
                 </div>
                 {/* Cancel Request Button*/}
                 <Button
                   onMouseEnter={() => setIsHovering(true)}
                   onMouseLeave={() => setIsHovering(false)}
-                  className={`bg-red-400 hover:bg-red-500 ${isHovering && "bg-red-600"}`}
+                  className={`h-8 rounded-lg bg-secondary px-4 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-destructive hover:text-white ${isHovering && "bg-destructive text-white"}`}
                   onClick={() =>
                     cancelFollowRequest({
                       requestId: request.requestId,
@@ -68,14 +70,14 @@ function CancellingRequestsCard() {
                   Cancel
                 </Button>
               </div>
-              <div className="border-t border-gray-600" />
+              <div className="border-t border-border" />
             </div>
           ))}
           {hasNextPage && (
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2 w-full"
+              className="mt-2 w-full text-sm font-semibold text-sky-500 hover:text-sky-600"
               disabled={isFetchingNextPage}
               onClick={loadMore}
             >
@@ -85,7 +87,7 @@ function CancellingRequestsCard() {
         </CardContent>
         <CardFooter>
           {outgoingRequestsCount === 0 && (
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-muted-foreground">
               You have no follow requests
             </span>
           )}

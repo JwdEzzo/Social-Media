@@ -69,16 +69,16 @@ const HomePagePostCard = memo(
 
     return (
       <div className="w-full">
-        <Card className="w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle>
+        <Card className="w-full gap-0 rounded-none border-x-0 border-t-0 border-border bg-background py-0 shadow-none sm:rounded-lg sm:border">
+          <CardHeader className="gap-0 px-0">
+            <CardTitle className="px-3 py-3 text-sm">
               <div className="flex items-center gap-3 justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
                   {/* Profile Picture with lazy loading */}
                   <img
                     src={post.profilePictureUrl}
                     alt={post.description}
-                    className="w-10 h-10 rounded-full cursor-pointer"
+                    className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
                     loading="lazy"
                     decoding="async"
                     onClick={() =>
@@ -86,7 +86,7 @@ const HomePagePostCard = memo(
                     }
                   />
                   <h1
-                    className="cursor-pointer"
+                    className="cursor-pointer truncate text-sm font-semibold hover:opacity-70"
                     onClick={() =>
                       navigate(`/searcheduserprofile/${post.username}`)
                     }
@@ -107,70 +107,68 @@ const HomePagePostCard = memo(
                 {/* <MoreHorizontal className="h-6 w-6 cursor-pointer" /> */}
               </div>
             </CardTitle>
-            <CardDescription>
-              <div className="h-96">
+            <CardDescription className="text-foreground">
+              <div className="aspect-square w-full overflow-hidden bg-muted">
                 {/* Post image with lazy loading and async decoding */}
                 <img
                   src={post.imageUrl}
                   alt={post.description}
                   loading="lazy"
                   decoding="async"
-                  className="w-full object-cover h-full aspect-square"
+                  className="size-full object-cover"
                   onDoubleClick={() => handleTogglePostLike(post.id)}
                 />
               </div>
             </CardDescription>
             {/*  Post Actions */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center pt-2">
+            <div className="flex items-center justify-between px-3 pt-3">
+              <div className="flex items-center">
                 <Heart
-                  className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+                  className={`size-6 cursor-pointer text-foreground transition-[color,opacity,transform] hover:opacity-60 active:scale-90 ${
                     isPostLiked
                       ? "fill-current text-red-500 dark:text-red-500"
                       : ""
                   } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => handleTogglePostLike(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                <span className="pr-3 pl-1.5 text-sm font-semibold text-foreground">
                   {postLikeCount}
                 </span>
                 <MessageCircle
-                  className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                  className="size-6 -scale-x-100 cursor-pointer text-foreground transition-opacity hover:opacity-60"
                   onClick={() => onViewComments(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                <span className="pr-3 pl-1.5 text-sm font-semibold text-foreground">
                   {postCommentCount}
                 </span>
-                <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
+                <Send className="size-6 cursor-pointer text-foreground transition-opacity hover:opacity-60" />
               </div>
-              <div className="flex items-center ">
+              <div className="flex items-center">
                 <Bookmark
-                  className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 transition-colors ${
-                    isPostSaved
-                      ? "fill-current text-yellow-500 dark:text-yellow-500"
-                      : ""
+                  className={`size-6 cursor-pointer text-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
+                    isPostSaved ? "fill-current" : ""
                   } ${isTogglingSavePost ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => handleToggleSavePost(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                <span className="pr-3 pl-1.5 text-sm font-semibold text-foreground">
                   {postSaveCount}
                 </span>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pt-2 text-sm leading-snug">
             <div>
-              <span className="font-bold ">{post.username} : </span>
+              <span className="font-semibold">{post.username} : </span>
               <span>{post.description}</span>
               <div
-                className="hover:underline cursor-pointer text-gray-400 dark:text-gray-400 mt-1"
+                className="mt-1.5 w-fit cursor-pointer text-muted-foreground hover:underline"
                 onClick={() => onViewComments(post.id)}
               >
                 View Comments...
               </div>
             </div>
           </CardContent>
-          <CardFooter className="font-serif">
+          <CardFooter className="px-3 pt-1.5 pb-4 text-xs tracking-wide text-muted-foreground">
             {post.createdAt.substring(0, 10)}
           </CardFooter>
         </Card>

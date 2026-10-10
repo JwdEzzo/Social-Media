@@ -119,62 +119,62 @@ function SignUp() {
   // Show loading screen while logging in
   if (isLoginLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-700 dark:text-gray-300">
-            Logging you in...
-          </p>
+          <Loader2 className="mx-auto mb-4 size-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Logging you in...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-sm space-y-3">
         {/* Top bar with theme toggle */}
-        <div className="flex justify-end gap-2">
+        <div className="fixed right-4 top-4 z-10 rounded-full border border-border bg-secondary">
           <ModeToggle />
         </div>
 
         {/* Logo Section */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-1 rounded-full mb-4">
-            <div className="bg-white dark:bg-gray-900 rounded-full p-2">
-              <Camera className="h-10 w-10 text-purple-500" />
+        <div className="flex flex-col items-center gap-3 pb-4">
+          <div className="rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[2px]">
+            <div className="rounded-full bg-background p-2.5">
+              <Camera className="size-8 text-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl tracking-tight text-center bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-            <span className="font-[GreatVibes]">Social Media</span>
+          <h1 className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text px-2 pb-1 text-center text-5xl leading-tight text-transparent">
+            <span className="font-['Great_Vibes']">Social Media</span>
           </h1>
         </div>
 
         {/* Sign Up Form */}
-        <Card className="w-full shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">
+        <Card className="w-full gap-6 rounded-lg border-border py-8 shadow-none">
+          <CardHeader className="px-6 sm:px-10">
+            <CardTitle className="text-center text-base font-semibold text-muted-foreground">
               Create New Account
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 sm:px-10">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSignUp)}
-                className="space-y-6"
+                className="space-y-4"
               >
                 {/* Error Message */}
                 {serverError && (
                   <div
                     role="alert"
-                    className="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-destructive"
                   >
-                    <p className="text-sm">{serverError.message}</p>
+                    <p className="text-sm leading-snug">
+                      {serverError.message}
+                    </p>
                     {serverError.type === "accountCreated" && (
                       <button
                         type="button"
                         onClick={() => navigate("/")}
-                        className="mt-2 text-sm font-medium underline"
+                        className="mt-1.5 rounded-sm text-sm font-semibold underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                       >
                         Go to sign in
                       </button>
@@ -196,7 +196,7 @@ function SignUp() {
                             if (field.value) field.onBlur();
                           }}
                           disabled={isLoading}
-                          className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
+                          className="h-10 rounded-md bg-muted/40 px-3 text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -218,7 +218,7 @@ function SignUp() {
                             if (field.value) field.onBlur();
                           }}
                           disabled={isLoading}
-                          className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
+                          className="h-10 rounded-md bg-muted/40 px-3 text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -241,7 +241,7 @@ function SignUp() {
                           }}
                           disabled={isLoading}
                           type="password"
-                          className="py-5 px-4 rounded-lg border-gray-300 focus:ring-2 focus:ring-purple-500"
+                          className="h-10 rounded-md bg-muted/40 px-3 text-sm"
                         />
                       </FormControl>
                       <FormMessage />
@@ -253,16 +253,16 @@ function SignUp() {
                 <Button
                   type="submit"
                   disabled={isDisabledButton}
-                  className="w-full py-6 text-lg bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 transition-all duration-300 text-white"
+                  className="h-10 w-full rounded-lg bg-sky-500 text-sm font-semibold text-white hover:bg-sky-600 focus-visible:ring-sky-500/40 disabled:opacity-60"
                 >
                   {isSignUpLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" />
                       Creating Account...
                     </>
                   ) : isLoginLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" />
                       Logging In...
                     </>
                   ) : (
@@ -275,21 +275,21 @@ function SignUp() {
         </Card>
 
         {/* Footer Links */}
-        <Card className="mt-6 border-0 bg-transparent shadow-none">
-          <CardFooter className="flex flex-col gap-4">
+        <Card className="gap-0 border-0 bg-transparent py-2 shadow-none">
+          <CardFooter className="flex flex-col gap-5 px-6 sm:px-10">
             <div className="flex items-center justify-center w-full">
-              <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
-              <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex-grow border-t border-border"></div>
+              <span className="px-4 text-xs font-semibold tracking-wider text-muted-foreground">
                 OR
               </span>
-              <div className="border-t border-gray-300 dark:border-gray-600 flex-grow"></div>
+              <div className="flex-grow border-t border-border"></div>
             </div>
 
-            <div className="text-center space-y-2">
-              <p className="text-sm">
+            <div className="space-y-3 text-center">
+              <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <span
-                  className="text-blue-500 hover:underline cursor-pointer font-medium"
+                  className="cursor-pointer font-semibold text-sky-500 hover:underline"
                   onClick={() => navigate("/")}
                 >
                   Sign in

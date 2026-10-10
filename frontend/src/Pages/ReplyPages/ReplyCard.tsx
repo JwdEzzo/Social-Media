@@ -64,13 +64,13 @@ const ReplyCard = memo(
       reply.appUser.username === loggedInUser?.username;
 
     return (
-      <div className="pt-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-        <div className="flex items-start gap-3">
+      <div className="pt-3">
+        <div className="flex items-start gap-2.5">
           {/* Profile Picture */}
           <img
             src={reply.appUser.profilePictureUrl}
             alt={reply.appUser.username}
-            className="w-8 h-8 rounded-full object-cover"
+            className="size-6 shrink-0 cursor-pointer rounded-full object-cover ring-1 ring-border"
             loading="lazy"
             decoding="async"
             onClick={() => {
@@ -79,10 +79,10 @@ const ReplyCard = memo(
           />
 
           {/* Reply Content */}
-          <div className="flex-1 min-w-0 pr-4">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between">
               <span
-                className="font-bold text-[11px] dark:text-white font-sans"
+                className="cursor-pointer text-[13px] font-semibold hover:opacity-70"
                 onClick={() => {
                   navigateToSelectedUserProfile(reply.appUser.username);
                 }}
@@ -101,27 +101,27 @@ const ReplyCard = memo(
               </div>
             </div>
 
-            <div className="pb-1">
-              <span className="text-sm dark:text-white break-words font-normal">
+            <div className="pb-1.5">
+              <span className="whitespace-pre-line break-words text-sm leading-snug text-foreground">
                 {reply.content}
               </span>
             </div>
 
             {/* Reply Actions */}
             <div className="flex items-center">
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 hidden [@media(min-width:770px)]:block pr-2">
+              <span className="hidden pr-3 text-xs text-muted-foreground [@media(min-width:770px)]:block">
                 {reply.createdAt.substring(0, 10)}
               </span>
 
               <Heart
-                className={`h-4 w-4 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+                className={`size-3.5 cursor-pointer text-muted-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
                   isReplyLiked
                     ? "fill-current text-red-500 dark:text-red-500"
                     : ""
                 } ${isLikeToggling ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={handleToggleLike}
               />
-              <span className="text-gray-700 dark:text-gray-300 text-[13px] pl-1 pr-3 pb-[1px]">
+              <span className="pr-3 pl-1 text-xs font-medium text-muted-foreground">
                 {replyLikeCount}
               </span>
             </div>

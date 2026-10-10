@@ -15,14 +15,16 @@ function FollowingCard({ following, loggedInUsername }: FollowingCardProps) {
   const dispatch = useDispatch();
 
   return (
-    <div className="py-3 flex justify-between items-center border-b-1">
-      <div className="flex items-center justify-start">
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3">
         <img
-          className="h-10 w-10 rounded-full"
+          className="size-11 shrink-0 rounded-full object-cover ring-1 ring-border"
           src={following.profilePictureUrl}
           alt={`${following.username} pic`}
         />
-        <span className="px-3">{following.username}</span>
+        <span className="truncate text-sm font-semibold">
+          {following.username}
+        </span>
       </div>
       <div>
         {!isOwnProfile && (

@@ -361,14 +361,12 @@ function ViewPost({
   if (post?.id !== selectedPostId) {
     return (
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Loading post...
-          </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Loading post...</p>
         </div>
       </div>
     );
@@ -378,14 +376,12 @@ function ViewPost({
   if (isPostLoading || isCommentsLoading) {
     return (
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Loading post...
-          </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Loading post...</p>
         </div>
       </div>
     );
@@ -395,14 +391,12 @@ function ViewPost({
   if (isPostDeleting) {
     return (
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Deleting Post...
-          </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
+          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Deleting Post...</p>
         </div>
       </div>
     );
@@ -412,14 +406,14 @@ function ViewPost({
   if (isPostError || isCommentsError) {
     return (
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full">
-          <h2 className="text-xl font-bold text-red-500 mb-4 text-center">
+        <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-xl">
+          <h2 className="mb-2 text-center text-lg font-semibold text-destructive">
             Error Loading Content
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
+          <p className="mb-6 text-center text-sm text-muted-foreground">
             {isPostError ? "Failed to load post" : "Failed to load comments"}
           </p>
           <div className="flex gap-2 justify-center">
@@ -428,9 +422,9 @@ function ViewPost({
                 if (isPostError) refetchPost();
                 if (isCommentsError) refetchComments();
               }}
-              className="flex items-center"
+              className="flex items-center gap-2"
             >
-              <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+              <RotateCcw className="size-4" /> Try Again
             </Button>
             <Button variant="outline" onClick={handleCloseViewModal}>
               Close
@@ -443,21 +437,21 @@ function ViewPost({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
       onClick={handleCloseViewModal}
     >
       <Card
-        className="flex flex-row w-3/4 max-w-4xl h-[80vh] overflow-hidden bg-white dark:bg-gray-800 rounded-lg"
+        className="flex h-[88svh] w-full max-w-5xl flex-col gap-0 overflow-hidden rounded-lg border-0 bg-card py-0 shadow-2xl md:h-[85vh] md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Side - Image Display */}
-        <div className="w-1/2 flex-shrink-0">
-          <CardDescription className="h-full w-full">
-            <div className="h-full w-full">
+        <div className="flex h-[40%] w-full shrink-0 items-center justify-center bg-black md:h-full md:w-[55%]">
+          <CardDescription className="size-full">
+            <div className="size-full">
               <img
                 src={post?.imageUrl}
                 alt={post?.description}
-                className="w-full h-full object-contain"
+                className="size-full object-contain"
                 loading="lazy"
                 decoding="async"
                 onDoubleClick={() => handleTogglePostLike(post.id)}
@@ -467,36 +461,38 @@ function ViewPost({
         </div>
 
         {/* Right Side - Content */}
-        <div className="w-1/2 flex flex-col">
+        <div className="flex min-h-0 w-full flex-1 flex-col md:w-[45%]">
           {/* Top Header - Contains poster info and actions */}
-          <div className="flex items-center justify-between p-3 border-b flex-shrink-0">
-            <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
               <img
                 src={post?.profilePictureUrl}
                 alt={post?.description}
-                className="w-10 h-10 rounded-full cursor-pointer"
+                className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
                 loading="lazy"
                 decoding="async"
                 onClick={() => navigateToSelectedUserProfile(post?.username)}
               />
-              <h1 className="font-bold cursor-pointer">{post?.username}</h1>
+              <h1 className="cursor-pointer truncate text-sm font-semibold">
+                {post?.username}
+              </h1>
             </div>
             {/* Dropdown menu for post owner actions (edit/delete) */}
             {loggedInUser && loggedInUser.username === post?.username && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+                  <MoreHorizontal className="size-5 cursor-pointer text-foreground transition-opacity hover:opacity-60" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="min-w-fit dark:bg-gray-900"
+                  className="min-w-36 rounded-lg"
                   align="center"
                 >
                   {/* Dropdown Content - Edit and Delete */}
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuGroup>
-                    <div className="flex items-center justify-start gap-7 cursor-pointer">
+                    <div className="flex cursor-pointer items-center justify-between gap-3 pr-2">
                       <DropdownMenuItem
-                        className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                        className="flex-1 cursor-pointer font-medium"
                         onClick={() =>
                           navigate(
                             `/userprofile/${post?.username}/post/edit/${post.id}`,
@@ -505,16 +501,16 @@ function ViewPost({
                       >
                         Edit
                       </DropdownMenuItem>
-                      <Edit className="size-4 text-blue-200" />
+                      <Edit className="size-4 text-muted-foreground" />
                     </div>
                     <div
-                      className="flex items-center justify-start cursor-pointer"
+                      className="flex cursor-pointer items-center justify-between gap-3 pr-2"
                       onClick={handleDeletePost}
                     >
-                      <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+                      <DropdownMenuItem className="flex-1 cursor-pointer font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
                         Delete
                       </DropdownMenuItem>
-                      <Trash2 className="size-4 text-red-200" />
+                      <Trash2 className="size-4 text-destructive/70" />
                     </div>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
@@ -523,28 +519,33 @@ function ViewPost({
           </div>
 
           {/* Scrollable Content Area - Contains post description and comments */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
+          <div
+            ref={scrollContainerRef}
+            className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
+          >
             {/* Post Description Section */}
-            <div className="mb-2 flex items-start gap-1 flex-shrink-0">
-              <div className="flex-shrink-0">
+            <div className="mb-3 flex shrink-0 items-start gap-3">
+              <div className="shrink-0">
                 <img
                   src={post?.profilePictureUrl}
                   alt={post?.description}
-                  className="w-8 h-8 rounded-full object-fill cursor-pointer"
+                  className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
                   loading="lazy"
                   decoding="async"
                   onClick={() => navigateToSelectedUserProfile(post?.username)}
                 />
               </div>
               <div>
-                <div className="font-normal text-sm">{post?.description}</div>
-                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                <div className="whitespace-pre-line break-words text-sm leading-snug">
+                  {post?.description}
+                </div>
+                <div className="mt-1.5 text-xs text-muted-foreground">
                   {post?.createdAt.substring(0, 10)}
                 </div>
               </div>
             </div>
 
-            <hr className="border-gray-300 dark:border-gray-700" />
+            <hr className="border-border" />
             {/* Comments List */}
             <div>
               {comments.map((comment) => (
@@ -571,11 +572,11 @@ function ViewPost({
           </div>
 
           {/* Action Bar - Contains like, comment, share, and save buttons */}
-          <div className="flex items-center gap-4 px-4 py-3 border-t flex-shrink-0">
+          <div className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-2.5">
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <Heart
-                  className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
+                  className={`size-6 cursor-pointer text-foreground transition-[color,opacity,transform] hover:opacity-60 active:scale-90 ${
                     isPostLiked
                       ? "fill-current text-red-500 dark:text-red-500"
                       : ""
@@ -584,32 +585,30 @@ function ViewPost({
                   }`}
                   onClick={() => handleTogglePostLike(post?.id ?? 0)}
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="pr-2 text-sm font-semibold text-foreground">
                   {postLikeCount}
                 </span>
                 <MessageCircle
-                  className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
+                  className="size-6 -scale-x-100 cursor-pointer text-foreground transition-opacity hover:opacity-60"
                   onClick={() => {
                     focusRef.current?.focus();
                   }}
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="pr-2 text-sm font-semibold text-foreground">
                   {postCommentCount}
                 </span>
-                <Share2 className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
+                <Share2 className="size-6 cursor-pointer text-foreground transition-opacity hover:opacity-60" />
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center gap-1.5">
                 <Bookmark
-                  className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 transition-colors ${
-                    isPostSaved
-                      ? "fill-current text-yellow-500 dark:text-yellow-500"
-                      : ""
+                  className={`size-6 cursor-pointer text-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
+                    isPostSaved ? "fill-current" : ""
                   } ${
                     isTogglingSavePost ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   onClick={() => handleToggleSavePost(post.id)}
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="pr-2 text-sm font-semibold text-foreground">
                   {postSaveCount}
                 </span>
               </div>
@@ -617,16 +616,19 @@ function ViewPost({
           </div>
 
           {/* Comment Input Section - Contains input field and submit button */}
-          <div className="p-4 border-t flex-shrink-0">
+          <div className="shrink-0 border-t border-border px-4 py-3">
             {/* Reply indicator - shows who you're replying to */}
             {isReplying && !isEditing && (
-              <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  Replying to <span className="font-bold">{replyUsername}</span>
+              <div className="mb-2 flex items-center justify-between rounded-md bg-muted px-3 py-1.5">
+                <span className="text-xs text-muted-foreground">
+                  Replying to{" "}
+                  <span className="font-semibold text-foreground">
+                    {replyUsername}
+                  </span>
                 </span>
                 <button
                   onClick={cancelReplyMode}
-                  className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                  className="rounded-sm text-xs font-semibold text-foreground hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   Cancel
                 </button>
@@ -635,13 +637,13 @@ function ViewPost({
 
             {/* Edit indicator - shows that youre editing the highlighted comment */}
             {isEditing && !isReplying && (
-              <div className="flex items-center justify-between mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="mb-2 flex items-center justify-between rounded-md bg-muted px-3 py-1.5">
+                <span className="text-xs text-muted-foreground">
                   Editing...
                 </span>
                 <button
                   onClick={cancelEditMode}
-                  className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                  className="rounded-sm text-xs font-semibold text-foreground hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   Cancel
                 </button>
@@ -649,11 +651,14 @@ function ViewPost({
             )}
 
             {/* Comment/Reply/Edit Form */}
-            <form className="flex w-full gap-2" onSubmit={handleAddComment}>
+            <form
+              className="flex w-full items-center gap-3"
+              onSubmit={handleAddComment}
+            >
               <img
                 src={loggedInUser?.profilePictureUrl}
                 alt="Your profile"
-                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border"
                 loading="lazy"
                 decoding="async"
               />
@@ -668,13 +673,14 @@ function ViewPost({
                       ? `Reply to ${replyUsername}...`
                       : "Add a comment..."
                 }
-                className="flex-1"
+                className="h-9 flex-1 rounded-full bg-muted/50 px-4"
               />
               <Button
                 type="submit"
                 variant="default"
                 disabled={isCreateLoading}
                 size="sm"
+                className="rounded-full bg-transparent px-3 font-semibold text-sky-500 shadow-none hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-400"
               >
                 {isCreateLoading
                   ? isEditing
@@ -690,7 +696,9 @@ function ViewPost({
               </Button>
             </form>
             {isCreateError && (
-              <p className="text-red-500 text-sm mt-2">Error posting comment</p>
+              <p className="mt-2 text-xs text-destructive">
+                Error posting comment
+              </p>
             )}
           </div>
         </div>

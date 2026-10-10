@@ -32,34 +32,31 @@ function EditDeleteDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <MoreHorizontal className="h-6 w-6 cursor-pointer" />
+        <MoreHorizontal className="size-5 cursor-pointer text-foreground transition-opacity hover:opacity-60" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="min-w-fit dark:bg-gray-900"
-        align="center"
-      >
+      <DropdownMenuContent className="min-w-36 rounded-lg" align="center">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuGroup>
           {isAuthenticated && (
-            <div className="flex items-center justify-start gap-7 cursor-pointer">
+            <div className="flex cursor-pointer items-center justify-between gap-3 pr-2">
               <DropdownMenuItem
-                className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-600 font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-900"
+                className="flex-1 cursor-pointer font-medium"
                 onClick={() => handleEntityEdit(entityId)}
               >
                 Edit
               </DropdownMenuItem>
-              <Edit className="size-4 text-blue-200" />
+              <Edit className="size-4 text-muted-foreground" />
             </div>
           )}
           {isAuthenticated && (
             <div
-              className="flex items-center justify-start cursor-pointer"
+              className="flex cursor-pointer items-center justify-between gap-3 pr-2"
               onClick={handleEntityDelete}
             >
-              <DropdownMenuItem className="text-red-400 hover:text-red-600 dark:hover:text-red-600 cursor-pointer font-bold pr-[18px] hover:bg-gray-200 dark:hover:bg-gray-900">
+              <DropdownMenuItem className="flex-1 cursor-pointer font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
                 Delete
               </DropdownMenuItem>
-              <Trash2 className="size-4 text-red-200" />
+              <Trash2 className="size-4 text-destructive/70" />
             </div>
           )}
         </DropdownMenuGroup>

@@ -80,27 +80,27 @@ function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="dark:bg-gray-800 bg-white">
+      <SidebarContent className="pt-2">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem className="mt-3">
+              <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
-                  className="dark:hover:bg-gray-900 transition-colors"
+                  className="h-10 gap-3 font-medium transition-colors"
                   onClick={navigateBackToProfile}
                 >
-                  <User className="dark:text-green-400 text-green-400" />
+                  <User className="text-foreground" />
                   <span>Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem onClick={() => setSearchType("post")}>
                 {isPostSearchOpen ? (
-                  <div className="px-3 py-2">
+                  <div className="py-0.5">
                     <input
                       type="text"
                       placeholder="Search posts..."
-                      className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="h-10 w-full rounded-md border border-sidebar-border bg-muted px-3 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/60"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
@@ -110,7 +110,7 @@ function AppSidebar() {
                   </div>
                 ) : (
                   <SidebarMenuButton
-                    className="dark:hover:bg-gray-900 transition-colors"
+                    className="h-10 gap-3 font-medium transition-colors"
                     onClick={() => setIsPostSearchOpen(true)}
                   >
                     <Search />
@@ -121,11 +121,11 @@ function AppSidebar() {
 
               <SidebarMenuItem onClick={() => setSearchType("user")}>
                 {isUserSearchOpen ? (
-                  <div className="px-3 py-2">
+                  <div className="py-0.5">
                     <input
                       type="text"
                       placeholder="Search users..."
-                      className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="h-10 w-full rounded-md border border-sidebar-border bg-muted px-3 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/60"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
@@ -135,7 +135,7 @@ function AppSidebar() {
                   </div>
                 ) : (
                   <SidebarMenuButton
-                    className="dark:hover:bg-gray-900 transition-colors"
+                    className="h-10 gap-3 font-medium transition-colors"
                     onClick={() => setIsUserSearchOpen(true)}
                   >
                     <Search />
@@ -147,40 +147,40 @@ function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}
-                  className="dark:hover:bg-gray-900 transition-colors"
+                  className="h-10 gap-3 font-medium transition-colors"
                 >
-                  <LogOutIcon className="text-red-500" />
-                  <span className="text-red-500">Logout</span>
+                  <LogOutIcon className="text-destructive" />
+                  <span className="text-destructive">Logout</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="dark:bg-gray-800 bg-white dark:hover:bg-gray-900 transition-colors">
+      <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="dark:hover:bg-gray-900 transition-colors">
+                <SidebarMenuButton className="h-10 gap-3 font-medium transition-colors">
                   <User2 />
-                  <span className="font-bold">{username}</span>
+                  <span className="truncate font-semibold">{username}</span>
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
-                className="w-[--radix-popper-anchor-width] dark:bg-gray-800 bg-white transition-colors"
+                className="w-(--radix-popper-anchor-width) min-w-48 rounded-lg"
               >
                 <DropdownMenuItem
-                  className="dark:hover:bg-gray-700 transition-colors"
+                  className="cursor-pointer"
                   onClick={navigateBackToProfile}
                 >
                   <span>Profile</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="dark:hover:bg-gray-700 transition-colors"
+                  className="cursor-pointer"
                   onClick={handleLogout}
                 >
                   <span>Log out</span>

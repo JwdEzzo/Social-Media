@@ -16,14 +16,16 @@ function FollowerCard({ follower, loggedInUsername }: FollowerCardProps) {
   const dispatch = useDispatch();
 
   return (
-    <div className="py-3 flex justify-between items-center border-b-1">
-      <div className="flex items-center justify-start">
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3">
         <img
-          className="h-10 w-10 rounded-full"
+          className="size-11 shrink-0 rounded-full object-cover ring-1 ring-border"
           src={follower.profilePictureUrl}
           alt={`${follower.username} pic`}
         />
-        <span className="px-3">{follower.username}</span>
+        <span className="truncate text-sm font-semibold">
+          {follower.username}
+        </span>
       </div>
       <div>
         {!isOwnProfile && (

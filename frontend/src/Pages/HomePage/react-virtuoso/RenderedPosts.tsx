@@ -24,7 +24,7 @@ function Footer({ context }: { context?: FooterContext }) {
   if (!context?.isFetchingMore) return null;
   return (
     <div className="flex justify-center py-6">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+      <div className="size-6 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
     </div>
   );
 }
@@ -51,7 +51,7 @@ function RenderedPosts({
         itemContent={(index) => {
           const post = posts[index];
           return (
-            <div className="mb-4">
+            <div className="sm:mb-5">
               {" "}
               {/* Add margin bottom */}
               <HomePagePostCard
