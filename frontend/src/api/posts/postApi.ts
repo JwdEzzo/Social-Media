@@ -1,12 +1,36 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithReauth } from '@/api/public/baseApi';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "@/api/public/baseApi";
 import type {
-  CreatePostRequestDto,
+  CreatePostRequest,
   EditPostWithUploadRequestDto,
   EditPostWithUrlRequestDto,
-} from '@/types/request-types';
-import type { GetPostResponseDto } from '@/types/response-types';
+} from "@/types/request-types";
+import type { GetPostResponse } from "@/types/response-types";
+import type { PagedModel } from "@/types/api-response";
+import {
+  pagedInfiniteQueryOptions,
+  pageParams,
+  providePagedTags,
+} from "@/api/pagination";
+import type { InfiniteData } from "@reduxjs/toolkit/query";
 
+type PostsPage = PagedModel<GetPostResponse>;
+
+// Newest first: ?page=N&size=10&sort=createdAt,desc
+const postPageParams = (pageParam: number) =>
+  pageParams(pageParam, "createdAt,desc");
+
+// Per-post tags plus the LIST tag for the collection as a whole and any endpoint-specific extras
+const providePagedPostTags = (
+  result: InfiniteData<PostsPage, number> | undefined,
+  extraTags: { type: "Post"; id: string }[] = [],
+) =>
+  providePagedTags(result, "Post", [
+    { type: "Post", id: "LIST" },
+    ...extraTags,
+  ]);
+
+// prettier-ignore
 export const postApi = createApi({
   reducerPath: 'postApi',
   baseQuery: baseQueryWithReauth,
@@ -14,7 +38,7 @@ export const postApi = createApi({
   refetchOnReconnect: true,
   refetchOnFocus: true,
   endpoints: (builder) => ({
-    createPost: builder.mutation<string, CreatePostRequestDto>({
+    createPost: builder.mutation<string, CreatePostRequest>({
       query: (newPost) => ({
         url: '/posts/create-post',
         method: 'POST',
@@ -36,38 +60,26 @@ export const postApi = createApi({
       invalidatesTags: [{ type: 'Post', id: 'LIST' }, 'Post'],
     }),
 
-    getPrivateAccountPostsUserFollows: builder.query<GetPostResponseDto[], { privateAccountUsername: string }>({
-      query: (privateAccountUsername) => ({
+    // Infinite queries: one cache entry holds every page fetched so far.
+    // <ResultPerPage, QueryArg, PageParam> - PageParam is Spring's zero-based page index.
+    getPrivateAccountPostsUserFollows: builder.infiniteQuery<PostsPage, { privateAccountUsername: string }, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: { privateAccountUsername }, pageParam }) => ({
         url: `/posts/private-account/${privateAccountUsername}`,
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: 'Post' as const,
-                id,
-              })),
-              { type: 'Post', id: 'LIST' },
-            ]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
 
-    getPosts: builder.query<GetPostResponseDto[], void>({
-      query: () => ({
+    getPosts: builder.infiniteQuery<PostsPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: '/posts',
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: 'Post' as const,
-                id,
-              })),
-              { type: 'Post', id: 'LIST' },
-            ]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
     getPostsCount: builder.query<number, string>({
       query: (username) => ({
@@ -78,7 +90,7 @@ export const postApi = createApi({
         { type: 'Post', id: `COUNT_${username}` }, // Unique tag for each user's count
       ],
     }),
-    getPostById: builder.query<GetPostResponseDto, number>({
+    getPostById: builder.query<GetPostResponse, number>({
       query: (id) => ({
         url: `/posts/get-by-id/${id}`,
         method: 'GET',
@@ -86,77 +98,64 @@ export const postApi = createApi({
       providesTags: (_result, _error, id) => [{ type: 'Post', id }],
     }),
 
-    getPostsByUsername: builder.query<GetPostResponseDto[], string>({
-      query: (username) => ({
+    getPostsByUsername: builder.infiniteQuery<PostsPage, string, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: username, pageParam }) => ({
         url: `/posts/${username}`,
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
       providesTags: (_result, _error, username) => [
         { type: 'Post', id: username },
         { type: 'Post', id: 'LIST' },
       ],
     }),
-    getPostsExcludingCurrentUser: builder.query<GetPostResponseDto[], void>({
-      query: () => ({
+    getPostsExcludingCurrentUser: builder.infiniteQuery<PostsPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: '/posts/excluded',
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: 'Post' as const,
-                id,
-              })),
-              { type: 'Post', id: 'LIST' },
-            ]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
-    getPostsLikedByCurrentUser: builder.query<GetPostResponseDto[], void>({
-      query: () => ({
+    getPostsLikedByCurrentUser: builder.infiniteQuery<PostsPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: '/posts/liked-by-me',
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
 
-    getPostsSavedByCurrentUser: builder.query<GetPostResponseDto[], void>({
-      query: () => ({
+    getPostsSavedByCurrentUser: builder.infiniteQuery<PostsPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: '/posts/saved-by-me',
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
-    getFollowingPostsByUserId: builder.query<GetPostResponseDto[], void>({
-      query: () => ({
+    getFollowingPostsByUserId: builder.infiniteQuery<PostsPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: '/posts/my-followers',
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: 'Post' as const, id })),
-              { type: 'Post', id: 'LIST' },
-              { type: 'Post', id: 'FOLLOWING_POSTS' },
-            ]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'FOLLOWING_POSTS' }]),
     }),
 
-    getPostsByDescription: builder.query<GetPostResponseDto[], string>({
-      query: (description) => ({
+    getPostsByDescription: builder.infiniteQuery<PostsPage, string, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: description, pageParam }) => ({
         url: `/posts/search-posts/containing/${description}`,
         method: 'GET',
+        params: postPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        result
-          ? [...result.map(({ id }) => ({ type: 'Post' as const, id })), { type: 'Post', id: 'LIST' }]
-          : [{ type: 'Post', id: 'LIST' }],
+      providesTags: (result) => providePagedPostTags(result),
     }),
 
     editPostWithUrl: builder.mutation<void, EditPostWithUrlRequestDto & { postId: number }>({
@@ -200,16 +199,16 @@ export const postApi = createApi({
 export const {
   useCreatePostMutation,
   useUploadPostMutation,
-  useGetPostsQuery,
-  useGetPrivateAccountPostsUserFollowsQuery,
-  useGetPostsByUsernameQuery,
-  useGetPostsExcludingCurrentUserQuery,
+  useGetPostsInfiniteQuery,
+  useGetPrivateAccountPostsUserFollowsInfiniteQuery,
+  useGetPostsByUsernameInfiniteQuery,
+  useGetPostsExcludingCurrentUserInfiniteQuery,
   useGetPostByIdQuery,
   useGetPostsCountQuery,
-  useGetPostsLikedByCurrentUserQuery,
-  useGetFollowingPostsByUserIdQuery,
-  useGetPostsSavedByCurrentUserQuery,
-  useGetPostsByDescriptionQuery,
+  useGetPostsLikedByCurrentUserInfiniteQuery,
+  useGetFollowingPostsByUserIdInfiniteQuery,
+  useGetPostsSavedByCurrentUserInfiniteQuery,
+  useGetPostsByDescriptionInfiniteQuery,
   useEditPostWithUrlMutation,
   useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,

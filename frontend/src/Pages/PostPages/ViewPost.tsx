@@ -5,9 +5,11 @@ import {
 import {
   useCreateCommentMutation,
   useEditCommentMutation,
-  useGetCommentsByPostIdQuery,
+  useGetCommentsByPostIdInfiniteQuery,
   useGetPostCommentCountQuery,
 } from "@/api/comments/commentApi";
+import { usePagedList } from "@/hooks/usePagedList";
+import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,13 +130,22 @@ function ViewPost({
   const [editComment] = useEditCommentMutation();
   const [editReply] = useEditReplyMutation();
 
-  // Fetch comments for the current post
+  // Fetch comments for the current post, a page at a time
+  const commentsQuery = useGetCommentsByPostIdInfiniteQuery(
+    { postId: selectedPostId! },
+    { skip: !selectedPostId },
+  );
   const {
-    data: comments,
     isLoading: isCommentsLoading,
     isError: isCommentsError,
     refetch: refetchComments,
-  } = useGetCommentsByPostIdQuery({ postId: selectedPostId! });
+  } = commentsQuery;
+  const {
+    items: comments,
+    loadMore: loadMoreComments,
+    hasNextPage: hasMoreComments,
+    isFetchingNextPage: isFetchingMoreComments,
+  } = usePagedList(commentsQuery);
 
   // Fetch post details
   const {
@@ -536,7 +547,7 @@ function ViewPost({
             <hr className="border-gray-300 dark:border-gray-700" />
             {/* Comments List */}
             <div>
-              {comments?.map((comment) => (
+              {comments.map((comment) => (
                 <CommentCard
                   postUsername={post.username}
                   key={`${comment.id}-${comment.content}`}
@@ -551,6 +562,11 @@ function ViewPost({
                   focusRef={focusRef}
                 />
               ))}
+              <LoadMoreTrigger
+                hasNextPage={hasMoreComments}
+                isFetchingNextPage={isFetchingMoreComments}
+                onLoadMore={loadMoreComments}
+              />
             </div>
           </div>
 

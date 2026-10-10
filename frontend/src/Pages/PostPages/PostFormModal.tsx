@@ -164,7 +164,7 @@ function PostFormModal({
       const randomNumber = Math.floor(Math.random() * 1000);
       form.setValue(
         "imageUrl",
-        `https://picsum.photos/1080/1920?random=${randomNumber}`
+        `https://picsum.photos/1080/1920?random=${randomNumber}`,
       );
       form.setValue("description", getRandomSentence());
     } else if (isOpen && mode === "edit" && initialValues) {

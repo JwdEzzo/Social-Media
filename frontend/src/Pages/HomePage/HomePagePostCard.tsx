@@ -1,17 +1,30 @@
-import { useGetPostCommentCountQuery } from '@/api/comments/commentApi';
-import { postApi } from '@/api/posts/postApi';
-import { useGetPostLikeCountQuery, useIsPostLikedQuery } from '@/api/posts/postLikesApi';
-import { useGetPostSaveCountQuery, useIsPostSavedQuery } from '@/api/posts/postSavesApi';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { GetPostResponseDto } from '@/types/response-types';
-import { Bookmark, Heart, MessageCircle, Send } from 'lucide-react';
-import { memo } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import FollowButton from '@/components/custom/follow-button';
+import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
+import { postApi } from "@/api/posts/postApi";
+import {
+  useGetPostLikeCountQuery,
+  useIsPostLikedQuery,
+} from "@/api/posts/postLikesApi";
+import {
+  useGetPostSaveCountQuery,
+  useIsPostSavedQuery,
+} from "@/api/posts/postSavesApi";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { GetPostResponse } from "@/types/response-types";
+import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
+import { memo } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import FollowButton from "@/components/custom/follow-button";
 
 interface HomePagePostCardProps {
-  post: GetPostResponseDto;
+  post: GetPostResponse;
   onViewComments: (postId: number) => void;
   handleTogglePostLike: (postId: number) => void;
   isTogglingPostLike: boolean;
@@ -47,9 +60,12 @@ const HomePagePostCard = memo(
       skip: !post?.id || post.id === 0,
     });
 
-    const { data: postCommentCount } = useGetPostCommentCountQuery(post?.id ?? 0, {
-      skip: !post?.id || post.id === 0,
-    });
+    const { data: postCommentCount } = useGetPostCommentCountQuery(
+      post?.id ?? 0,
+      {
+        skip: !post?.id || post.id === 0,
+      },
+    );
 
     return (
       <div className="w-full">
@@ -65,14 +81,27 @@ const HomePagePostCard = memo(
                     className="w-10 h-10 rounded-full cursor-pointer"
                     loading="lazy"
                     decoding="async"
-                    onClick={() => navigate(`/searcheduserprofile/${post.username}`)}
+                    onClick={() =>
+                      navigate(`/searcheduserprofile/${post.username}`)
+                    }
                   />
-                  <h1 className="cursor-pointer" onClick={() => navigate(`/searcheduserprofile/${post.username}`)}>
+                  <h1
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate(`/searcheduserprofile/${post.username}`)
+                    }
+                  >
                     {post.username}
                   </h1>
                   <FollowButton
                     username={post.username}
-                    onFollowToggled={() => dispatch(postApi.util.invalidateTags([{ type: 'Post', id: 'LIST' }]))}
+                    onFollowToggled={() =>
+                      dispatch(
+                        postApi.util.invalidateTags([
+                          { type: "Post", id: "LIST" },
+                        ]),
+                      )
+                    }
                   />
                 </div>
                 {/* <MoreHorizontal className="h-6 w-6 cursor-pointer" /> */}
@@ -96,26 +125,36 @@ const HomePagePostCard = memo(
               <div className="flex items-center pt-2">
                 <Heart
                   className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-500 transition-colors ${
-                    isPostLiked ? 'fill-current text-red-500 dark:text-red-500' : ''
-                  } ${isTogglingPostLike ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    isPostLiked
+                      ? "fill-current text-red-500 dark:text-red-500"
+                      : ""
+                  } ${isTogglingPostLike ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => handleTogglePostLike(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">{postLikeCount}</span>
+                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                  {postLikeCount}
+                </span>
                 <MessageCircle
                   className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-500 transition-colors"
                   onClick={() => onViewComments(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">{postCommentCount}</span>
+                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                  {postCommentCount}
+                </span>
                 <Send className="h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-500 transition-colors" />
               </div>
               <div className="flex items-center ">
                 <Bookmark
                   className={`h-6 w-6 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-500 transition-colors ${
-                    isPostSaved ? 'fill-current text-yellow-500 dark:text-yellow-500' : ''
-                  } ${isTogglingSavePost ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    isPostSaved
+                      ? "fill-current text-yellow-500 dark:text-yellow-500"
+                      : ""
+                  } ${isTogglingSavePost ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => handleToggleSavePost(post.id)}
                 />
-                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">{postSaveCount}</span>
+                <span className="text-gray-700 dark:text-gray-300 pl-1 pr-3">
+                  {postSaveCount}
+                </span>
               </div>
             </div>
           </CardHeader>
@@ -131,7 +170,9 @@ const HomePagePostCard = memo(
               </div>
             </div>
           </CardContent>
-          <CardFooter className="font-serif">{post.createdAt.substring(0, 10)}</CardFooter>
+          <CardFooter className="font-serif">
+            {post.createdAt.substring(0, 10)}
+          </CardFooter>
         </Card>
       </div>
     );
@@ -158,6 +199,6 @@ const HomePagePostCard = memo(
   },
 );
 
-HomePagePostCard.displayName = 'HomePagePostCard';
+HomePagePostCard.displayName = "HomePagePostCard";
 
 export default HomePagePostCard;

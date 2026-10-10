@@ -1,11 +1,16 @@
-import { useGetFollowingsByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
-import { useAuth } from '@/auth/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import FollowingCard from '@/Pages/FollowPages/Followings/FollowingCard';
-import { useGetFollowingCountQuery } from '@/api/followers/followApi';
-import NavigateBack from '@/components/custom/navigate-back';
-import CancellingRequestsCard from '@/components/custom/cancelling-requests-card';
+import {
+  useGetFollowingsByUserIdInfiniteQuery,
+  useGetUserByUsernameQuery,
+} from "@/api/users/userApi";
+import { usePagedList } from "@/hooks/usePagedList";
+import LoadMoreTrigger from "@/components/custom/load-more-trigger";
+import { useAuth } from "@/auth/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import FollowingCard from "@/Pages/FollowPages/Followings/FollowingCard";
+import { useGetFollowingCountQuery } from "@/api/followers/followApi";
+import NavigateBack from "@/components/custom/navigate-back";
+import CancellingRequestsCard from "@/components/custom/cancelling-requests-card";
 
 interface FollowingListProps {
   profileUsername: string;
@@ -32,13 +37,20 @@ function FollowingList({ profileUsername }: FollowingListProps) {
   });
 
   // Get users that the logged in user is following
+  const followingsQuery = useGetFollowingsByUserIdInfiniteQuery(
+    profileUser?.id ?? 0,
+    {
+      skip: !profileUser?.id,
+    },
+  );
+  const { isLoading: isFollowingsLoading, isError: isFollowingsError } =
+    followingsQuery;
   const {
-    data: followings,
-    isLoading: isFollowingsLoading,
-    isError: isFollowingsError,
-  } = useGetFollowingsByUserIdQuery(profileUser?.id ?? 0, {
-    skip: !profileUser?.id,
-  });
+    items: followings,
+    loadMore: loadMoreFollowings,
+    hasNextPage: hasMoreFollowings,
+    isFetchingNextPage: isFetchingMoreFollowings,
+  } = usePagedList(followingsQuery);
 
   // Get follower count
   const { data: followingCount } = useGetFollowingCountQuery(profileUsername!, {
@@ -93,7 +105,9 @@ function FollowingList({ profileUsername }: FollowingListProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
-              {loggedInUsername === profileUsername ? 'Your Following' : `${profileUsername}'s Followings`}
+              {loggedInUsername === profileUsername
+                ? "Your Following"
+                : `${profileUsername}'s Followings`}
             </CardTitle>
           </div>
         </CardHeader>
@@ -103,14 +117,21 @@ function FollowingList({ profileUsername }: FollowingListProps) {
           ) : followingCount === 0 ? (
             <div>{profileUsername} is not following anyone.</div>
           ) : (
-            followings?.map((following) => (
-              <FollowingCard
-                key={following.id}
-                following={following}
-                loggedInUsername={loggedInUsername!}
-                //
+            <>
+              {followings.map((following) => (
+                <FollowingCard
+                  key={following.id}
+                  following={following}
+                  loggedInUsername={loggedInUsername!}
+                  //
+                />
+              ))}
+              <LoadMoreTrigger
+                hasNextPage={hasMoreFollowings}
+                isFetchingNextPage={isFetchingMoreFollowings}
+                onLoadMore={loadMoreFollowings}
               />
-            ))
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,6 @@
 import {
-  postApi,
-  useGetFollowingPostsByUserIdQuery,
-  useGetPostsExcludingCurrentUserQuery,
+  useGetFollowingPostsByUserIdInfiniteQuery,
+  useGetPostsExcludingCurrentUserInfiniteQuery,
 } from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -28,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import RenderedPosts from "./react-virtuoso/RenderedPosts";
 import NotificationDropdown from "@/components/custom/notification-dropdown";
+import { usePagedList } from "@/hooks/usePagedList";
 
 function HomePage() {
   //
@@ -40,6 +40,7 @@ function HomePage() {
     selectedPostId,
     homePageScrollPosition,
   } = useSelector((state: RootState) => state.viewPostModal);
+
   // Get logged-in username (string)
   const { username: loggedInUsername } = useAuth();
 
@@ -48,18 +49,30 @@ function HomePage() {
     loggedInUsername || "",
   );
 
+  // Infinite queries: data.pages holds one PagedModel per page fetched so far
+  const forYouQuery = useGetPostsExcludingCurrentUserInfiniteQuery();
   const {
-    data: apiPosts,
     isLoading: isPostsLoading,
     isError: isPostsError,
     refetch: refetchPosts,
-  } = useGetPostsExcludingCurrentUserQuery();
+  } = forYouQuery;
+
+  const followingQuery = useGetFollowingPostsByUserIdInfiniteQuery();
+  const { isLoading: isFollowingPostsLoading, isError: isFollowingPostsError } =
+    followingQuery;
+
+  // Flattened posts for Virtuoso, plus loadMore for its endReached
+  const {
+    items: apiPosts,
+    loadMore: loadMoreForYouPosts,
+    isFetchingNextPage: isFetchingMoreForYouPosts,
+  } = usePagedList(forYouQuery);
 
   const {
-    data: followingPosts,
-    isLoading: isFollowingPostsLoading,
-    isError: isFollowingPostsError,
-  } = useGetFollowingPostsByUserIdQuery();
+    items: followingPosts,
+    loadMore: loadMoreFollowingPosts,
+    isFetchingNextPage: isFetchingMoreFollowingPosts,
+  } = usePagedList(followingQuery);
 
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
@@ -68,39 +81,29 @@ function HomePage() {
     useTogglePostSaveMutation();
 
   // Toggle post like
+  // No Post tag invalidation needed: like state/count live in postLikesApi, which the
+  // mutation already invalidates. Invalidating 'Post' here would refetch every loaded feed page.
   const handleTogglePostLike = useCallback(
     async (postId: number) => {
       try {
-        await togglePostLike(postId)
-          .unwrap()
-          .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
-          });
+        await togglePostLike(postId).unwrap();
       } catch (error) {
         console.log("Error: ", error);
       }
     },
-    [togglePostLike, dispatch],
+    [togglePostLike],
   );
 
-  // Toggle post save
+  // Toggle post save (same reasoning: postSavesApi owns the saved state)
   const handleToggleSavePost = useCallback(
     async (postId: number) => {
       try {
-        await toggleSave(postId)
-          .unwrap()
-          .then(() => {
-            dispatch(
-              postApi.util.invalidateTags([{ type: "Post", id: postId }]),
-            );
-          });
+        await toggleSave(postId).unwrap();
       } catch (error) {
         console.log("Error: ", error);
       }
     },
-    [toggleSave, dispatch],
+    [toggleSave],
   );
 
   // Open modal for selected post
@@ -242,21 +245,25 @@ function HomePage() {
             {/* Map over posts - now using HomePagePostCard component */}
             {viewMode === "For You" ? (
               <RenderedPosts
-                posts={apiPosts!}
+                posts={apiPosts}
                 onViewComments={handleViewModal}
                 handleTogglePostLike={handleTogglePostLike}
                 isTogglingPostLike={isTogglingPostLike}
                 handleToggleSavePost={handleToggleSavePost}
                 isTogglingSavePost={isTogglingSavePost}
+                onEndReached={loadMoreForYouPosts}
+                isFetchingMore={isFetchingMoreForYouPosts}
               />
             ) : (
               <RenderedPosts
-                posts={followingPosts!}
+                posts={followingPosts}
                 onViewComments={handleViewModal}
                 handleTogglePostLike={handleTogglePostLike}
                 isTogglingPostLike={isTogglingPostLike}
                 handleToggleSavePost={handleToggleSavePost}
                 isTogglingSavePost={isTogglingSavePost}
+                onEndReached={loadMoreFollowingPosts}
+                isFetchingMore={isFetchingMoreFollowingPosts}
               />
             )}
           </div>

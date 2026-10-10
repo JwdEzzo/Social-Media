@@ -1,5 +1,4 @@
 import { useSearchParams } from "react-router-dom";
-import { useGetPostsByDescriptionQuery } from "@/api/posts/postApi";
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
@@ -16,7 +15,11 @@ import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
 import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import ViewPost from "@/Pages/PostPages/ViewPost";
-import { postApi } from "@/api/posts/postApi";
+import {
+  postApi,
+  useGetPostsByDescriptionInfiniteQuery,
+} from "@/api/posts/postApi";
+import { usePagedList } from "@/hooks/usePagedList";
 import AppSidebar from "@/Pages/HomePage/AppSidebar";
 import RenderedPosts from "../HomePage/react-virtuoso/RenderedPosts";
 
@@ -37,14 +40,25 @@ function SearchPostPage() {
   );
 
   // This will now only run when searchQuery is provided
+  const searchedPostsQuery = useGetPostsByDescriptionInfiniteQuery(
+    searchQuery,
+    {
+      skip: !searchQuery, // Don't run the query if searchQuery is empty
+    },
+  );
   const {
-    data: searchedPosts,
     isLoading: isSearchedPostsLoading,
     isError: isSearchedPostsError,
     refetch: refetchSearchedPosts,
-  } = useGetPostsByDescriptionQuery(searchQuery, {
-    skip: !searchQuery, // Don't run the query if searchQuery is empty
-  });
+  } = searchedPostsQuery;
+
+  // totalMatches is the server-side count, not just the pages loaded so far
+  const {
+    items: searchedPosts,
+    loadMore: loadMoreSearchedPosts,
+    isFetchingNextPage: isFetchingMoreSearchedPosts,
+    totalElements: totalMatches,
+  } = usePagedList(searchedPostsQuery);
 
   const [togglePostLike, { isLoading: isTogglingPostLike }] =
     useTogglePostLikeMutation();
@@ -154,16 +168,15 @@ function SearchPostPage() {
                 Showing results for:{" "}
                 <span className="font-semibold">"{searchQuery}"</span>
               </p>
-              {searchedPosts && (
+              {searchedPosts.length > 0 && (
                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                  {searchedPosts.length}{" "}
-                  {searchedPosts.length === 1 ? "post" : "posts"} found
+                  {totalMatches} {totalMatches === 1 ? "post" : "posts"} found
                 </p>
               )}
             </div>
 
             {/* Search Results */}
-            {searchedPosts && searchedPosts.length > 0 ? (
+            {searchedPosts.length > 0 ? (
               <RenderedPosts
                 posts={searchedPosts}
                 onViewComments={handleViewModal}
@@ -171,6 +184,8 @@ function SearchPostPage() {
                 isTogglingPostLike={isTogglingPostLike}
                 handleToggleSavePost={handleToggleSavePost}
                 isTogglingSavePost={isTogglingSavePost}
+                onEndReached={loadMoreSearchedPosts}
+                isFetchingMore={isFetchingMoreSearchedPosts}
               />
             ) : (
               <div className="text-center py-12">

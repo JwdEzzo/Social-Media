@@ -2,6 +2,12 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/api/public/baseApi";
 import { type WriteReplyRequestDto } from "@/types/request-types";
 import { type GetReplyResponseDto } from "@/types/response-types";
+import type { PagedModel } from "@/types/api-response";
+import {
+  pagedInfiniteQueryOptions,
+  pageParams,
+  providePagedTags,
+} from "@/api/pagination";
 
 export const commentRepliesApi = createApi({
   reducerPath: "commentRepliesApi",
@@ -21,25 +27,24 @@ export const commentRepliesApi = createApi({
         { type: "CommentReply", id: `COUNT_${arg.commentId}` },
       ],
     }),
-    getRepliesByCommentId: builder.query<
-      GetReplyResponseDto[],
-      { commentId: number }
+    // Infinite query: one cache entry per comment holds every page fetched so far.
+    // Oldest first, so a thread reads top to bottom.
+    getRepliesByCommentId: builder.infiniteQuery<
+      PagedModel<GetReplyResponseDto>,
+      { commentId: number },
+      number
     >({
-      query: ({ commentId }) => ({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: { commentId }, pageParam }) => ({
         url: `/comment-replies/comment/${commentId}`,
         method: "GET",
+        params: pageParams(pageParam, "createdAt,asc"),
       }),
       // FIXED: Tag with the specific comment ID
-      providesTags: (result, error, { commentId }) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: "CommentReply" as const,
-                id,
-              })),
-              { type: "CommentReply", id: `COMMENT_${commentId}` },
-            ]
-          : [{ type: "CommentReply", id: `COMMENT_${commentId}` }],
+      providesTags: (result, _error, { commentId }) =>
+        providePagedTags(result, "CommentReply", [
+          { type: "CommentReply", id: `COMMENT_${commentId}` },
+        ]),
     }),
     getCommentReplyCount: builder.query<number, number>({
       query: (commentId) => ({
@@ -79,7 +84,7 @@ export const commentRepliesApi = createApi({
 
 export const {
   useCreateReplyMutation,
-  useGetRepliesByCommentIdQuery,
+  useGetRepliesByCommentIdInfiniteQuery,
   useGetCommentReplyCountQuery,
   useDeleteReplyMutation,
   useEditReplyMutation,

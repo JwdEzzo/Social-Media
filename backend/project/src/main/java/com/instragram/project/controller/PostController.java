@@ -94,6 +94,14 @@ public class PostController {
       return ResponseEntity.status(HttpStatus.OK).body(responseDto);
    }
 
+   // GET : Get all posts, paginated — ?page=0&size=20&sort=createdAt,desc
+   @GetMapping
+   public ResponseEntity<PagedModel<GetPostResponse>> getAllPosts(
+         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+      Page<GetPostResponse> posts = postService.getAllPosts(pageable);
+      return ResponseEntity.ok(new PagedModel<>(posts));
+   }
+
    // GET : Get posts by username, paginated — ?page=0&size=20&sort=createdAt,desc
    @GetMapping("/{username}")
    public ResponseEntity<PagedModel<GetPostResponse>> getPostsByUsername(

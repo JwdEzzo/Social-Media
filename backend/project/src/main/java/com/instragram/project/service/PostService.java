@@ -113,6 +113,13 @@ public class PostService {
             .map(mappingMethods::convertPostEntityToGetPostResponse);
    }
 
+   // Get a page of all posts
+   public Page<GetPostResponse> getAllPosts(Pageable pageable) {
+      return postRepository
+            .findAll(pageable)
+            .map(mappingMethods::convertPostEntityToGetPostResponse);
+   }
+
    // Get a page of all posts excluding the given user's own
    public Page<GetPostResponse> getAllPostsExcludingUser(String username, Pageable pageable) {
       return postRepository

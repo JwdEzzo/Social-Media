@@ -3,7 +3,7 @@ import {
   useCreatePostMutation,
   useUploadPostMutation,
 } from "@/api/posts/postApi";
-import type { CreatePostRequestDto } from "@/types/request-types";
+import type { CreatePostRequest } from "@/types/request-types";
 import { useDispatch } from "react-redux";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 
@@ -24,7 +24,7 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       if (!data.imageUrl) {
         throw new Error("Image URL is required");
       }
-      const postRequest: CreatePostRequestDto = {
+      const postRequest: CreatePostRequest = {
         description: data.description,
         imageUrl: data.imageUrl,
       };

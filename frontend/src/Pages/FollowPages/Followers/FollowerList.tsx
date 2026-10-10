@@ -1,11 +1,16 @@
-import { useGetFollowersByUserIdQuery, useGetUserByUsernameQuery } from '@/api/users/userApi';
-import { useAuth } from '@/auth/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import FollowerCard from '@/Pages/FollowPages/Followers/FollowerCard';
-import { useGetFollowerCountQuery } from '@/api/followers/followApi';
-import IncomingRequestsCard from '@/components/custom/incoming-request-card';
-import NavigateBack from '@/components/custom/navigate-back';
+import {
+  useGetFollowersByUserIdInfiniteQuery,
+  useGetUserByUsernameQuery,
+} from "@/api/users/userApi";
+import { usePagedList } from "@/hooks/usePagedList";
+import LoadMoreTrigger from "@/components/custom/load-more-trigger";
+import { useAuth } from "@/auth/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
+import { useGetFollowerCountQuery } from "@/api/followers/followApi";
+import IncomingRequestsCard from "@/components/custom/incoming-request-card";
+import NavigateBack from "@/components/custom/navigate-back";
 
 interface FollowerListProps {
   profileUsername: string;
@@ -30,13 +35,20 @@ function FollowerList({ profileUsername }: FollowerListProps) {
     skip: !profileUsername,
   });
 
+  const followersQuery = useGetFollowersByUserIdInfiniteQuery(
+    profileUser?.id ?? 0,
+    {
+      skip: !profileUser?.id,
+    },
+  );
+  const { isLoading: isFollowersLoading, isError: isFollowersError } =
+    followersQuery;
   const {
-    data: followers,
-    isLoading: isFollowersLoading,
-    isError: isFollowersError,
-  } = useGetFollowersByUserIdQuery(profileUser?.id ?? 0, {
-    skip: !profileUser?.id,
-  });
+    items: followers,
+    loadMore: loadMoreFollowers,
+    hasNextPage: hasMoreFollowers,
+    isFetchingNextPage: isFetchingMoreFollowers,
+  } = usePagedList(followersQuery);
 
   const { data: followerCount } = useGetFollowerCountQuery(profileUsername!, {
     skip: !profileUsername,
@@ -87,7 +99,9 @@ function FollowerList({ profileUsername }: FollowerListProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
-              {loggedInUsername === profileUsername ? 'Your Followers' : `${profileUsername}'s Followers`}
+              {loggedInUsername === profileUsername
+                ? "Your Followers"
+                : `${profileUsername}'s Followers`}
             </CardTitle>
           </div>
         </CardHeader>
@@ -98,9 +112,18 @@ function FollowerList({ profileUsername }: FollowerListProps) {
             <div>No one is following {profileUsername}</div>
           ) : (
             <div>
-              {followers?.map((follower) => (
-                <FollowerCard key={follower.id} follower={follower} loggedInUsername={loggedInUsername!} />
+              {followers.map((follower) => (
+                <FollowerCard
+                  key={follower.id}
+                  follower={follower}
+                  loggedInUsername={loggedInUsername!}
+                />
               ))}
+              <LoadMoreTrigger
+                hasNextPage={hasMoreFollowers}
+                isFetchingNextPage={isFetchingMoreFollowers}
+                onLoadMore={loadMoreFollowers}
+              />
             </div>
           )}
         </CardContent>

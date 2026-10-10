@@ -10,6 +10,17 @@ import type {
 } from "@/types/response-types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../public/baseApi";
+import type { PagedModel } from "@/types/api-response";
+import {
+  pagedInfiniteQueryOptions,
+  pageParams,
+  providePagedTags,
+} from "@/api/pagination";
+
+type UsersPage = PagedModel<GetUserResponseDto>;
+
+// Stable order so pages don't shift between requests: ?page=N&size=10&sort=id,asc
+const userPageParams = (pageParam: number) => pageParams(pageParam, "id,asc");
 
 export const userApi = createApi({
   reducerPath: "userApi",
@@ -24,22 +35,21 @@ export const userApi = createApi({
       }),
       invalidatesTags: [{ type: "UserList", id: "ALL" }],
     }),
-    getUsers: builder.query<GetUserResponseDto[], void>({
-      query: () => ({
+    // Infinite queries: one cache entry holds every page fetched so far.
+    // <ResultPerPage, QueryArg, PageParam> - PageParam is Spring's zero-based page index.
+    getUsers: builder.infiniteQuery<UsersPage, void, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: "/users",
         method: "GET",
+        params: userPageParams(pageParam),
       }),
       providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "ALL" },
-            ]
-          : [{ type: "UserList", id: "ALL" }],
+        providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
     }),
     getUserByUsername: builder.query<GetUserResponseDto, string>({
       query: (username) => ({
-        url: `/users/${username}`,
+        url: `/users/username/${username}`,
         method: "GET",
       }),
       providesTags: (result) =>
@@ -50,58 +60,59 @@ export const userApi = createApi({
             ]
           : [],
     }),
-    getUsersExcludingCurrentUser: builder.query<GetUserResponseDto[], void>({
-      query: () => ({
+    getUsersExcludingCurrentUser: builder.infiniteQuery<
+      UsersPage,
+      void,
+      number
+    >({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: "/users/excluded",
         method: "GET",
+        params: userPageParams(pageParam),
       }),
       providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "EXCLUDED" },
-            ]
-          : [{ type: "UserList", id: "EXCLUDED" }],
+        providePagedTags(result, "User", [
+          { type: "UserList", id: "EXCLUDED" },
+        ]),
     }),
-    getFollowersByUserId: builder.query<GetUserResponseDto[], number>({
-      query: (userId) => ({
+    getFollowersByUserId: builder.infiniteQuery<UsersPage, number, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: userId, pageParam }) => ({
         url: `/users/followers/${userId}`,
         method: "GET",
+        params: userPageParams(pageParam),
       }),
-      providesTags: (_result, _error, userId) => [
-        { type: "Followers", id: userId },
-        { type: "User", id: "LIST" },
-      ],
+      providesTags: (result, _error, userId) =>
+        providePagedTags(result, "User", [
+          { type: "Followers", id: userId },
+          { type: "User", id: "LIST" },
+        ]),
     }),
-    getFollowingsByUserId: builder.query<GetUserResponseDto[], number>({
-      query: (userId) => ({
+    getFollowingsByUserId: builder.infiniteQuery<UsersPage, number, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: userId, pageParam }) => ({
         url: `/users/followings/${userId}`,
         method: "GET",
+        params: userPageParams(pageParam),
       }),
       providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: "User" as const,
-                id,
-              })),
-              { type: "User", id: "LIST" },
-            ]
-          : [{ type: "User", id: "LIST" }],
+        providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
     }),
 
-    searchUsersByUsername: builder.query<SearchUserResponseDto[], string>({
-      query: (username) => ({
+    searchUsersByUsername: builder.infiniteQuery<
+      PagedModel<SearchUserResponseDto>,
+      string,
+      number
+    >({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: username, pageParam }) => ({
         url: `/users/search/${username}`,
         method: "GET",
+        params: userPageParams(pageParam),
       }),
       providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: "User" as const, id })),
-              { type: "UserList", id: "ALL" },
-            ]
-          : [{ type: "UserList", id: "ALL" }],
+        providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
     }),
 
     updateUserCredentials: builder.mutation<
@@ -175,12 +186,12 @@ export const userApi = createApi({
 
 export const {
   useSignUpMutation,
-  useGetUsersQuery,
+  useGetUsersInfiniteQuery,
   useGetUserByUsernameQuery,
-  useGetFollowersByUserIdQuery,
-  useGetFollowingsByUserIdQuery,
-  useGetUsersExcludingCurrentUserQuery,
-  useSearchUsersByUsernameQuery,
+  useGetFollowersByUserIdInfiniteQuery,
+  useGetFollowingsByUserIdInfiniteQuery,
+  useGetUsersExcludingCurrentUserInfiniteQuery,
+  useSearchUsersByUsernameInfiniteQuery,
   useUpdateUserCredentialsMutation,
   useUpdateUserProfileWithUrlMutation,
   useUpdateUserProfileWithUploadMutation,

@@ -1,6 +1,12 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../public/baseApi";
 import type { NotificationResponseDto } from "@/types/response-types";
+import type { PagedModel } from "@/types/api-response";
+import {
+  pagedInfiniteQueryOptions,
+  pageParams,
+  providePagedTags,
+} from "@/api/pagination";
 
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
@@ -9,21 +15,22 @@ export const notificationApi = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   endpoints: (builder) => ({
-    getAllNotifications: builder.query<NotificationResponseDto[], void>({
-      query: () => ({
+    // Infinite query: one cache entry holds every page fetched so far, newest first
+    getAllNotifications: builder.infiniteQuery<
+      PagedModel<NotificationResponseDto>,
+      void,
+      number
+    >({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ pageParam }) => ({
         url: "/notifications",
         method: "GET",
+        params: pageParams(pageParam, "createdAt,desc"),
       }),
       providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({
-                type: "Notification" as const,
-                id,
-              })),
-              { type: "Notification", id: "LIST" },
-            ]
-          : [{ type: "Notification", id: "LIST" }],
+        providePagedTags(result, "Notification", [
+          { type: "Notification", id: "LIST" },
+        ]),
     }),
     getUnreadNotificationCount: builder.query<number, void>({
       query: () => ({
@@ -60,7 +67,7 @@ export const notificationApi = createApi({
 });
 
 export const {
-  useGetAllNotificationsQuery,
+  useGetAllNotificationsInfiniteQuery,
   useGetUnreadNotificationCountQuery,
   useGetLatest3NotificationsQuery,
   useMarkOneAsReadMutation,

@@ -1,5 +1,5 @@
-import { Undo } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Undo } from "lucide-react";
+import { Button } from "../ui/button";
 
 function NavigateBack() {
   return (

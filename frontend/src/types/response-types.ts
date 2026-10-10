@@ -16,7 +16,7 @@ export interface GetUserResponseDto {
   createdAt: string;
   updatedAt: string;
   accountStatus: AccountStatus;
-  posts: GetPostResponseDto[];
+  posts: GetPostResponse[];
 }
 
 export interface SearchUserResponseDto {
@@ -34,7 +34,7 @@ export interface SignUpResponse {
 }
 
 // ================ POST =================
-export interface GetPostResponseDto {
+export interface GetPostResponse {
   id: number;
   username: string;
   profilePictureUrl: string;

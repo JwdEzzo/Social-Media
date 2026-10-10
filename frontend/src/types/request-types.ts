@@ -1,5 +1,5 @@
 // ================ POST =================
-export interface CreatePostRequestDto {
+export interface CreatePostRequest {
   description: string;
   imageUrl: string;
 }

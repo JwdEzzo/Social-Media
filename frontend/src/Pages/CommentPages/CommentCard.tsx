@@ -4,8 +4,9 @@ import {
 } from "@/api/comments/commentLikesApi";
 import {
   useGetCommentReplyCountQuery,
-  useGetRepliesByCommentIdQuery,
+  useGetRepliesByCommentIdInfiniteQuery,
 } from "@/api/comments/commentRepliesApi";
+import { usePagedList } from "@/hooks/usePagedList";
 import type {
   GetCommentResponseDto,
   GetUserResponseDto,
@@ -77,12 +78,18 @@ const CommentCard = memo(
       }
     }, [comment.id, deleteComment]);
 
-    // Fetch replies when showReplies is true
-    const { data: replies, isLoading: isRepliesLoading } =
-      useGetRepliesByCommentIdQuery(
-        { commentId: comment.id },
-        { skip: !showReplies },
-      );
+    // Fetch replies when showReplies is true, a page at a time
+    const repliesQuery = useGetRepliesByCommentIdInfiniteQuery(
+      { commentId: comment.id },
+      { skip: !showReplies },
+    );
+    const { isLoading: isRepliesLoading } = repliesQuery;
+    const {
+      items: replies,
+      loadMore: loadMoreReplies,
+      hasNextPage: hasMoreReplies,
+      isFetchingNextPage: isFetchingMoreReplies,
+    } = usePagedList(repliesQuery);
 
     const isAuthenticated =
       comment.appUser.username === loggedInUser?.username ||
@@ -188,21 +195,34 @@ const CommentCard = memo(
                   <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
                     Loading replies...
                   </div>
-                ) : replies && replies.length > 0 ? (
-                  replies.map((reply) => (
-                    <ReplyCard
-                      key={reply.id}
-                      reply={reply}
-                      navigateToSelectedUserProfile={
-                        navigateToSelectedUserProfile
-                      }
-                      postUsername={postUsername}
-                      comment={comment}
-                      loggedInUser={loggedInUser}
-                      onEditReply={onEditReply}
-                      //
-                    />
-                  ))
+                ) : replies.length > 0 ? (
+                  <>
+                    {replies.map((reply) => (
+                      <ReplyCard
+                        key={reply.id}
+                        reply={reply}
+                        navigateToSelectedUserProfile={
+                          navigateToSelectedUserProfile
+                        }
+                        postUsername={postUsername}
+                        comment={comment}
+                        loggedInUser={loggedInUser}
+                        onEditReply={onEditReply}
+                        //
+                      />
+                    ))}
+                    {hasMoreReplies && (
+                      <button
+                        onClick={loadMoreReplies}
+                        disabled={isFetchingMoreReplies}
+                        className="text-[12px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mt-2 ml-8"
+                      >
+                        {isFetchingMoreReplies
+                          ? "Loading replies..."
+                          : "View more replies"}
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <div className="text-[12px] text-gray-500 dark:text-gray-400 ml-8">
                     No replies yet

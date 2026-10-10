@@ -1,8 +1,10 @@
 import {
-  useGetAllNotificationsQuery,
+  useGetAllNotificationsInfiniteQuery,
   useMarkAllAsReadMutation,
   useMarkOneAsReadMutation,
 } from "@/api/notifications/notificationApi";
+import { usePagedList } from "@/hooks/usePagedList";
+import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,14 +33,21 @@ function NotificationPage() {
     useMarkAllAsReadMutation();
   const [markOneAsRead] = useMarkOneAsReadMutation();
 
+  const notificationsQuery = useGetAllNotificationsInfiniteQuery();
   const {
-    data: notifications,
     isLoading: isNotificationsLoading,
     isError: isNotificationsError,
     refetch: refetchNotifications,
-  } = useGetAllNotificationsQuery();
+  } = notificationsQuery;
+  const {
+    items: notifications,
+    loadMore: loadMoreNotifications,
+    hasNextPage: hasMoreNotifications,
+    isFetchingNextPage: isFetchingMoreNotifications,
+  } = usePagedList(notificationsQuery);
 
-  const hasUnread = notifications?.some((n) => !n.isRead) ?? false;
+  // Only checks the pages loaded so far; newest-first ordering puts unread ones on top
+  const hasUnread = notifications.some((n) => !n.isRead);
 
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -243,7 +252,7 @@ function NotificationPage() {
           </div>
 
           {/* List details */}
-          {!notifications || notifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 text-center px-4">
               <div className="h-16 w-16 rounded-full bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mb-4 select-none">
                 <BellOff className="h-8 w-8 text-purple-500 dark:text-purple-400" />
@@ -320,6 +329,11 @@ function NotificationPage() {
                   </div>
                 );
               })}
+              <LoadMoreTrigger
+                hasNextPage={hasMoreNotifications}
+                isFetchingNextPage={isFetchingMoreNotifications}
+                onLoadMore={loadMoreNotifications}
+              />
             </div>
           )}
         </div>
