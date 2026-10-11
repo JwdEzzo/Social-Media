@@ -1,4 +1,13 @@
-import { ChevronUp, LogOutIcon, Search, User, User2 } from "lucide-react";
+import {
+  ChevronUp,
+  Home,
+  Instagram,
+  Menu,
+  Plus,
+  Search,
+  Send,
+  Video,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -6,6 +15,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -21,13 +31,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 
 type SearchType = "post" | "user";
+
+const navButtonClass =
+  "h-10 cursor-pointer gap-3 font-medium transition-colors group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1!";
 
 function AppSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { username } = useAuth();
+  const { data: loggedInUser } = useGetUserByUsernameQuery(username!);
 
   const [searchType, setSearchType] = useState<SearchType>();
   const [isPostSearchOpen, setIsPostSearchOpen] = useState<boolean>(false);
@@ -80,20 +95,34 @@ function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="pt-2">
-        <SidebarGroup>
+      {/* Sidebar Header */}
+      <SidebarHeader className="flex items-start px-2 py-1">
+        <button
+          type="button"
+          aria-label="Home"
+          className="cursor-pointer rounded-md p-2 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1"
+          onClick={navigateBackToProfile}
+        >
+          <Instagram className="size-6" />
+        </button>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup className="my-auto">
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* User Icon */}
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
-                  className="h-10 gap-3 font-medium transition-colors"
+                  className={navButtonClass}
                   onClick={navigateBackToProfile}
                 >
-                  <User className="text-foreground" />
-                  <span>Profile</span>
+                  <div>
+                    <Home />
+                  </div>
+                  <span>Home</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
+              {/* Search Icon 1 */}
               <SidebarMenuItem onClick={() => setSearchType("post")}>
                 {isPostSearchOpen ? (
                   <div className="py-0.5">
@@ -110,15 +139,18 @@ function AppSidebar() {
                   </div>
                 ) : (
                   <SidebarMenuButton
-                    className="h-10 gap-3 font-medium transition-colors"
+                    className={navButtonClass}
                     onClick={() => setIsPostSearchOpen(true)}
                   >
-                    <Search />
+                    <div>
+                      <Search />
+                    </div>
                     <span>Search Post</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
 
+              {/* Search Icon 2 */}
               <SidebarMenuItem onClick={() => setSearchType("user")}>
                 {isUserSearchOpen ? (
                   <div className="py-0.5">
@@ -135,36 +167,79 @@ function AppSidebar() {
                   </div>
                 ) : (
                   <SidebarMenuButton
-                    className="h-10 gap-3 font-medium transition-colors"
+                    className={navButtonClass}
                     onClick={() => setIsUserSearchOpen(true)}
                   >
-                    <Search />
+                    <div>
+                      <Search />
+                    </div>
                     <span>Search User</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
-
-              <SidebarMenuItem>
+              <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
-                  onClick={handleLogout}
-                  className="h-10 gap-3 font-medium transition-colors"
+                  className={navButtonClass}
+                  onClick={navigateBackToProfile}
                 >
-                  <LogOutIcon className="text-destructive" />
-                  <span className="text-destructive">Logout</span>
+                  <div>
+                    <Video />
+                  </div>
+                  <span>Reels</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem className="mt-1">
+                <SidebarMenuButton
+                  className={navButtonClass}
+                  onClick={navigateBackToProfile}
+                >
+                  <div>
+                    <Send />
+                  </div>
+                  <span>Messages</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="mt-1">
+                <SidebarMenuButton
+                  className={navButtonClass}
+                  onClick={navigateBackToProfile}
+                >
+                  <div>
+                    <Plus />
+                  </div>
+                  <span>Create</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="mt-1">
+                <SidebarMenuButton
+                  className={navButtonClass}
+                  onClick={navigateBackToProfile}
+                >
+                  <div className="shrink-0">
+                    <img
+                      src={loggedInUser?.profilePictureUrl}
+                      alt=""
+                      className="size-6 rounded-full object-cover"
+                    />
+                  </div>
+                  <span>Profile</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {/* End of Sidebar icons */}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border">
+      <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="h-10 gap-3 font-medium transition-colors">
-                  <User2 />
-                  <span className="truncate font-semibold">{username}</span>
+                <SidebarMenuButton className={navButtonClass}>
+                  <div>
+                    <Menu />
+                  </div>
+                  <span className="truncate font-semibold">More</span>
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -172,13 +247,6 @@ function AppSidebar() {
                 side="top"
                 className="w-(--radix-popper-anchor-width) min-w-48 rounded-lg"
               >
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={navigateBackToProfile}
-                >
-                  <span>Profile</span>
-                </DropdownMenuItem>
-
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={handleLogout}
