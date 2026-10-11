@@ -20,6 +20,8 @@ import { UserFollowingListRouted } from "./Pages/FollowPages/Followings/UserFoll
 import { YourFollowingListRouted } from "./Pages/FollowPages/Followings/YourFollowingList";
 import NotificationPage from "@/Pages/NotificationPages/NotificationPage";
 import SignUp from "./Pages/AuthPages/SignUp";
+import Layout from "@/components/sidebar/layout";
+import SearchPage from "./Pages/SearchPages/SearchPage";
 
 function App() {
   return (
@@ -31,123 +33,67 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
 
-            <Route
-              path="/search/posts"
-              element={
-                <ProtectedRoute>
-                  <SearchPostPage />
-                </ProtectedRoute>
-              }
-            />
+            {/* Everything below renders inside the sidebar layout */}
+            <Route element={<Layout />}>
+              {/* Public, but still shows the sidebar */}
+              <Route
+                path="/searcheduserprofile/:searchedUsername"
+                element={<UserProfilePageRouted />}
+              />
 
-            <Route
-              path="/search/users"
-              element={
-                <ProtectedRoute>
-                  <SearchUsersPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/search/posts" element={<SearchPostPage />} />
 
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationPage />
-                </ProtectedRoute>
-              }
-            />
+                <Route path="/search/users" element={<SearchUsersPage />} />
 
-            <Route
-              path="/searcheduserprofile/:searchedUsername"
-              element={<UserProfilePageRouted />}
-            />
+                <Route path="/searchs" element={<SearchPage />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/userprofile/:username"
-              element={
-                <ProtectedRoute>
-                  <YourProfilePageRouted />
-                </ProtectedRoute>
-              }
-            />
+                <Route path="/notifications" element={<NotificationPage />} />
 
-            <Route
-              path="/userprofile/:username/edit-credentials"
-              element={
-                <ProtectedRoute>
-                  <EditCredentials />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userprofile/:username/edit-profile"
-              element={
-                <ProtectedRoute>
-                  <EditProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userprofile/:username/set-profile"
-              element={
-                <ProtectedRoute>
-                  <SetProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/home/:username"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userprofile/:username/yourfollowers"
-              element={
-                <ProtectedRoute>
-                  <YourFollowerListRouted />
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/userprofile/:username"
+                  element={<YourProfilePageRouted />}
+                />
 
-            <Route
-              path="/userprofile/:username/userfollowers"
-              element={
-                <ProtectedRoute>
-                  <UserFollowerListRouted />
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/userprofile/:username/edit-credentials"
+                  element={<EditCredentials />}
+                />
+                <Route
+                  path="/userprofile/:username/edit-profile"
+                  element={<EditProfile />}
+                />
+                <Route
+                  path="/userprofile/:username/set-profile"
+                  element={<SetProfile />}
+                />
+                <Route path="/home/:username" element={<HomePage />} />
+                <Route
+                  path="/userprofile/:username/yourfollowers"
+                  element={<YourFollowerListRouted />}
+                />
 
-            <Route
-              path="/userprofile/:username/yourfollowings"
-              element={
-                <ProtectedRoute>
-                  <YourFollowingListRouted />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userprofile/:username/userfollowings"
-              element={
-                <ProtectedRoute>
-                  <UserFollowingListRouted />
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/userprofile/:username/userfollowers"
+                  element={<UserFollowerListRouted />}
+                />
 
-            <Route
-              path="/userprofile/:username/post/edit/:postId"
-              element={
-                <ProtectedRoute>
-                  <EditPost />
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/userprofile/:username/yourfollowings"
+                  element={<YourFollowingListRouted />}
+                />
+                <Route
+                  path="/userprofile/:username/userfollowings"
+                  element={<UserFollowingListRouted />}
+                />
+
+                <Route
+                  path="/userprofile/:username/post/edit/:postId"
+                  element={<EditPost />}
+                />
+              </Route>
+            </Route>
           </Routes>
         </BrowserRouter>
       </Provider>

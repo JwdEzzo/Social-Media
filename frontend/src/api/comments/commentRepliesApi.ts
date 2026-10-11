@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/api/public/baseApi";
+import { api } from "@/api/api";
 import { type WriteReplyRequestDto } from "@/types/request-types";
 import { type GetReplyResponseDto } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
@@ -9,10 +8,7 @@ import {
   providePagedTags,
 } from "@/api/pagination";
 
-export const commentRepliesApi = createApi({
-  reducerPath: "commentRepliesApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["CommentReply"],
+export const commentRepliesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     createReply: builder.mutation<void, WriteReplyRequestDto>({
       query: (requestDto) => ({

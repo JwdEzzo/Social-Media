@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../public/baseApi";
+import { api } from "@/api/api";
 import type { NotificationResponseDto } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -8,12 +7,9 @@ import {
   providePagedTags,
 } from "@/api/pagination";
 
-export const notificationApi = createApi({
-  reducerPath: "notificationApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Notification"],
-  refetchOnFocus: true,
-  refetchOnReconnect: true,
+// Notifications go stale while the tab is in the background, so their hooks are
+// called with { refetchOnFocus: true } (the shared API leaves it off by default)
+export const notificationApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Infinite query: one cache entry holds every page fetched so far, newest first
     getAllNotifications: builder.infiniteQuery<

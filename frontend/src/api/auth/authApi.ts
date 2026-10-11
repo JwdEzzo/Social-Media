@@ -8,6 +8,9 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+// Kept outside the shared api (api/api.ts) on purpose: login must use a plain fetchBaseQuery,
+// because baseQueryWithReauth dispatches logout() on any 401 - which a wrong password is.
+// It has no tags or cached data for other endpoints to depend on.
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({

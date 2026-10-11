@@ -5,6 +5,8 @@ import type { PagedModel } from "@/types/api-response";
 // The parts of an RTK infinite query result that pagination needs
 interface PagedQueryResult<T> {
   data?: InfiniteData<PagedModel<T>, number>;
+  currentData?: InfiniteData<PagedModel<T>, number>;
+  isFetching: boolean;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => unknown;
@@ -15,9 +17,13 @@ interface PagedQueryResult<T> {
 //   changes when a page is added or refetched
 // - loadMore: fetches the next page; the guards stop duplicate requests when it's
 //   called repeatedly (Virtuoso's endReached, an IntersectionObserver, ...)
+// - isLoadingFirstPage: true while the first page for the current arg is loading,
+//   including when the arg changes (e.g. a new search); false during loadMore and refetches
 // - totalElements: the server-side total, not just what's loaded
 export function usePagedList<T>({
   data,
+  currentData,
+  isFetching,
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
@@ -36,6 +42,15 @@ export function usePagedList<T>({
     loadMore,
     hasNextPage,
     isFetchingNextPage,
+    isLoadingFirstPage: isFetching && !currentData,
     totalElements: data?.pages[0]?.page.totalElements ?? 0,
   };
 }
+
+// data = {
+//   pages: [
+//     { content: [post1, ...post10],  page: { number: 0, totalPages: 4, totalElements: 37 } },
+//     { content: [post11, ...post20], page: { number: 1, ... } },
+//   ],
+//   pageParams: [0, 1],
+// }

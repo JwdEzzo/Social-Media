@@ -9,6 +9,7 @@ import {
   useGetPostCommentCountQuery,
 } from "@/api/comments/commentApi";
 import { usePagedList } from "@/hooks/usePagedList";
+import { usePostActions } from "@/hooks/usePostActions";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription } from "@/components/ui/card";
@@ -74,10 +75,6 @@ interface ViewPostProps {
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponseDto | undefined;
-  handleTogglePostLike: (postId: number) => void;
-  isTogglingPostLike: boolean;
-  handleToggleSavePost: (postId: number) => void;
-  isTogglingSavePost: boolean;
 }
 
 function ViewPost({
@@ -85,11 +82,15 @@ function ViewPost({
   handleCloseViewModal,
   selectedPostId,
   loggedInUser,
-  handleTogglePostLike,
-  isTogglingPostLike,
-  handleToggleSavePost,
-  isTogglingSavePost,
 }: ViewPostProps) {
+  //
+  const {
+    handleTogglePostLike,
+    isTogglingPostLike,
+    handleToggleSavePost,
+    isTogglingSavePost,
+  } = usePostActions();
+
   const [newComment, setNewComment] = useState<string>("");
   const focusRef = useRef<HTMLInputElement>(null);
 

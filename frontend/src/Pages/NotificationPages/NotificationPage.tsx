@@ -33,7 +33,9 @@ function NotificationPage() {
     useMarkAllAsReadMutation();
   const [markOneAsRead] = useMarkOneAsReadMutation();
 
-  const notificationsQuery = useGetAllNotificationsInfiniteQuery();
+  const notificationsQuery = useGetAllNotificationsInfiniteQuery(undefined, {
+    refetchOnFocus: true,
+  });
   const {
     isLoading: isNotificationsLoading,
     isError: isNotificationsError,

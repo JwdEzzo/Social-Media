@@ -19,8 +19,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "@/auth/authSlice";
 import { useAuth } from "@/auth/useAuth";
@@ -30,87 +31,90 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-
-type SearchType = "post" | "user";
+import { useState } from "react";
 
 const navButtonClass =
-  "h-10 cursor-pointer gap-3 font-medium transition-colors group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1!";
+  "h-10 cursor-pointer gap-3 px-1 font-medium transition-colors group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1!";
+
+const headerButtonClass =
+  "cursor-pointer rounded-md my-1 p-1 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring";
 
 function AppSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { username } = useAuth();
-  const { data: loggedInUser } = useGetUserByUsernameQuery(username!);
+  const { setOpen } = useSidebar();
+  // Sidebar expands while hovered, and stays expanded while the "More" menu is open
+  // (its content renders in a portal outside the sidebar, which fires mouseleave)
+  const [isHovered, setIsHovered] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const { data: loggedInUser } = useGetUserByUsernameQuery(username!, {
+    skip: !username,
+  });
 
-  const [searchType, setSearchType] = useState<SearchType>();
-  const [isPostSearchOpen, setIsPostSearchOpen] = useState<boolean>(false);
-  const [isUserSearchOpen, setIsUserSearchOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  function handleMouseEnter() {
+    setIsHovered(true);
+    setOpen(true);
+  }
+
+  function handleMouseLeave() {
+    setIsHovered(false);
+    if (!isMoreOpen) setOpen(false);
+  }
+
+  function handleMoreOpenChange(isOpen: boolean) {
+    setIsMoreOpen(isOpen);
+    if (!isOpen && !isHovered) setOpen(false);
+  }
 
   function handleLogout() {
     dispatch(logout());
     navigate("/");
   }
 
+  function getBackToHomeOrScrollToTop() {
+    if (location.pathname === `/home/${username}`) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate(`/home/${username}`);
+    }
+  }
+
   function navigateBackToProfile() {
     navigate(`/userprofile/${username}`);
   }
 
-  function handlePostSearch() {
-    if (searchType === "post" && searchQuery.trim()) {
-      navigate(`/search/posts?q=${encodeURIComponent(searchQuery)}`);
-      setIsPostSearchOpen(false);
-      setSearchQuery("");
-    }
-  }
-
-  function handleUserSearch() {
-    if (searchType === "user" && searchQuery.trim()) {
-      navigate(`/search/users?q=${encodeURIComponent(searchQuery)}`);
-      setIsUserSearchOpen(false);
-      setSearchQuery("");
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      if (searchType === "post") {
-        handlePostSearch();
-      } else if (searchType === "user") {
-        handleUserSearch();
-      }
-    }
-  }
-
-  function handleSearchBlur(searchType: SearchType) {
-    if (searchType === "post") {
-      setIsPostSearchOpen(false);
-    } else if (searchType === "user") {
-      setIsUserSearchOpen(false);
-    }
-    setSearchQuery("");
+  function navigateToSearchPage() {
+    navigate(`/searchs`);
   }
 
   return (
-    <Sidebar collapsible="icon">
-      {/* Sidebar Header */}
+    // z-20 + shadow: when expanded it overlays the page (incl. sticky z-10 headers)
+    <Sidebar
+      collapsible="icon"
+      className="z-20 group-data-[state=expanded]:shadow-xl"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Sidebar Header - Instagram Icon Button */}
       <SidebarHeader className="flex items-start px-2 py-1">
         <button
           type="button"
           aria-label="Home"
-          className="cursor-pointer rounded-md p-2 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1"
-          onClick={navigateBackToProfile}
+          className={headerButtonClass}
+          onClick={getBackToHomeOrScrollToTop}
         >
           <Instagram className="size-6" />
         </button>
       </SidebarHeader>
+      {/* End of Header - Start of Content */}
       <SidebarContent>
         <SidebarGroup className="my-auto">
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* User Icon */}
+              {/* Home Icon */}
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
                   className={navButtonClass}
@@ -122,61 +126,20 @@ function AppSidebar() {
                   <span>Home</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {/* Search Icon 1 */}
-              <SidebarMenuItem onClick={() => setSearchType("post")}>
-                {isPostSearchOpen ? (
-                  <div className="py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search posts..."
-                      className="h-10 w-full rounded-md border border-sidebar-border bg-muted px-3 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/60"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                      onBlur={() => handleSearchBlur("post")}
-                      onKeyDown={handleKeyDown}
-                    />
+              {/* Search */}
+              <SidebarMenuItem className="mt-1">
+                <SidebarMenuButton
+                  className={navButtonClass}
+                  onClick={navigateToSearchPage}
+                >
+                  <div>
+                    <Search />
                   </div>
-                ) : (
-                  <SidebarMenuButton
-                    className={navButtonClass}
-                    onClick={() => setIsPostSearchOpen(true)}
-                  >
-                    <div>
-                      <Search />
-                    </div>
-                    <span>Search Post</span>
-                  </SidebarMenuButton>
-                )}
+                  <span>Search</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
-
-              {/* Search Icon 2 */}
-              <SidebarMenuItem onClick={() => setSearchType("user")}>
-                {isUserSearchOpen ? (
-                  <div className="py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search users..."
-                      className="h-10 w-full rounded-md border border-sidebar-border bg-muted px-3 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/60"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                      onBlur={() => handleSearchBlur("user")}
-                      onKeyDown={handleKeyDown}
-                    />
-                  </div>
-                ) : (
-                  <SidebarMenuButton
-                    className={navButtonClass}
-                    onClick={() => setIsUserSearchOpen(true)}
-                  >
-                    <div>
-                      <Search />
-                    </div>
-                    <span>Search User</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
+              {/* Reels */}
+              <SidebarMenuItem></SidebarMenuItem>
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
                   className={navButtonClass}
@@ -188,6 +151,7 @@ function AppSidebar() {
                   <span>Reels</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Messages */}
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
                   className={navButtonClass}
@@ -199,6 +163,7 @@ function AppSidebar() {
                   <span>Messages</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Create Post */}
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
                   className={navButtonClass}
@@ -210,6 +175,7 @@ function AppSidebar() {
                   <span>Create</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Profile */}
               <SidebarMenuItem className="mt-1">
                 <SidebarMenuButton
                   className={navButtonClass}
@@ -232,8 +198,9 @@ function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          {/* More Dropdown */}
           <SidebarMenuItem>
-            <DropdownMenu>
+            <DropdownMenu modal={false} onOpenChange={handleMoreOpenChange}>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className={navButtonClass}>
                   <div>

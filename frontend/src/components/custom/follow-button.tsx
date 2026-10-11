@@ -9,10 +9,11 @@ import { useState } from "react";
 
 interface FollowButtonProps {
   username: string;
-  onFollowToggled?: () => void;
 }
 
-function FollowButton({ username, onFollowToggled }: FollowButtonProps) {
+// toggleFollow's invalidatesTags refreshes everything a follow affects
+// (counts, follower lists, the following feed), so no callback is needed here
+function FollowButton({ username }: FollowButtonProps) {
   const [isHoveringPending, setIsHoveringPending] = useState(false);
 
   const { data: isFollowed } = useIsFollowedQuery(username);
@@ -32,9 +33,7 @@ function FollowButton({ username, onFollowToggled }: FollowButtonProps) {
       });
       return;
     }
-    toggleFollow(username)
-      .unwrap()
-      .then(() => onFollowToggled?.());
+    toggleFollow(username);
   }
 
   return (

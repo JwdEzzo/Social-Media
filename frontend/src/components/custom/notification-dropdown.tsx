@@ -28,7 +28,9 @@ import { formatTimeAgo } from "@/utils/helpers";
 
 function NotificationDropdown() {
   const { data: latest3Notifications, isLoading } =
-    useGetLatest3NotificationsQuery();
+    useGetLatest3NotificationsQuery(undefined, {
+      refetchOnFocus: true,
+    });
   const navigate = useNavigate();
   const [markAllAsRead] = useMarkAllAsReadMutation();
 

@@ -1,7 +1,5 @@
-import { postApi } from "@/api/posts/postApi";
 import FollowButton from "@/components/custom/follow-button";
 import type { GetUserResponseDto } from "@/types/response-types";
-import { useDispatch } from "react-redux";
 
 interface FollowerCardProps {
   follower: GetUserResponseDto;
@@ -13,7 +11,6 @@ function FollowerCard({ follower, loggedInUsername }: FollowerCardProps) {
   const isOwnProfile =
     loggedInUsername?.trim().toLowerCase() ===
     follower.username?.trim().toLowerCase();
-  const dispatch = useDispatch();
 
   return (
     <div className="flex items-center justify-between gap-3 py-2.5">
@@ -28,13 +25,7 @@ function FollowerCard({ follower, loggedInUsername }: FollowerCardProps) {
         </span>
       </div>
       <div>
-        {!isOwnProfile && (
-          <FollowButton
-            username={follower.username}
-            onFollowToggled={() => dispatch(postApi.util.resetApiState())}
-            //
-          />
-        )}
+        {!isOwnProfile && <FollowButton username={follower.username} />}
       </div>
     </div>
   );

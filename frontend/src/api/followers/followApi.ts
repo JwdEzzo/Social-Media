@@ -1,15 +1,11 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/api/public/baseApi";
+import { api } from "@/api/api";
 import type { FollowRequestResponseDto } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import { pagedInfiniteQueryOptions, pageParams } from "@/api/pagination";
 
 type FollowRequestsPage = PagedModel<FollowRequestResponseDto>;
 
-export const followApi = createApi({
-  reducerPath: "followerApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Follow", "User", "UserList"],
+export const followApi = api.injectEndpoints({
   endpoints: (builder) => ({
     toggleFollow: builder.mutation<void, string>({
       query: (followingUsername) => ({
@@ -20,7 +16,12 @@ export const followApi = createApi({
         { type: "Follow", id: followingUsername },
         { type: "Follow", id: "COUNT" },
         { type: "Follow", id: `PENDING-${followingUsername}` },
+        // Follower / following lists
         { type: "User", id: "LIST" },
+        // The home feed of followed accounts, and this account's posts
+        // (a private account's posts appear or disappear)
+        { type: "Post", id: "FOLLOWING_POSTS" },
+        { type: "Post", id: followingUsername },
       ],
     }),
     getFollowerCount: builder.query<number, string>({

@@ -1,10 +1,8 @@
 import {
-  postApi,
   useCreatePostMutation,
   useUploadPostMutation,
 } from "@/api/posts/postApi";
 import type { CreatePostRequest } from "@/types/request-types";
-import { useDispatch } from "react-redux";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 
 interface CreatePostModalProps {
@@ -15,7 +13,6 @@ interface CreatePostModalProps {
 function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [createPost, { isLoading: isCreatingPost }] = useCreatePostMutation();
   const [uploadPost, { isLoading: isUploadingPost }] = useUploadPostMutation();
-  const dispatch = useDispatch();
 
   const isSubmitting = isCreatingPost || isUploadingPost;
 
@@ -29,7 +26,6 @@ function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         imageUrl: data.imageUrl,
       };
       await createPost(postRequest).unwrap();
-      dispatch(postApi.util.invalidateTags([{ type: "Post", id: "COUNT" }]));
     } else {
       if (!data.file) {
         throw new Error("File is required");

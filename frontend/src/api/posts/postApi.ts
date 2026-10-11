@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/api/public/baseApi";
+import { api } from "@/api/api";
 import type {
   CreatePostRequest,
   EditPostWithUploadRequestDto,
@@ -31,12 +30,7 @@ const providePagedPostTags = (
   ]);
 
 // prettier-ignore
-export const postApi = createApi({
-  reducerPath: 'postApi',
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ['Post'],
-  refetchOnReconnect: true,
-  refetchOnFocus: true,
+export const postApi = api.injectEndpoints({
   endpoints: (builder) => ({
     createPost: builder.mutation<string, CreatePostRequest>({
       query: (newPost) => ({
@@ -69,7 +63,9 @@ export const postApi = createApi({
         method: 'GET',
         params: postPageParams(pageParam),
       }),
-      providesTags: (result) => providePagedPostTags(result),
+      // Per-user tag so toggleFollow can refresh this account's posts
+      providesTags: (result, _error, { privateAccountUsername }) =>
+        providePagedPostTags(result, [{ type: 'Post', id: privateAccountUsername }]),
     }),
 
     getPosts: builder.infiniteQuery<PostsPage, void, number>({
@@ -126,7 +122,8 @@ export const postApi = createApi({
         method: 'GET',
         params: postPageParams(pageParam),
       }),
-      providesTags: (result) => providePagedPostTags(result),
+      // LIKED: invalidated by togglePostLike
+      providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'LIKED' }]),
     }),
 
     getPostsSavedByCurrentUser: builder.infiniteQuery<PostsPage, void, number>({
@@ -136,7 +133,8 @@ export const postApi = createApi({
         method: 'GET',
         params: postPageParams(pageParam),
       }),
-      providesTags: (result) => providePagedPostTags(result),
+      // SAVED: invalidated by togglePostSave
+      providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'SAVED' }]),
     }),
     getFollowingPostsByUserId: builder.infiniteQuery<PostsPage, void, number>({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
@@ -145,6 +143,7 @@ export const postApi = createApi({
         method: 'GET',
         params: postPageParams(pageParam),
       }),
+      // FOLLOWING_POSTS: invalidated by toggleFollow / acceptFollowRequest
       providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'FOLLOWING_POSTS' }]),
     }),
 
@@ -181,6 +180,10 @@ export const postApi = createApi({
           body: formData,
         };
       },
+      invalidatesTags: (_result, _error, { postId }) => [
+        { type: 'Post', id: postId },
+        { type: 'Post', id: 'LIST' },
+      ],
     }),
 
     deletePostByPostId: builder.mutation<void, number>({

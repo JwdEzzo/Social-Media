@@ -1,5 +1,4 @@
 import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
-import { postApi } from "@/api/posts/postApi";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
@@ -19,30 +18,24 @@ import {
 import type { GetPostResponse } from "@/types/response-types";
 import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
 import { memo } from "react";
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/custom/follow-button";
+import { usePostActions } from "@/hooks/usePostActions";
 
 interface HomePagePostCardProps {
   post: GetPostResponse;
   onViewComments: (postId: number) => void;
-  handleTogglePostLike: (postId: number) => void;
-  isTogglingPostLike: boolean;
-  handleToggleSavePost: (postId: number) => void;
-  isTogglingSavePost: boolean;
 }
 
 const HomePagePostCard = memo(
-  ({
-    post,
-    onViewComments,
-    handleTogglePostLike,
-    isTogglingPostLike,
-    handleToggleSavePost,
-    isTogglingSavePost,
-  }: HomePagePostCardProps) => {
+  ({ post, onViewComments }: HomePagePostCardProps) => {
     const navigate = useNavigate();
-    const dispatch = useDispatch();
+    const {
+      handleTogglePostLike,
+      isTogglingPostLike,
+      handleToggleSavePost,
+      isTogglingSavePost,
+    } = usePostActions();
 
     const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
       skip: !post?.id || post.id === 0,
@@ -93,16 +86,7 @@ const HomePagePostCard = memo(
                   >
                     {post.username}
                   </h1>
-                  <FollowButton
-                    username={post.username}
-                    onFollowToggled={() =>
-                      dispatch(
-                        postApi.util.invalidateTags([
-                          { type: "Post", id: "LIST" },
-                        ]),
-                      )
-                    }
-                  />
+                  <FollowButton username={post.username} />
                 </div>
                 {/* <MoreHorizontal className="h-6 w-6 cursor-pointer" /> */}
               </div>
@@ -182,18 +166,16 @@ const HomePagePostCard = memo(
 
     // Check if the post itself changed
     // We only compare the post ID because the hooks inside will handle
-    // fetching the latest like/save/comment counts
+    // fetching the latest like/save/comment counts and the toggling state
     const postUnchanged = prevProps.post.id === nextProps.post.id;
 
-    // Check if the callback functions are the same reference
-    // (they will be if you used useCallback in HomePage)
-    const callbacksUnchanged =
-      prevProps.onViewComments === nextProps.onViewComments &&
-      prevProps.handleTogglePostLike === nextProps.handleTogglePostLike &&
-      prevProps.handleToggleSavePost === nextProps.handleToggleSavePost;
+    // Check if the callback is the same reference
+    // (it will be, since HomePage wraps it in useCallback)
+    const callbackUnchanged =
+      prevProps.onViewComments === nextProps.onViewComments;
 
-    // Only re-render if the post ID changed or callbacks changed
-    return postUnchanged && callbacksUnchanged;
+    // Only re-render if the post ID or the callback changed
+    return postUnchanged && callbackUnchanged;
   },
 );
 

@@ -1,19 +1,17 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../public/baseApi";
+import { api } from "@/api/api";
 
-export const postSavesApi = createApi({
-  reducerPath: "postSavesApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["PostSave"],
+export const postSavesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     togglePostSave: builder.mutation<void, number>({
       query: (postId) => ({
         url: `/post-saves/post/${postId}`,
         method: "POST",
       }),
-      invalidatesTags: (result, error, postId) => [
-        "PostSave",
+      // Only this post's save count / is-saved, not every post's on screen
+      invalidatesTags: (_result, _error, postId) => [
         { type: "PostSave", id: postId },
+        // The profile's "saved" tab gains or loses this post
+        { type: "Post", id: "SAVED" },
       ],
     }),
     isPostSaved: builder.query<boolean, number>({

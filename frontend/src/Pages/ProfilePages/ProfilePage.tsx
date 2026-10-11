@@ -1,4 +1,3 @@
-import { postApi } from "@/api/posts/postApi";
 import { Button } from "@/components/ui/button";
 import {
   Camera,
@@ -27,6 +26,7 @@ import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import FollowButton from "@/components/custom/follow-button";
 import { useProfileLogic } from "@/hooks/useProfilePageHook";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
+import LoadingPostTiles from "@/components/custom/loading-post-tiles";
 import type { GetPostResponse } from "@/types/response-types";
 
 interface ProfilePageProps {
@@ -250,14 +250,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     ) {
       return (
         <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-          {[...Array(9)].map((_, index) => (
-            <div
-              key={`loading-${index}`}
-              className="relative flex aspect-square items-center justify-center bg-muted"
-            >
-              <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"></div>
-            </div>
-          ))}
+          <LoadingPostTiles />
         </div>
       );
     }
@@ -273,14 +266,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     if (state.isPostsLoading && viewMode === "posts") {
       return (
         <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-          {[...Array(9)].map((_, index) => (
-            <div
-              key={`loading-${index}`}
-              className="relative flex aspect-square items-center justify-center bg-muted"
-            >
-              <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"></div>
-            </div>
-          ))}
+          <LoadingPostTiles />
         </div>
       );
     }
@@ -354,16 +340,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                       {profileUser.username}
                     </h1>
                     {!isOwnProfile ? (
-                      <FollowButton
-                        username={profileUser.username}
-                        onFollowToggled={() =>
-                          actions.dispatch(
-                            postApi.util.invalidateTags([
-                              { type: "Post", id: "LIST" },
-                            ]),
-                          )
-                        }
-                      />
+                      <FollowButton username={profileUser.username} />
                     ) : null}
                   </div>
                   {renderBio()}
@@ -506,10 +483,6 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         handleCloseViewModal={actions.handleCloseViewModal}
         selectedPostId={state.selectedPostId}
         loggedInUser={loggedInUserData}
-        handleTogglePostLike={actions.handleTogglePostLike}
-        isTogglingPostLike={state.isTogglingPostLike}
-        handleToggleSavePost={actions.handleToggleSavePost}
-        isTogglingSavePost={state.isTogglingSavePost}
       />
     </div>
   );

@@ -12,7 +12,6 @@ import {
   useIsFollowedQuery,
 } from "@/api/followers/followApi";
 import {
-  postApi,
   useGetPostsByUsernameInfiniteQuery,
   useGetPostsCountQuery,
   useGetPostsLikedByCurrentUserInfiniteQuery,
@@ -23,8 +22,6 @@ import {
   useGetUserByUsernameQuery,
   useToggleAccountStatusMutation,
 } from "@/api/users/userApi";
-import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";
-import { useTogglePostSaveMutation } from "@/api/posts/postSavesApi";
 import { usePagedList } from "@/hooks/usePagedList";
 
 // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
@@ -129,33 +126,10 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
         ? savedPosts
         : posts;
 
-  const [togglePostLike, { isLoading: isTogglingPostLike }] =
-    useTogglePostLikeMutation();
-  const [toggleSave, { isLoading: isTogglingSavePost }] =
-    useTogglePostSaveMutation();
   const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
   // --- HANDLERS ---
-  const handleTogglePostLike = async (postId: number) => {
-    if (!isOwnProfile) return;
-    try {
-      await togglePostLike(postId).unwrap();
-      dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleToggleSavePost = async (postId: number) => {
-    if (!isOwnProfile) return;
-    try {
-      await toggleSave(postId).unwrap();
-      dispatch(postApi.util.invalidateTags([{ type: "Post", id: "LIST" }]));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
+  // Like / save live in usePostActions, called by ViewPost itself
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
@@ -197,16 +171,12 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
         loadMore: activeList.loadMore,
       },
       stats: { followerCount, followingCount, postCount },
-      isTogglingPostLike,
-      isTogglingSavePost,
       loggedInUsername,
     },
     actions: {
       dispatch,
       setViewMode,
       setShowCreatePostModal,
-      handleTogglePostLike,
-      handleToggleSavePost,
       handleLogout,
       handleCloseViewModal,
       toggleAccountStatus,

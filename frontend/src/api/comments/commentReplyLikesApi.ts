@@ -1,10 +1,6 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/api/public/baseApi";
+import { api } from "@/api/api";
 
-export const commentReplyLikesApi = createApi({
-  reducerPath: "commentReplyLikesApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["CommentReplyLike"],
+export const commentReplyLikesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     toggleReplyLike: builder.mutation<void, number>({
       query: (replyId) => ({

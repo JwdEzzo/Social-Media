@@ -1,21 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { api } from "@/api/api";
 import { authApi } from "@/api/auth/authApi";
-import { postApi } from "@/api/posts/postApi";
-import { userApi } from "@/api/users/userApi";
 import authSlice, { logout } from "@/auth/authSlice";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { commentApi } from "@/api/comments/commentApi";
 import viewPostModalReducer from "@/slices/viewPostSlice";
-import { postLikesApi } from "@/api/posts/postLikesApi";
-import { commentLikesApi } from "@/api/comments/commentLikesApi";
-import { followApi } from "@/api/followers/followApi";
-import { commentRepliesApi } from "@/api/comments/commentRepliesApi";
-import { commentReplyLikesApi } from "@/api/comments/commentReplyLikesApi";
-import { postSavesApi } from "@/api/posts/postSavesApi";
 import { replyModeSlice } from "@/slices/replyModeSlice";
 import { editModeSlice } from "@/slices/editModeSlice";
-import { notificationApi } from "@/api/notifications/notificationApi";
 
 // Combine all reducers
 const appReducer = combineReducers({
@@ -23,17 +14,9 @@ const appReducer = combineReducers({
   viewPostModal: viewPostModalReducer,
   replyModeSlice: replyModeSlice.reducer,
   editModeSlice: editModeSlice.reducer,
+  // One cache for every endpoint (see api/api.ts); login has its own, see authApi.ts
+  [api.reducerPath]: api.reducer,
   [authApi.reducerPath]: authApi.reducer,
-  [userApi.reducerPath]: userApi.reducer,
-  [postApi.reducerPath]: postApi.reducer,
-  [commentApi.reducerPath]: commentApi.reducer,
-  [postLikesApi.reducerPath]: postLikesApi.reducer,
-  [commentLikesApi.reducerPath]: commentLikesApi.reducer,
-  [followApi.reducerPath]: followApi.reducer,
-  [commentRepliesApi.reducerPath]: commentRepliesApi.reducer,
-  [commentReplyLikesApi.reducerPath]: commentReplyLikesApi.reducer,
-  [postSavesApi.reducerPath]: postSavesApi.reducer,
-  [notificationApi.reducerPath]: notificationApi.reducer,
 });
 
 // Root reducer that resets state on logout
@@ -48,19 +31,7 @@ const rootReducer = (state: any, action: any) => {
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat([
-      authApi.middleware,
-      userApi.middleware,
-      postApi.middleware,
-      commentApi.middleware,
-      postLikesApi.middleware,
-      commentLikesApi.middleware,
-      commentRepliesApi.middleware,
-      followApi.middleware,
-      commentReplyLikesApi.middleware,
-      postSavesApi.middleware,
-      notificationApi.middleware,
-    ]),
+    getDefaultMiddleware().concat([api.middleware, authApi.middleware]),
 });
 
 setupListeners(store.dispatch);

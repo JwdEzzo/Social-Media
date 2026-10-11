@@ -7,8 +7,12 @@ const NotificationButton = React.forwardRef<
   HTMLButtonElement,
   React.ComponentPropsWithoutRef<typeof Button>
 >((props, ref) => {
-  const { data: unreadNotificationCount } =
-    useGetUnreadNotificationCountQuery();
+  const { data: unreadNotificationCount } = useGetUnreadNotificationCountQuery(
+    undefined,
+    {
+      refetchOnFocus: true,
+    },
+  );
 
   return (
     <Button

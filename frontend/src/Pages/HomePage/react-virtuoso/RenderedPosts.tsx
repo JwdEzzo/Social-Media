@@ -5,10 +5,6 @@ import HomePagePostCard from "../HomePagePostCard";
 interface RenderedPostsProps {
   posts: GetPostResponse[];
   onViewComments: (postId: number) => void;
-  handleTogglePostLike: (postId: number) => void;
-  isTogglingPostLike: boolean;
-  handleToggleSavePost: (postId: number) => void;
-  isTogglingSavePost: boolean;
   // Infinite scroll: called when the last post is rendered, e.g. to fetch the next page
   onEndReached?: () => void;
   isFetchingMore?: boolean;
@@ -33,10 +29,6 @@ function Footer({ context }: { context?: FooterContext }) {
 function RenderedPosts({
   posts,
   onViewComments,
-  handleTogglePostLike,
-  isTogglingPostLike,
-  handleToggleSavePost,
-  isTogglingSavePost,
   onEndReached,
   isFetchingMore,
 }: RenderedPostsProps) {
@@ -58,10 +50,6 @@ function RenderedPosts({
                 key={post.id}
                 post={post}
                 onViewComments={onViewComments}
-                handleTogglePostLike={handleTogglePostLike}
-                isTogglingPostLike={isTogglingPostLike}
-                handleToggleSavePost={handleToggleSavePost}
-                isTogglingSavePost={isTogglingSavePost}
               />
             </div>
           );

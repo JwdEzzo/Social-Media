@@ -8,8 +8,7 @@ import type {
   SearchUserResponseDto,
   SignUpResponse,
 } from "@/types/response-types";
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "../public/baseApi";
+import { api } from "@/api/api";
 import type { PagedModel } from "@/types/api-response";
 import {
   pagedInfiniteQueryOptions,
@@ -22,10 +21,7 @@ type UsersPage = PagedModel<GetUserResponseDto>;
 // Stable order so pages don't shift between requests: ?page=N&size=10&sort=id,asc
 const userPageParams = (pageParam: number) => pageParams(pageParam, "id,asc");
 
-export const userApi = createApi({
-  reducerPath: "userApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "UserList", "Followers", "Followings"],
+export const userApi = api.injectEndpoints({
   endpoints: (builder) => ({
     signUp: builder.mutation<SignUpResponse, SignUpRequest>({
       query: (newUser) => ({
