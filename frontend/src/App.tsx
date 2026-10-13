@@ -10,10 +10,8 @@ import EditProfile from "./Pages/ProfilePages/EditProfile";
 import HomePage from "./Pages/HomePage/HomePage";
 import SetProfile from "./Pages/ProfilePages/SetProfile";
 import EditPost from "./Pages/PostPages/EditPost";
-import SearchPostPage from "@/Pages/SearchPages/SearchPostPage";
 import { UserProfilePageRouted } from "@/Pages/ProfilePages/UserProfilePage";
 import { YourProfilePageRouted } from "@/Pages/ProfilePages/YourProfilePage";
-import SearchUsersPage from "./Pages/SearchPages/SearchUsersPage";
 import { YourFollowerListRouted } from "./Pages/FollowPages/Followers/YourFollowerList";
 import { UserFollowerListRouted } from "./Pages/FollowPages/Followers/UserFollowerList";
 import { UserFollowingListRouted } from "./Pages/FollowPages/Followings/UserFollowingList";
@@ -43,11 +41,7 @@ function App() {
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/search/posts" element={<SearchPostPage />} />
-
-                <Route path="/search/users" element={<SearchUsersPage />} />
-
-                <Route path="/searchs" element={<SearchPage />} />
+                <Route path="/search" element={<SearchPage />} />
 
                 <Route path="/notifications" element={<NotificationPage />} />
 

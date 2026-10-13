@@ -1,159 +1,161 @@
-import {
-  useGetPostsByDescriptionInfiniteQuery,
-  useGetPostsExcludingCurrentUserInfiniteQuery,
-} from "@/api/posts/postApi";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
-import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import LoadingPostTiles from "@/components/custom/loading-post-tiles";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { usePagedList } from "@/hooks/usePagedList";
-import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
-import ViewPost from "@/Pages/PostPages/ViewPost";
-import { closePostModal } from "@/slices/viewPostSlice";
-import type { RootState } from "@/store/store";
-import { RotateCcw, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import PostSearchResults from "@/Pages/SearchPages/PostSearchResults";
+import UserSearchResults from "@/Pages/SearchPages/UserSearchResults";
+import { Search, X } from "lucide-react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 
-const SEARCH_DEBOUNCE_MS = 1000;
+const USER_SEARCH_DEBOUNCE_MS = 500;
+type SearchType = "posts" | "users";
 
-// Explore page: with no query it shows other users' posts, with ?q= it shows the
-// posts whose description matches. Clicking a tile opens the ViewPost modal.
+// The search page owns the search bar, the Posts/Users tabs and the URL
+// (?q=...&type=users). Each tab's results component only renders what it's given.
 function SearchPage() {
-  const dispatch = useDispatch();
+  // current URL is /search?q=cats&tab=people
+  // searchParams.get("q")      returns "cats"
+  // searchParams.get("tab")    returns "people"
+  // searchParams.get("sort")   returns null (not in the URL)
+  //
+  // setSearchParams({ q: "dogs" })  =>  URL becomes /search?q=dogs  (tab is gone!)
+  // setSearchParams({})             =>  URL becomes /search
+  //
+  // /search?q=cats	      get("q")= "cats"   	        ?.trim()="cats"	      searchQuery= "cats"
+  // /search?q=%20cats%20	get("q")= " cats "   	      ?.trim()="cats"	      searchQuery= "cats"
+  // /search?q=	          get("q")= ""            	  ?.trim()=""	          searchQuery= ""
+  // /search	            get("q")= null	            ?.trim()=undefined	  searchQuery= ""
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("q")?.trim() || "";
+  // Posts is the default, so it's left out of the URL
+  const searchType: SearchType =
+    searchParams.get("type") === "users" ? "users" : "posts";
+  const isSearchTypePost = searchType === "posts";
 
-  // The input updates on every keystroke; the URL (and so the query) only after a pause
-  const [inputValue, setInputValue] = useState(searchQuery);
+  const [inputValue, setInputValue] = useState<string>(searchQuery);
+
+  // setSearchParams replaces every param, so q and type are always written together
+  const writeSearchParams = useCallback(
+    (query: string, type: SearchType) => {
+      const params: Record<string, string> = {};
+      if (query) params.q = query;
+      if (type === "users") params.type = type;
+      // replace: true so every search doesn't add a history entry
+      setSearchParams(params, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
+    if (isSearchTypePost) return;
+
     const timeout = setTimeout(() => {
       const nextQuery = inputValue.trim();
       if (nextQuery === searchQuery) return;
-      // replace: true so every search doesn't add a history entry
-      setSearchParams(nextQuery ? { q: nextQuery } : {}, { replace: true });
-    }, SEARCH_DEBOUNCE_MS);
+      writeSearchParams(nextQuery, searchType);
+    }, USER_SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timeout);
-  }, [inputValue, searchQuery, setSearchParams]);
-
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal,
-  );
-
-  const { username: loggedInUsername } = useAuth();
-  const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || "",
-    { skip: !loggedInUsername },
-  );
-
-  // Explore posts, shown while the search box is empty
-  const explorePostsQuery = useGetPostsExcludingCurrentUserInfiniteQuery(
-    undefined,
-    { skip: !!searchQuery },
-  );
-  const explorePosts = usePagedList(explorePostsQuery);
-
-  // Search results, shown once there's a query
-  const searchedPostsQuery = useGetPostsByDescriptionInfiniteQuery(
+  }, [
+    inputValue,
     searchQuery,
-    { skip: !searchQuery },
-  );
-  const searchedPosts = usePagedList(searchedPostsQuery);
+    searchType,
+    isSearchTypePost,
+    writeSearchParams,
+  ]);
 
-  const isSearching = !!searchQuery;
-  const activeQuery = isSearching ? searchedPostsQuery : explorePostsQuery;
-  const activeList = isSearching ? searchedPosts : explorePosts;
-
-  function handleCloseViewModal() {
-    dispatch(closePostModal());
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextQuery = inputValue.trim();
+    if (nextQuery === searchQuery) return;
+    writeSearchParams(nextQuery, searchType);
   }
 
-  function renderPosts() {
-    if (activeList.isLoadingFirstPage) {
-      return (
-        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-          <LoadingPostTiles />
-        </div>
-      );
-    }
+  function handleClearSearch() {
+    setInputValue("");
+    writeSearchParams("", searchType);
+  }
 
-    if (activeQuery.isError) {
-      return (
-        <div className="py-16 text-center">
-          <p className="text-base font-semibold text-foreground">
-            {isSearching
-              ? "Couldn't load search results"
-              : "Couldn't load posts"}
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => activeQuery.refetch()}
-          >
-            <RotateCcw className="size-4" /> Try Again
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-          {activeList.items.map((post) => (
-            <ProfilePagePostCard key={post.id} post={post} />
-          ))}
-        </div>
-        <LoadMoreTrigger
-          hasNextPage={activeList.hasNextPage}
-          isFetchingNextPage={activeList.isFetchingNextPage}
-          onLoadMore={activeList.loadMore}
-        />
-      </>
-    );
+  function handleTabChange(type: SearchType) {
+    if (type === searchType) return;
+    writeSearchParams(searchQuery, type);
   }
 
   return (
+    // Page Container
     <div className="min-h-svh bg-background pb-8">
-      {/* Header Search Input */}
-      <div className="sticky top-0 z-10 flex items-center justify-center bg-background/85 px-4 py-3 backdrop-blur-md">
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            aria-label="Search posts"
-            className="rounded-full pr-9 pl-9 [&::-webkit-search-cancel-button]:hidden"
-            placeholder="Search posts"
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-          />
-          {inputValue && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={() => setInputValue("")}
+      {/* Header: sticky search bar and tabs, both the width of the search bar */}
+      <div className="sticky top-0 z-10 bg-background/85 px-4 pt-3 backdrop-blur-md">
+        <div className="mx-auto max-w-md">
+          {/* Search Form: Enter submits the search */}
+          <form
+            role="search"
+            className="relative"
+            onSubmit={handleSearchSubmit}
+          >
+            {/* Search Icon */}
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+
+            {/* Search Input */}
+            <Input
+              type="search"
+              aria-label={isSearchTypePost ? "Search posts" : "Search users"}
+              className="rounded-full pr-9 pl-9 [&::-webkit-search-cancel-button]:hidden"
+              placeholder={isSearchTypePost ? "Search posts" : "Search users"}
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+            />
+
+            {/* Clear Search Button: only shown while there's text */}
+            {inputValue && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
+                onClick={handleClearSearch}
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </form>
+
+          {/* Tabs: switch between Posts and Users search; the active one is underlined */}
+          <div className="mt-2 flex border-b border-border">
+            {/* Posts Tab */}
+            <div
+              onClick={() => handleTabChange("posts")}
+              className={`-mb-px flex-1 cursor-pointer border-b py-3 text-center text-sm font-semibold transition-colors ${
+                isSearchTypePost
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <X className="size-4" />
-            </button>
-          )}
+              Posts
+            </div>
+
+            {/* Users Tab */}
+            <div
+              onClick={() => handleTabChange("users")}
+              className={`-mb-px flex-1 cursor-pointer border-b py-3 text-center text-sm font-semibold transition-colors ${
+                !isSearchTypePost
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Users
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Posts Grid */}
-      <div className="mx-auto mt-5 w-[90%]">{renderPosts()}</div>
-
-      {/* View Post Modal */}
-      <ViewPost
-        isOpen={isViewModalOpen}
-        handleCloseViewModal={handleCloseViewModal}
-        selectedPostId={selectedPostId}
-        loggedInUser={loggedInUser}
-      />
+      {/* Results: the active tab's results for the current query */}
+      {isSearchTypePost ? (
+        <div className="mx-auto mt-5 w-[60%]">
+          <PostSearchResults query={searchQuery} />
+        </div>
+      ) : (
+        <div className="mx-auto mt-2 box-content max-w-md px-4">
+          <UserSearchResults query={searchQuery} />
+        </div>
+      )}
     </div>
   );
 }

@@ -87,7 +87,7 @@ function AppSidebar() {
   }
 
   function navigateToSearchPage() {
-    navigate(`/searchs`);
+    navigate(`/search`);
   }
 
   return (

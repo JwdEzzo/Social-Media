@@ -98,15 +98,6 @@ public class AppUserService {
       }
    }
 
-   /**
-    * SQLState {@code 23505} is the SQL-standard code for a unique violation, which keeps this
-    * independent of the constraint names Hibernate generates under {@code ddl-auto=update}.
-    */
-   private static boolean isUniqueViolation(DataIntegrityViolationException e) {
-      return NestedExceptionUtils.getMostSpecificCause(e) instanceof SQLException sql
-            && "23505".equals(sql.getSQLState());
-   }
-
    public GetUserResponse getUserByUsername(String username) {
       AppUser user = getUserByUsernameOrThrow(username);
       return mappingMethods.convertAppUserEntityToGetUserResponse(user);
@@ -128,13 +119,6 @@ public class AppUserService {
             .map(mappingMethods::convertAppUserEntityToGetUserResponse);
    }
 
-   /**
-    * Get a page of every user except the caller, as a page of GetUserResponse.
-    * The {@code Pageable} carries the page number, size and sort, and the returned
-    * {@link Page} carries the total count so the caller can render pagination controls.
-    *
-    * @param username the caller's own username, resolved from the SecurityContext.
-    */
    public Page<GetUserResponse> getAllUsersExcludingCurrentUser(String username, Pageable pageable) {
       return appUserRepository
             .findByUsernameNot(username, pageable)
@@ -442,6 +426,15 @@ public class AppUserService {
       if (!conflicts.isEmpty()) {
          throw new ConflictException("That username or email is already taken.", conflicts);
       }
+   }
+
+   /**
+    * SQLState {@code 23505} is the SQL-standard code for a unique violation, which keeps this
+    * independent of the constraint names Hibernate generates under {@code ddl-auto=update}.
+    */
+   private static boolean isUniqueViolation(DataIntegrityViolationException e) {
+      return NestedExceptionUtils.getMostSpecificCause(e) instanceof SQLException sql
+            && "23505".equals(sql.getSQLState());
    }
 
 }
