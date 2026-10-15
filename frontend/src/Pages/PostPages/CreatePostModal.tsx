@@ -1,8 +1,4 @@
-import {
-  useCreatePostMutation,
-  useUploadPostMutation,
-} from "@/api/posts/postApi";
-import type { CreatePostRequest } from "@/types/request-types";
+import { useUploadPostMutation } from "@/api/posts/postApi";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 
 interface CreatePostModalProps {
@@ -11,30 +7,16 @@ interface CreatePostModalProps {
 }
 
 function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
-  const [createPost, { isLoading: isCreatingPost }] = useCreatePostMutation();
-  const [uploadPost, { isLoading: isUploadingPost }] = useUploadPostMutation();
-
-  const isSubmitting = isCreatingPost || isUploadingPost;
+  const [uploadPost, { isLoading: isSubmitting }] = useUploadPostMutation();
 
   async function handleFormSubmit(data: PostFormData) {
-    if (data.uploadMode === "url") {
-      if (!data.imageUrl) {
-        throw new Error("Image URL is required");
-      }
-      const postRequest: CreatePostRequest = {
-        description: data.description,
-        imageUrl: data.imageUrl,
-      };
-      await createPost(postRequest).unwrap();
-    } else {
-      if (!data.file) {
-        throw new Error("File is required");
-      }
-      await uploadPost({
-        description: data.description,
-        image: data.file,
-      }).unwrap();
+    if (!data.file) {
+      throw new Error("File is required");
     }
+    await uploadPost({
+      description: data.description,
+      image: data.file,
+    }).unwrap();
   }
 
   function handleClose() {

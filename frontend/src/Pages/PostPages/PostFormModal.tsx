@@ -8,7 +8,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
@@ -24,6 +23,7 @@ interface PostFormModalProps {
   handleClose: () => void;
   initialValues?: {
     description?: string;
+    // The post's current image, shown as the preview until a new file is picked
     imageUrl?: string;
   };
   mode: "create" | "edit";
@@ -32,18 +32,14 @@ interface PostFormModalProps {
 
 type PostSchema = z.infer<typeof postSchema>;
 
-type UploadMode = "url" | "file";
-
 const postSchema = z.object({
   description: z.string().min(0, "Description is required"),
-  imageUrl: z.string().optional(),
 });
 
 export interface PostFormData {
   description: string;
-  imageUrl?: string;
+  // Required when creating; optional when editing (keeps the current image)
   file?: File;
-  uploadMode: "url" | "file";
 }
 
 function PostFormModal({
@@ -55,7 +51,6 @@ function PostFormModal({
   handleClose,
   isOpen,
 }: PostFormModalProps) {
-  const [uploadMode, setUploadMode] = useState<UploadMode>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,31 +59,23 @@ function PostFormModal({
     resolver: zodResolver(postSchema),
     defaultValues: {
       description: initialValues?.description || "",
-      imageUrl: initialValues?.imageUrl || "",
-      // imageUrl:
-      //   "imageUrl" in initialValues &&
-      //   typeof initialValues.imageUrl === "string"
-      //     ? initialValues.imageUrl
-      //     : "",
     },
   });
 
+  // A freshly picked file wins; otherwise an edit keeps showing the current image
+  const displayedImage =
+    previewUrl ?? (mode === "edit" ? initialValues?.imageUrl : undefined);
+
   async function handleFormSubmit(data: PostSchema) {
     try {
-      if (uploadMode === "url" && !data.imageUrl) {
-        form.setError("imageUrl", { message: "Image URL is required" });
-        return;
-      }
-
-      if (uploadMode === "file" && !selectedFile) {
+      if (mode === "create" && !selectedFile) {
+        form.setError("root", { message: "Please upload an image" });
         return;
       }
 
       handleSubmit({
         description: data.description,
-        imageUrl: data.imageUrl,
         file: selectedFile || undefined,
-        uploadMode,
       });
 
       handleClose();
@@ -102,6 +89,7 @@ function PostFormModal({
     if (file) {
       if (file.type.startsWith("image/")) {
         setSelectedFile(file);
+        form.clearErrors("root");
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
       } else {
@@ -115,6 +103,7 @@ function PostFormModal({
     const file = event.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       setSelectedFile(file);
+      form.clearErrors("root");
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     } else {
@@ -160,17 +149,11 @@ function PostFormModal({
 
   useEffect(() => {
     if (isOpen && mode === "create") {
-      // Only generate random data for create mode
-      const randomNumber = Math.floor(Math.random() * 1000);
-      form.setValue(
-        "imageUrl",
-        `https://picsum.photos/1080/1920?random=${randomNumber}`,
-      );
+      // Only generate a random caption for create mode
       form.setValue("description", getRandomSentence());
     } else if (isOpen && mode === "edit" && initialValues) {
       // Set initial values for edit mode
       form.setValue("description", initialValues.description || "");
-      form.setValue("imageUrl", initialValues.imageUrl || "");
     }
   }, [isOpen, mode, initialValues, form]);
 
@@ -205,110 +188,64 @@ function PostFormModal({
               onSubmit={form.handleSubmit(handleFormSubmit)}
               className="space-y-4"
             >
-              {/* Upload Mode Toggle */}
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={uploadMode === "url" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setUploadMode("url")}
-                  disabled={isSubmitting}
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <FormLabel>
+                  {mode === "edit"
+                    ? "Replace Image (optional)"
+                    : "Upload Image"}
+                </FormLabel>
+                <div
+                  className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  Image URL
-                </Button>
-                <Button
-                  type="button"
-                  variant={uploadMode === "file" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setUploadMode("file")}
-                  disabled={isSubmitting}
-                >
-                  Upload File
-                </Button>
+                  {selectedFile ? (
+                    <div className="space-y-2">
+                      <ImageIcon className="mx-auto size-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {selectedFile.name}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSelectedFile();
+                        }}
+                      >
+                        <X className="size-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="mx-auto size-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Drag and drop an image here, or click to select
+                      </p>
+                      <p className="text-xs text-muted-foreground/80">
+                        PNG, JPG, GIF up to 5MB
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
               </div>
 
-              {/* URL Mode */}
-              {uploadMode === "url" && (
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/image.jpg"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* File Upload Mode */}
-              {uploadMode === "file" && (
-                <div className="space-y-2">
-                  <FormLabel>Upload Image</FormLabel>
-                  <div
-                    className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {selectedFile ? (
-                      <div className="space-y-2">
-                        <ImageIcon className="mx-auto size-10 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          {selectedFile.name}
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeSelectedFile();
-                          }}
-                        >
-                          <X className="size-4" />
-                          Remove
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Upload className="mx-auto size-10 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Drag and drop an image here, or click to select
-                        </p>
-                        <p className="text-xs text-muted-foreground/80">
-                          PNG, JPG, GIF up to 10MB
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                </div>
-              )}
-
               {/* Image Preview */}
-              {(uploadMode === "url" && form.watch("imageUrl")) ||
-              (uploadMode === "file" && previewUrl) ? (
+              {displayedImage ? (
                 <div className="mt-2">
                   <img
-                    src={
-                      uploadMode === "url"
-                        ? form.watch("imageUrl")
-                        : previewUrl!
-                    }
+                    src={displayedImage}
                     alt="Preview"
                     className="h-56 w-full rounded-lg border border-border object-cover"
                   />

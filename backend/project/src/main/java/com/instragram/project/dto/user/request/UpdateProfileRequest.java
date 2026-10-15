@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * {@code String} bioText <br>
- * {@code String} profilePictureUrl <br>
  */
 
 @Data
@@ -15,6 +14,4 @@ import lombok.NoArgsConstructor;
 public class UpdateProfileRequest {
 
    private String bioText;
-
-   private String profilePictureUrl;
 }

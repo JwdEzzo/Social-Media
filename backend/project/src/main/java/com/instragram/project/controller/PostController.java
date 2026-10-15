@@ -22,15 +22,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.post.request.CreatePostRequest;
 import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
-import com.instragram.project.dto.post.request.EditPostWithUrlRequest;
 import com.instragram.project.dto.post.response.GetPostResponse;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.repository.AppUserRepository;
@@ -51,15 +48,6 @@ public class PostController {
    public PostController(PostService postService, AppUserRepository appUserRepository) {
       this.postService = postService;
       this.appUserRepository = appUserRepository;
-   }
-
-   // POST: create post
-   @PostMapping("/create-post")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> createPost(@RequestBody CreatePostRequest requestDto, Authentication authentication) {
-      String username = authentication.getName();
-      postService.createPostWithUrl(requestDto, username);
-      return ResponseEntity.noContent().build();
    }
 
    // POST: create post with image upload
@@ -190,16 +178,9 @@ public class PostController {
             .body(resource);
    }
 
-   // PUT : Update/Edit a post
-   @PutMapping("/edit-with-url/{postId}")
-   public ResponseEntity<Void> editPostWithUrl(@PathVariable Long postId,
-         @RequestBody EditPostWithUrlRequest requestDto, Authentication authentication) throws IOException {
-      String username = authentication.getName();
-      postService.updatePostWithUrl(postId, requestDto, username);
-      return ResponseEntity.noContent().build();
-   }
-
-   @PutMapping("/edit-with-upload/{postId}")
+   // PUT : Update/Edit a post; the image part is optional and replaces the current image when present
+   @PutMapping(value = "/edit-with-upload/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   @PreAuthorize("isAuthenticated()")
    public ResponseEntity<Void> editPostWithUpload(@PathVariable Long postId,
          EditPostWithUploadRequest requestDto, Authentication authentication) throws IOException {
       String username = authentication.getName();

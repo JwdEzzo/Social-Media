@@ -1,17 +1,8 @@
 // ================ POST =================
-export interface CreatePostRequest {
-  description: string;
-  imageUrl: string;
-}
-
-export interface EditPostWithUrlRequestDto {
-  description: string;
-  imageUrl: string;
-}
-
 export interface EditPostWithUploadRequestDto {
   description: string;
-  image: File;
+  // Omit to keep the post's current image
+  image?: File;
 }
 
 // ================ SIGN UP =================
@@ -32,11 +23,6 @@ export interface UpdateCredentialsRequestDto {
   username: string;
   oldPassword: string;
   newPassword: string;
-}
-
-export interface UpdateProfileRequestDto {
-  bioText: string;
-  profilePictureUrl: string;
 }
 
 // =============== COMMENTS =================

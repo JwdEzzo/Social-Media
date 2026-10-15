@@ -10,7 +10,6 @@ import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.dto.comment.response.GetCommentResponse;
 import com.instragram.project.dto.follow.response.FollowRequestResponse;
 import com.instragram.project.dto.notification.NotificationResponse;
-import com.instragram.project.dto.post.request.CreatePostRequest;
 import com.instragram.project.dto.post.response.GetPostResponse;
 import com.instragram.project.dto.reply.request.WriteReplyRequest;
 import com.instragram.project.dto.reply.response.GetReplyResponse;
@@ -25,7 +24,6 @@ import com.instragram.project.model.CommentReply;
 import com.instragram.project.model.FollowRequest;
 import com.instragram.project.model.Notification;
 import com.instragram.project.model.Post;
-import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
 import com.instragram.project.repository.PostRepository;
 
@@ -34,15 +32,11 @@ public class MappingMethods {
 
    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-   private final AppUserRepository appUserRepository;
-
    private final PostRepository postRepository;
 
    private final CommentRepository commentRepository;
 
-   public MappingMethods(AppUserRepository appUserRepository,
-         PostRepository postRepository, CommentRepository commentRepository) {
-      this.appUserRepository = appUserRepository;
+   public MappingMethods(PostRepository postRepository, CommentRepository commentRepository) {
       this.postRepository = postRepository;
       this.commentRepository = commentRepository;
    }
@@ -115,15 +109,6 @@ public class MappingMethods {
       response.setUsername(appUser.getUsername());
       response.setProfilePictureUrl(appUser.getProfilePictureUrl());
       return response;
-   }
-
-   // Convert CreatePostRequest to Post Entity
-   public Post convertCreatePostRequestToPostEntity(CreatePostRequest request, String username) {
-      Post post = new Post();
-      post.setImageUrl(request.getImageUrl());
-      post.setDescription(request.getDescription());
-      post.setAppUser(getUserOrThrow(username));
-      return post;
    }
 
    // Convert WriteCommentRequest to Comment Entity
@@ -202,11 +187,6 @@ public class MappingMethods {
             .stream()
             .map(this::convertNotificationToNotificationResponse)
             .collect(Collectors.toList());
-   }
-
-   private AppUser getUserOrThrow(String username) {
-      return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
    }
 
    private Post getPostOrThrow(Long id) {

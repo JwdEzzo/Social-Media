@@ -1,7 +1,6 @@
 import type {
   SignUpRequest,
   UpdateCredentialsRequestDto,
-  UpdateProfileRequestDto,
 } from "@/types/request-types";
 import type {
   GetUserResponseDto,
@@ -137,34 +136,19 @@ export const userApi = api.injectEndpoints({
       ],
     }),
 
-    // URL-based profile update
-    updateUserProfileWithUrl: builder.mutation<
-      void,
-      { username: string } & UpdateProfileRequestDto
-    >({
-      query: ({ username, ...updateData }) => ({
-        url: `/users/${username}/update-profile-url`,
-        method: "PUT",
-        body: updateData,
-      }),
-      invalidatesTags: (_result, _error, { username }) => [
-        { type: "User", id: username },
-        { type: "UserList", id: "ALL" },
-        { type: "UserList", id: "EXCLUDED" },
-      ],
-    }),
-
-    // File upload profile update
+    // Profile update; omit profileImage to keep the current picture
     updateUserProfileWithUpload: builder.mutation<
       void,
-      { username: string; bioText?: string; profileImage: File }
+      { username: string; bioText?: string; profileImage?: File }
     >({
       query: ({ username, bioText, profileImage }) => {
         const formData = new FormData();
         if (bioText) {
           formData.append("bioText", bioText);
         }
-        formData.append("profileImage", profileImage);
+        if (profileImage) {
+          formData.append("profileImage", profileImage);
+        }
         return {
           url: `/users/${username}/update-profile-upload`,
           method: "PUT",
@@ -189,7 +173,6 @@ export const {
   useGetUsersExcludingCurrentUserInfiniteQuery,
   useSearchUsersByUsernameInfiniteQuery,
   useUpdateUserCredentialsMutation,
-  useUpdateUserProfileWithUrlMutation,
   useUpdateUserProfileWithUploadMutation,
   useToggleAccountStatusMutation,
 } = userApi;

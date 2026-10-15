@@ -10,10 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.post.request.CreatePostRequest;
 import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
-import com.instragram.project.dto.post.request.EditPostWithUrlRequest;
 import com.instragram.project.dto.post.response.GetPostResponse;
+import com.instragram.project.exception.BadRequestException;
 import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
@@ -41,26 +40,15 @@ public class PostService {
       
    }
 
-   // Create Post
-   public void createPostWithUrl(CreatePostRequest requestDto, String username) {
-      // Fail fast if the user does not exist; the mapper resolves the entity itself.
-      getUserOrThrow(username);
-
-      // Convert post request to entity
-      Post post = mappingMethods.convertCreatePostRequestToPostEntity(requestDto, username);
-
-      // Save entity
-      postRepository.save(post);
-   }
-
    // Create Post with uploaded image
    @Transactional
    public void createPostWithUpload(String description, MultipartFile image, String username) {
       AppUser appUser = getUserOrThrow(username);
 
       if (image == null || image.isEmpty()) {
-         throw new RuntimeException("Image file is required");
+         throw new BadRequestException("An image file is required to create a post.");
       }
+      requireImageOrThrow(image);
 
       try {
 
@@ -159,25 +147,7 @@ public class PostService {
       return postRepository.countByAppUserUsername(username);
    }
 
-   // Update/Edit a post with upload
-   public void updatePostWithUrl(Long postId, EditPostWithUrlRequest requestDto, String username)
-         throws IOException {
-      AppUser appUser = getUserOrThrow(username);
-      Post oldPost = getPostOrThrow(postId);
-      LocalDateTime now = LocalDateTime.now();
-
-      if (oldPost.getAppUser() != appUser || !oldPost.getAppUser().getUsername().equals(username)) {
-         throw new RuntimeException("You do not have permission to update this post");
-      }
-
-      oldPost.setDescription(requestDto.getDescription());
-      oldPost.setImageUrl(requestDto.getImageUrl());
-      oldPost.setUpdatedAt(now);
-      postRepository.save(oldPost);
-
-   }
-
-   // Update/Edit a post with upload
+   // Update/Edit a post; a new image is optional and replaces the stored one when provided
    public void updatePostWithUpload(Long postId, EditPostWithUploadRequest requestDto, String username)
          throws IOException {
       AppUser appUser = getUserOrThrow(username);
@@ -189,11 +159,17 @@ public class PostService {
       }
 
       oldPost.setDescription(requestDto.getDescription());
-      oldPost.setImageData(requestDto.getImage().getBytes());
-      oldPost.setImageName(requestDto.getImage().getOriginalFilename());
-      oldPost.setImageSize(requestDto.getImage().getSize());
-      oldPost.setImageType(requestDto.getImage().getContentType());
-      oldPost.setImageUrl("http://localhost:8080/api/instagram/posts/" + postId + "/image");
+
+      MultipartFile image = requestDto.getImage();
+      if (image != null && !image.isEmpty()) {
+         requireImageOrThrow(image);
+         oldPost.setImageData(image.getBytes());
+         oldPost.setImageName(image.getOriginalFilename());
+         oldPost.setImageSize(image.getSize());
+         oldPost.setImageType(image.getContentType());
+         oldPost.setImageUrl("http://localhost:8080/api/instagram/posts/" + postId + "/image");
+      }
+
       oldPost.setUpdatedAt(now);
       postRepository.save(oldPost);
 
@@ -252,6 +228,13 @@ public class PostService {
       return postRepository
             .findByDescriptionContaining(description, pageable)
             .map(mappingMethods::convertPostEntityToGetPostResponse);
+   }
+
+   private void requireImageOrThrow(MultipartFile file) {
+      String contentType = file.getContentType();
+      if (contentType == null || !contentType.startsWith("image/")) {
+         throw new BadRequestException("The uploaded file must be an image.");
+      }
    }
 
    private AppUser getUserOrThrow(String username) {

@@ -174,23 +174,6 @@ public class AppUserController {
         return ResponseEntity.noContent().build();
     }
 
-    // PUT: Update profile with URL
-    @PutMapping(value = "/{actorUsername}/update-profile-url", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> updateUserProfileWithUrl(
-            @PathVariable String actorUsername,
-            @RequestBody UpdateProfileRequest request,
-            Authentication authentication) {
-        // The service edits the caller's own profile only, so the path variable has to agree
-        // with the authenticated principal. Mirrors the upload endpoint below.
-        if (!authentication.getName().equals(actorUsername)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        appUserService.updateUserProfileWithUrl(authentication.getName(), request);
-        return ResponseEntity.noContent().build();
-    }
-
     // PUT: Update profile with image upload
     @PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")

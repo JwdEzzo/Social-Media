@@ -16,54 +16,39 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
   useGetUserByUsernameQuery,
-  useUpdateUserProfileWithUrlMutation,
   useUpdateUserProfileWithUploadMutation,
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
-import type { UpdateProfileRequestDto } from "@/types/request-types";
 import { useEffect, useState, useRef } from "react";
 
 const updateProfileSchema = z.object({
   bioText: z.string().nullable().optional(),
-  profilePictureUrl: z.string().optional(),
 });
 
 type UpdateProfileSchema = z.infer<typeof updateProfileSchema>;
-type UploadMode = "url" | "file";
 
 function SetProfile() {
   const { username } = useAuth();
   const [
-    updateUserProfileWithUrl,
-    { isLoading: isUpdatingUrl, isError: isUrlError, isSuccess: isUrlSuccess },
-  ] = useUpdateUserProfileWithUrlMutation();
-  const [
     updateUserProfileWithUpload,
-    {
-      isLoading: isUpdatingUpload,
-      isError: isUploadError,
-      isSuccess: isUploadSuccess,
-    },
+    { isLoading: isSubmitting, isError, isSuccess },
   ] = useUpdateUserProfileWithUploadMutation();
   const { data: user } = useGetUserByUsernameQuery(username!, {
     skip: !username,
   });
   const navigate = useNavigate();
 
-  const [uploadMode, setUploadMode] = useState<UploadMode>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isSubmitting = isUpdatingUrl || isUpdatingUpload;
-  const isError = isUrlError || isUploadError;
-  const isSuccess = isUrlSuccess || isUploadSuccess;
+  // A freshly picked file wins; otherwise show the current profile picture
+  const displayedImage = previewUrl ?? user?.profilePictureUrl;
 
   const form = useForm<UpdateProfileSchema>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       bioText: user?.bioText || "",
-      profilePictureUrl: user?.profilePictureUrl || "",
     },
   });
 
@@ -72,43 +57,22 @@ function SetProfile() {
     if (user) {
       form.reset({
         bioText: user.bioText || "",
-        profilePictureUrl: user.profilePictureUrl || "",
       });
     }
   }, [user, form]);
 
   async function handleUpdateProfile(data: UpdateProfileSchema) {
     try {
-      if (uploadMode === "url") {
-        if (!data.profilePictureUrl || data.profilePictureUrl.length < 8) {
-          // ← Validate here instead
-          form.setError("profilePictureUrl", {
-            message: "Image URL is required (minimum 8 characters)",
-          });
-          return;
-        }
-        const updateRequest: { username: string } & UpdateProfileRequestDto = {
-          username: username!,
-          bioText: data.bioText || "",
-          profilePictureUrl: data.profilePictureUrl,
-        };
-        await updateUserProfileWithUrl(updateRequest).unwrap();
-      } else {
-        if (!selectedFile) {
-          alert("Please select an image file.");
-          return;
-        }
-        await updateUserProfileWithUpload({
-          username: username!,
-          bioText: data.bioText || undefined,
-          profileImage: selectedFile,
-        }).unwrap();
-      }
+      // No file keeps the current profile picture
+      await updateUserProfileWithUpload({
+        username: username!,
+        bioText: data.bioText || undefined,
+        profileImage: selectedFile ?? undefined,
+      }).unwrap();
 
       // Reset form and state on success
       form.reset({
         bioText: "",
-        profilePictureUrl: "",
       });
       setSelectedFile(null);
       if (previewUrl) {
@@ -116,7 +80,6 @@ function SetProfile() {
         setPreviewUrl(null);
       }
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setUploadMode("url");
 
       navigate(`/userprofile/${username}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,120 +177,60 @@ function SetProfile() {
                   )}
                 />
 
-                {/* Upload Mode Toggle */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant={uploadMode === "url" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setUploadMode("url");
-                      removeSelectedFile();
-                    }}
-                    disabled={isSubmitting}
+                {/* Profile Picture Upload */}
+                <div className="space-y-2">
+                  <FormLabel>Profile Picture</FormLabel>
+                  <div
+                    className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    Use Image URL
-                  </Button>
-                  <span className="flex items-center text-xs font-semibold text-muted-foreground">
-                    OR
-                  </span>
-                  <Button
-                    type="button"
-                    variant={uploadMode === "file" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setUploadMode("file");
-                      form.setValue("profilePictureUrl", "");
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    Upload Image
-                  </Button>
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <ImageIcon className="mx-auto size-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {selectedFile.name}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSelectedFile();
+                          }}
+                        >
+                          <X className="size-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="mx-auto size-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Drag and drop an image here, or click to select
+                        </p>
+                        <p className="text-xs text-muted-foreground/80">
+                          PNG, JPG, GIF up to 5MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                 </div>
 
-                {/* URL Mode Field */}
-                {uploadMode === "url" && (
-                  <FormField
-                    control={form.control}
-                    name="profilePictureUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profile Picture URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            {...field}
-                            value={field.value ?? ""}
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* File Upload Mode */}
-                {uploadMode === "file" && (
-                  <div className="space-y-2">
-                    <FormLabel>Upload Profile Picture</FormLabel>
-                    <div
-                      className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/40"
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {selectedFile ? (
-                        <div className="space-y-2">
-                          <ImageIcon className="mx-auto size-10 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            {selectedFile.name}
-                          </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSelectedFile();
-                            }}
-                          >
-                            <X className="size-4" />
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="mx-auto size-10 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            Drag and drop an image here, or click to select
-                          </p>
-                          <p className="text-xs text-muted-foreground/80">
-                            PNG, JPG, GIF up to 10MB
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </div>
-                )}
-
                 {/* Image Preview */}
-                {(uploadMode === "url" && form.watch("profilePictureUrl")) ||
-                (uploadMode === "file" && previewUrl) ? (
+                {displayedImage ? (
                   <div className="flex justify-center pt-1">
                     <img
-                      src={
-                        uploadMode === "url"
-                          ? form.watch("profilePictureUrl") || ""
-                          : previewUrl!
-                      }
+                      src={displayedImage}
                       alt="Preview"
                       className="size-32 rounded-full border border-border object-cover"
                     />
@@ -343,7 +246,7 @@ function SetProfile() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
-                      {uploadMode === "url" ? "Updating..." : "Uploading..."}
+                      Updating...
                     </>
                   ) : (
                     "Set Up Profile"

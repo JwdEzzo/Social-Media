@@ -232,34 +232,6 @@ public class AppUserService {
    }
 
    /**
-    * Update the caller's profile, including bio and profile picture URL.
-    * If a new profile picture URL is provided, any previously uploaded bytes are deleted.
-    *
-    * @param username the caller's own username, resolved from the SecurityContext.
-    */
-   @Transactional
-   public void updateUserProfileWithUrl(String username, UpdateProfileRequest updateDto) {
-      // Step 1: Get the caller
-      AppUser user = getUserByUsernameOrThrow(username);
-
-      // Step 2: Update bio if provided
-      if (StringUtils.hasText(updateDto.getBioText())) {
-         user.setBioText(updateDto.getBioText());
-      }
-
-      // Step 3: Update profile picture URL if provided
-      if (StringUtils.hasText(updateDto.getProfilePictureUrl())) {
-         user.setProfilePictureUrl(updateDto.getProfilePictureUrl());
-         // Switching to an external URL -> drop any previously uploaded bytes.
-         profilePictureRepository.deleteByAppUserId(user.getId());
-      }
-
-      // Step 4: Update the timestamp and save the user
-      user.setUpdatedAt(LocalDateTime.now());
-      appUserRepository.save(user);
-   }
-
-   /**
     * Update the caller's profile, including bio and profile picture upload.
     * If a new image is provided, it replaces any previously uploaded profile picture.
     *
@@ -279,6 +251,10 @@ public class AppUserService {
          user.setUpdatedAt(LocalDateTime.now());
          appUserRepository.save(user);
          return;
+      }
+      String contentType = image.getContentType();
+      if (contentType == null || !contentType.startsWith("image/")) {
+         throw new BadRequestException("The uploaded profile picture must be an image.");
       }
       try {
          // Step 3: Update bio if provided

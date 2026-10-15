@@ -1,9 +1,5 @@
 import { api } from "@/api/api";
-import type {
-  CreatePostRequest,
-  EditPostWithUploadRequestDto,
-  EditPostWithUrlRequestDto,
-} from "@/types/request-types";
+import type { EditPostWithUploadRequestDto } from "@/types/request-types";
 import type { GetPostResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -32,14 +28,6 @@ const providePagedPostTags = (
 // prettier-ignore
 export const postApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    createPost: builder.mutation<string, CreatePostRequest>({
-      query: (newPost) => ({
-        url: '/posts/create-post',
-        method: 'POST',
-        body: newPost,
-      }),
-      invalidatesTags: [{ type: 'Post', id: 'LIST' }, 'Post'],
-    }),
     uploadPost: builder.mutation<string, { description: string; image: File }>({
       query: ({ description, image }) => {
         const formData = new FormData(); // Creates an empty FormData object
@@ -157,23 +145,13 @@ export const postApi = api.injectEndpoints({
       providesTags: (result) => providePagedPostTags(result),
     }),
 
-    editPostWithUrl: builder.mutation<void, EditPostWithUrlRequestDto & { postId: number }>({
-      query: ({ postId, ...body }) => ({
-        url: `/posts/edit-with-url/${postId}`,
-        method: 'PUT',
-        body: body,
-      }),
-      invalidatesTags: (result, error, { postId }) => [
-        { type: 'Post', id: postId },
-        { type: 'Post', id: 'LIST' },
-      ],
-    }),
-
     editPostWithUpload: builder.mutation<void, EditPostWithUploadRequestDto & { postId: number }>({
       query: ({ postId, ...body }) => {
         const formData = new FormData();
         formData.append('description', body.description);
-        formData.append('image', body.image);
+        if (body.image) {
+          formData.append('image', body.image);
+        }
         return {
           url: `/posts/edit-with-upload/${postId}`,
           method: 'PUT',
@@ -200,7 +178,6 @@ export const postApi = api.injectEndpoints({
 });
 
 export const {
-  useCreatePostMutation,
   useUploadPostMutation,
   useGetPostsInfiniteQuery,
   useGetPrivateAccountPostsUserFollowsInfiniteQuery,
@@ -212,7 +189,6 @@ export const {
   useGetFollowingPostsByUserIdInfiniteQuery,
   useGetPostsSavedByCurrentUserInfiniteQuery,
   useGetPostsByDescriptionInfiniteQuery,
-  useEditPostWithUrlMutation,
   useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,
 } = postApi;
