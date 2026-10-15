@@ -78,19 +78,13 @@ public class AppUserService {
     */
    @Transactional
    public SignUpResponse signUp(SignUpRequest request) {
-      // Step 1: Validate request
       validateSignUpRequestOrThrow(request);
-
-      // Step 2: Convert the request DTO to an AppUser entity
       AppUser appUser = mappingMethods.convertSignUpRequestToAppUserEntity(request);
 
       try {
          AppUser saved = appUserRepository.saveAndFlush(appUser);
          return mappingMethods.convertAppUserEntityToSignUpResponse(saved);
       } catch (DataIntegrityViolationException e) {
-         // Only a unique violation means "taken" - the race where another sign-up claimed the
-         // name between validateSignUpRequestOrThrow and this insert. A not-null or length
-         // failure is a bug, and rethrowing lets it surface as a logged 500 instead.
          if (!isUniqueViolation(e)) {
             throw e;
          }
@@ -228,7 +222,7 @@ public class AppUserService {
       // Step 6: Update the timestamp, save, and return the user
       user.setUpdatedAt(LocalDateTime.now());
       appUserRepository.save(user);
-      return new UpdateUserProfileResponse(user.getBioText(), user.getProfilePictureUrl());
+      return new UpdateUserProfileResponse(user.getBioText(), mappingMethods.buildProfilePictureUrl(user));
    }
 
    /**
@@ -262,10 +256,9 @@ public class AppUserService {
             user.setBioText(updateDto.getBioText());
          }
 
-         // Step 4: Update the timestamp, set profile picture URL, and save the user
+         // Step 4: Update the timestamp, flag the profile picture, and save the user
          user.setUpdatedAt(LocalDateTime.now());
-         user.setProfilePictureUrl(
-               "http://localhost:8080/api/instagram/users/" + user.getId() + "/profile-image/preview");
+         user.setHasProfilePicture(true);
          appUserRepository.save(user);
 
          ProfilePicture picture = profilePictureRepository.findByAppUserId(user.getId())

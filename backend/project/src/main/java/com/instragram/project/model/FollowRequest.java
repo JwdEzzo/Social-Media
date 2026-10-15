@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 import com.instragram.project.enums.FollowRequestStatus;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,10 +37,12 @@ public class FollowRequest {
 
     @ManyToOne
     @JoinColumn(name="requester_user_id" , nullable=false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private AppUser requester; // The user who sent the follow request
 
     @ManyToOne
     @JoinColumn(name="receiver_user_id" , nullable=false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private AppUser target; // The user who received the follow request, the private account being requested
 
     @Enumerated(EnumType.STRING)

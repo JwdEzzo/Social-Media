@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.dto.comment.response.GetCommentResponse;
@@ -65,22 +66,35 @@ public class MappingMethods {
       GetPostResponse response = new GetPostResponse();
       response.setId(post.getId());
       response.setUsername(post.getAppUser().getUsername());
-      response.setProfilePictureUrl(post.getAppUser().getProfilePictureUrl());
+      response.setProfilePictureUrl(buildProfilePictureUrl(post.getAppUser()));
 
-      // If imageUrl is null (uploaded image), use the serving endpoint
-      if (post.getImageUrl() == null && post.getImageData() != null) {
-         response.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
-      } else {
-         response.setImageUrl(post.getImageUrl());
-      }
-
+      response.setImageUrl(buildPostImageUrl(post.getId()));
       response.setDescription(post.getDescription());
       response.setCreatedAt(post.getCreatedAt());
       response.setUpdatedAt(post.getUpdatedAt());
       return response;
    }
 
-   // Convert List<Post> to List<GetPostResponse> responses; 
+   // Absolute URL of the endpoint that serves a post's image, based on the current request's host
+   private String buildPostImageUrl(Long postId) {
+      return ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path("/api/instagram/posts/{postId}/image")
+            .buildAndExpand(postId)
+            .toUriString();
+   }
+
+   // Absolute URL of the endpoint that serves a user's profile picture, or null if they haven't uploaded one
+   public String buildProfilePictureUrl(AppUser appUser) {
+      if (!appUser.isHasProfilePicture()) {
+         return null;
+      }
+      return ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path("/api/instagram/users/{userId}/profile-image/preview")
+            .buildAndExpand(appUser.getId())
+            .toUriString();
+   }
+
+   // Convert List<Post> to List<GetPostResponse> responses;
    public List<GetPostResponse> convertListPostEntityToListGetPostResponse(List<Post> posts) {
       return posts
             .stream()
@@ -94,7 +108,7 @@ public class MappingMethods {
       response.setId(appUser.getId());
       response.setUsername(appUser.getUsername());
       response.setBioText(appUser.getBioText());
-      response.setProfilePictureUrl(appUser.getProfilePictureUrl());
+      response.setProfilePictureUrl(buildProfilePictureUrl(appUser));
       response.setCreatedAt(appUser.getCreatedAt());
       response.setUpdatedAt(appUser.getUpdatedAt());
       response.setAccountStatus(appUser.getAccountStatus());
@@ -107,7 +121,7 @@ public class MappingMethods {
       SearchUserResponse response = new SearchUserResponse();
       response.setId(appUser.getId());
       response.setUsername(appUser.getUsername());
-      response.setProfilePictureUrl(appUser.getProfilePictureUrl());
+      response.setProfilePictureUrl(buildProfilePictureUrl(appUser));
       return response;
    }
 
@@ -161,9 +175,9 @@ public class MappingMethods {
       FollowRequestResponse response = new FollowRequestResponse();
       response.setRequestId(followRequest.getId());
       response.setRequesterUsername(followRequest.getRequester().getUsername());
-      response.setRequesterProfilePictureUrl(followRequest.getRequester().getProfilePictureUrl());
+      response.setRequesterProfilePictureUrl(buildProfilePictureUrl(followRequest.getRequester()));
       response.setTargetUsername(followRequest.getTarget().getUsername());
-      response.setTargetProfilePictureUrl(followRequest.getTarget().getProfilePictureUrl());
+      response.setTargetProfilePictureUrl(buildProfilePictureUrl(followRequest.getTarget()));
       response.setStatus(followRequest.getStatus().name());
       response.setCreatedAt(followRequest.getCreatedAt());
       return response;

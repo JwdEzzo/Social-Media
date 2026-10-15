@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 import com.instragram.project.enums.NotificationType;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,10 +34,12 @@ public class Notification {
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="recipient_id", nullable=false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private AppUser recipient;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="sender_id", nullable=false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private AppUser sender;
 
     @Enumerated(EnumType.STRING)

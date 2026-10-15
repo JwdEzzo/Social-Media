@@ -2,6 +2,9 @@ package com.instragram.project.model;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,10 +33,12 @@ public class Follow {
 
    @ManyToOne
    @JoinColumn(name = "follower_id", nullable = false)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private AppUser follower;
 
    @ManyToOne
    @JoinColumn(name = "following_id", nullable = false)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private AppUser following;
 
    private LocalDateTime followedAt;

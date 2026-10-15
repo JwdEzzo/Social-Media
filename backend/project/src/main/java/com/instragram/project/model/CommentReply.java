@@ -2,6 +2,9 @@ package com.instragram.project.model;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,10 +34,12 @@ public class CommentReply {
 
    @ManyToOne
    @JoinColumn(name = "app_user_id", nullable = false)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private AppUser appUser;
 
    @ManyToOne
    @JoinColumn(name = "comment_id", nullable = false)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private Comment comment;
 
    private LocalDateTime createdAt;

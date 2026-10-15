@@ -54,7 +54,8 @@ public class AppUser {
 
    private String bioText;
 
-   private String profilePictureUrl;
+   @Column(name = "has_profile_picture", nullable = false, columnDefinition = "boolean default false")
+   private boolean hasProfilePicture;
 
    private LocalDateTime createdAt;
 

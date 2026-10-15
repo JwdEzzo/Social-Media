@@ -3,7 +3,8 @@ package com.instragram.project.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -12,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -27,7 +27,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "posts")
-@ToString(exclude = { "appUser", "comments", "imageData" }) // Exclude relationships to prevent circular reference
+@ToString(exclude = { "appUser", "comments" }) // Exclude relationships to prevent circular reference
 public class Post {
 
    @Id
@@ -38,24 +38,6 @@ public class Post {
    @Column(name = "description")
    private String description;
 
-   @Column(name = "image_url")
-   private String imageUrl;
-
-   // New fields for file upload
-   @Lob
-   @Column(name = "image_data")
-   @JsonIgnore
-   private byte[] imageData;
-
-   @Column(name = "image_name")
-   private String imageName;
-
-   @Column(name = "image_type")
-   private String imageType; // MIME type (e.g., "image/jpeg", "image/png")
-
-   @Column(name = "image_size")
-   private Long imageSize; // File size in bytes
-
    @Column(name = "created_at")
    private LocalDateTime createdAt;
 
@@ -64,6 +46,7 @@ public class Post {
 
    @ManyToOne
    @JoinColumn(name = "app_user_id", nullable = false)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private AppUser appUser;
 
    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)

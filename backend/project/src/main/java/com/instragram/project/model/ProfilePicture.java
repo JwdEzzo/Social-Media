@@ -2,6 +2,9 @@ package com.instragram.project.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -32,6 +35,7 @@ public class ProfilePicture {
 
    @OneToOne(fetch = FetchType.LAZY, optional = false)
    @JoinColumn(name = "app_user_id", nullable = false, unique = true)
+   @OnDelete(action = OnDeleteAction.CASCADE)
    private AppUser appUser;
 
    @Column(name = "image_data", nullable = false)

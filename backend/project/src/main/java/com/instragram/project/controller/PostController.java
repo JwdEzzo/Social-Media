@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
 import com.instragram.project.dto.post.response.GetPostResponse;
 import com.instragram.project.model.AppUser;
+import com.instragram.project.model.PostImage;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.service.PostService;
 
@@ -168,8 +169,9 @@ public class PostController {
    // GET : serve image bytes for a post
    @GetMapping(value = "/{postId}/image")
    public ResponseEntity<Resource> getPostImage(@PathVariable Long postId) {
-      byte[] bytes = postService.getPostImageBytes(postId);
-      String contentType = postService.getPostImageContentType(postId);
+      PostImage postImage = postService.getPostImage(postId);
+      byte[] bytes = postImage.getImageData();
+      String contentType = postImage.getImageType();
       ByteArrayResource resource = new ByteArrayResource(bytes);
       return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))

@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +16,9 @@ import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Post;
+import com.instragram.project.model.PostImage;
 import com.instragram.project.repository.AppUserRepository;
+import com.instragram.project.repository.PostImageRepository;
 import com.instragram.project.repository.PostRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,16 +29,18 @@ public class PostService {
 
    private final PostRepository postRepository;
 
-   private final AppUserRepository appUserRepository;
+   private final PostImageRepository postImageRepository;
 
+   private final AppUserRepository appUserRepository;
 
    private final MappingMethods mappingMethods;
 
-   public PostService(PostRepository postRepository, AppUserRepository appUserRepository, MappingMethods mappingMethods) {
+   public PostService(PostRepository postRepository, PostImageRepository postImageRepository,
+         AppUserRepository appUserRepository, MappingMethods mappingMethods) {
       this.postRepository = postRepository;
+      this.postImageRepository = postImageRepository;
       this.appUserRepository = appUserRepository;
       this.mappingMethods = mappingMethods;
-      
    }
 
    // Create Post with uploaded image
@@ -55,15 +58,12 @@ public class PostService {
          Post post = new Post();
          post.setDescription(description);
          post.setAppUser(appUser);
-         post.setImageName(image.getOriginalFilename());
-         post.setImageType(image.getContentType());
-         post.setImageSize(image.getSize());
-         post.setImageData(image.getBytes());
+         postRepository.save(post);
 
-         postRepository.save(post); // Save first to get the ID
-
-         post.setImageUrl("http://localhost:8080/api/instagram/posts/" + post.getId() + "/image");
-         postRepository.save(post); // Save again to persist the URL
+         PostImage postImage = new PostImage();
+         postImage.setPost(post);
+         applyImage(postImage, image);
+         postImageRepository.save(postImage);
 
       } catch (IOException ex) {
          throw new RuntimeException("Failed to save uploaded image", ex);
@@ -148,6 +148,7 @@ public class PostService {
    }
 
    // Update/Edit a post; a new image is optional and replaces the stored one when provided
+   @Transactional
    public void updatePostWithUpload(Long postId, EditPostWithUploadRequest requestDto, String username)
          throws IOException {
       AppUser appUser = getUserOrThrow(username);
@@ -163,11 +164,10 @@ public class PostService {
       MultipartFile image = requestDto.getImage();
       if (image != null && !image.isEmpty()) {
          requireImageOrThrow(image);
-         oldPost.setImageData(image.getBytes());
-         oldPost.setImageName(image.getOriginalFilename());
-         oldPost.setImageSize(image.getSize());
-         oldPost.setImageType(image.getContentType());
-         oldPost.setImageUrl("http://localhost:8080/api/instagram/posts/" + postId + "/image");
+         PostImage postImage = postImageRepository.findByPostId(postId).orElseGet(PostImage::new);
+         postImage.setPost(oldPost);
+         applyImage(postImage, image);
+         postImageRepository.save(postImage);
       }
 
       oldPost.setUpdatedAt(now);
@@ -208,19 +208,10 @@ public class PostService {
       postRepository.deleteAll();
    }
 
-   @Transactional
-   public byte[] getPostImageBytes(Long postId) {
-      Post post = getPostOrThrow(postId);
-      if (post.getImageData() == null) {
-         throw new NotFoundException("No image data is stored for post " + postId + ".");
-      }
-      return post.getImageData();
-   }
-
-   @Transactional
-   public String getPostImageContentType(Long postId) {
-      Post post = getPostOrThrow(postId);
-      return post.getImageType() != null ? post.getImageType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+   // Get a post's image (bytes and content type) in one query
+   public PostImage getPostImage(Long postId) {
+      return postImageRepository.findByPostId(postId)
+            .orElseThrow(() -> new NotFoundException("No image is stored for post " + postId + "."));
    }
 
    // Search post by description (not case sensitive), one page at a time
@@ -228,6 +219,13 @@ public class PostService {
       return postRepository
             .findByDescriptionContaining(description, pageable)
             .map(mappingMethods::convertPostEntityToGetPostResponse);
+   }
+
+   private void applyImage(PostImage postImage, MultipartFile image) throws IOException {
+      postImage.setImageData(image.getBytes());
+      postImage.setImageName(image.getOriginalFilename());
+      postImage.setImageType(image.getContentType());
+      postImage.setImageSize(image.getSize());
    }
 
    private void requireImageOrThrow(MultipartFile file) {
