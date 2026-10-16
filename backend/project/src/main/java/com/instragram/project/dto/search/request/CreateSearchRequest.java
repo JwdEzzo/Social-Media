@@ -14,8 +14,8 @@ import lombok.Setter;
 @Setter
 public class CreateSearchRequest {
 
-   @NotBlank(message = "Search term is required.")
-   @Size(max = 150, message = "Search term must be at most {max} characters.")
-   private String searchTerm;
+	@NotBlank(message = "Search term is required.")
+	@Size(max = 150, message = "Search term must be at most {max} characters.")
+	private String searchTerm;
 
 }

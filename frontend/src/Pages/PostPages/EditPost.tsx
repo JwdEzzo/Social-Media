@@ -2,7 +2,7 @@ import {
   useEditPostWithUploadMutation,
   useGetPostByIdQuery,
 } from "@/api/posts/postApi";
-import type { EditPostWithUploadRequestDto } from "@/types/request-types";
+import type { EditPostWithUploadRequest } from "@/types/request-types";
 import { useNavigate, useParams } from "react-router-dom";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 
@@ -17,7 +17,7 @@ function EditPost() {
   async function handleFormSubmit(data: PostFormData) {
     try {
       // No new file keeps the post's current image
-      const editRequest: EditPostWithUploadRequestDto = {
+      const editRequest: EditPostWithUploadRequest = {
         description: data.description,
         image: data.file,
       };

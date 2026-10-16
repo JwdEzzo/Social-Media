@@ -1,5 +1,5 @@
 import { api } from "@/api/api";
-import type { NotificationResponseDto } from "@/types/response-types";
+import type { NotificationResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
   pagedInfiniteQueryOptions,
@@ -13,7 +13,7 @@ export const notificationApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Infinite query: one cache entry holds every page fetched so far, newest first
     getAllNotifications: builder.infiniteQuery<
-      PagedModel<NotificationResponseDto>,
+      PagedModel<NotificationResponse>,
       void,
       number
     >({
@@ -35,7 +35,7 @@ export const notificationApi = api.injectEndpoints({
       }),
       providesTags: ["Notification"],
     }),
-    getLatest3Notifications: builder.query<NotificationResponseDto[], void>({
+    getLatest3Notifications: builder.query<NotificationResponse[], void>({
       query: () => ({
         url: "/notifications/latest-3",
         method: "GET",

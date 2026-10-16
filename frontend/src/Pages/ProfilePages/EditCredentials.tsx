@@ -15,7 +15,7 @@ import { Loader2, Undo } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner"; // or use your preferred toast library
 import { z } from "zod";
-import type { UpdateCredentialsRequestDto } from "@/types/request-types";
+import type { UpdateCredentialsRequest } from "@/types/request-types";
 import {
   useGetUserByUsernameQuery,
   useUpdateUserCredentialsMutation,
@@ -83,7 +83,7 @@ function EditCredentials() {
       // The mutation expects username in the object for URL construction
       const updateRequest: {
         currentUsername: string;
-      } & UpdateCredentialsRequestDto = {
+      } & UpdateCredentialsRequest = {
         currentUsername: username!, // Current username for URL
         email: data.email ?? "",
         username: data.username ?? "", // New username

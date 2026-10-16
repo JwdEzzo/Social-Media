@@ -14,8 +14,9 @@ interface UserSearchResultsProps {
   query: string;
 }
 
-// Users tab of the search page: the users whose username matches the query.
-// Renders nothing while the query is empty. Clicking a row opens that profile.
+// The users whose username matches the query: the search page's Users tab, and the
+// live matches under the search box while typing. Renders nothing while the query is
+// empty. Clicking a row opens that profile.
 function UserSearchResults({ query }: UserSearchResultsProps) {
   const navigate = useNavigate();
   const { username: loggedInUsername } = useAuth();

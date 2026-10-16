@@ -9,7 +9,7 @@ export type FieldErrors = Record<string, string[]>;
  * a hook's `error.data`, or the `error` of a `catch` around `.unwrap()`.
  *
  * There is deliberately no success counterpart: successful responses are not enveloped, so
- * an endpoint's result type is its payload (`LoginResponse`, `PagedModel<GetUserResponseDto>`)
+ * an endpoint's result type is its payload (`LoginResponse`, `PagedModel<GetUserResponse>`)
  * and needs no `transformResponse`.
  *
  * Note that a failure is not guaranteed to take this shape - a backend that never answered
@@ -36,7 +36,7 @@ export interface PageMetadata {
  * Use it directly as an endpoint's result type:
  *
  * ```ts
- * getUsers: builder.query<PagedModel<GetUserResponseDto>, PageArgs>({ ... })
+ * getUsers: builder.query<PagedModel<GetUserResponse>, PageArgs>({ ... })
  * ```
  */
 export interface PagedModel<T> {

@@ -1,9 +1,9 @@
 import { api } from "@/api/api";
-import type { FollowRequestResponseDto } from "@/types/response-types";
+import type { FollowRequestResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import { pagedInfiniteQueryOptions, pageParams } from "@/api/pagination";
 
-type FollowRequestsPage = PagedModel<FollowRequestResponseDto>;
+type FollowRequestsPage = PagedModel<FollowRequestResponse>;
 
 export const followApi = api.injectEndpoints({
   endpoints: (builder) => ({

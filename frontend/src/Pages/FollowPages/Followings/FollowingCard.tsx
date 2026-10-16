@@ -1,8 +1,8 @@
 import FollowButton from "@/components/custom/follow-button";
-import type { GetUserResponseDto } from "@/types/response-types";
+import type { GetUserResponse } from "@/types/response-types";
 
 interface FollowingCardProps {
-  following: GetUserResponseDto;
+  following: GetUserResponse;
   loggedInUsername: string;
 }
 

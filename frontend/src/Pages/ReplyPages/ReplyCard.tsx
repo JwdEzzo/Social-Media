@@ -6,19 +6,19 @@ import {
 } from "@/api/comments/commentReplyLikesApi";
 import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
 import type {
-  GetCommentResponseDto,
-  GetReplyResponseDto,
-  GetUserResponseDto,
+  GetCommentResponse,
+  GetReplyResponse,
+  GetUserResponse,
 } from "@/types/response-types";
 import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
 
 interface ReplyCardProps {
-  reply: GetReplyResponseDto;
+  reply: GetReplyResponse;
   navigateToSelectedUserProfile: (username: string) => void;
-  comment: GetCommentResponseDto;
+  comment: GetCommentResponse;
   postUsername: string;
-  loggedInUser: GetUserResponseDto | undefined;
+  loggedInUser: GetUserResponse | undefined;
   onEditReply: (replyId: number) => void;
 }
 

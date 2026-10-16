@@ -1,5 +1,5 @@
 import { api } from "@/api/api";
-import type { EditPostWithUploadRequestDto } from "@/types/request-types";
+import type { EditPostWithUploadRequest } from "@/types/request-types";
 import type { GetPostResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -135,7 +135,7 @@ export const postApi = api.injectEndpoints({
       providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'FOLLOWING_POSTS' }]),
     }),
 
-    editPostWithUpload: builder.mutation<void, EditPostWithUploadRequestDto & { postId: number }>({
+    editPostWithUpload: builder.mutation<void, EditPostWithUploadRequest & { postId: number }>({
       query: ({ postId, ...body }) => {
         const formData = new FormData();
         formData.append('description', body.description);

@@ -1,11 +1,8 @@
 import type {
   SignUpRequest,
-  UpdateCredentialsRequestDto,
+  UpdateCredentialsRequest,
 } from "@/types/request-types";
-import type {
-  GetUserResponseDto,
-  SignUpResponse,
-} from "@/types/response-types";
+import type { GetUserResponse, SignUpResponse } from "@/types/response-types";
 import { api } from "@/api/api";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -14,7 +11,7 @@ import {
   providePagedTags,
 } from "@/api/pagination";
 
-type UsersPage = PagedModel<GetUserResponseDto>;
+type UsersPage = PagedModel<GetUserResponse>;
 
 // Stable order so pages don't shift between requests: ?page=N&size=10&sort=id,asc
 const userPageParams = (pageParam: number) => pageParams(pageParam, "id,asc");
@@ -41,7 +38,7 @@ export const userApi = api.injectEndpoints({
       providesTags: (result) =>
         providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
     }),
-    getUserByUsername: builder.query<GetUserResponseDto, string>({
+    getUserByUsername: builder.query<GetUserResponse, string>({
       query: (username) => ({
         url: `/users/username/${username}`,
         method: "GET",
@@ -96,7 +93,7 @@ export const userApi = api.injectEndpoints({
 
     updateUserCredentials: builder.mutation<
       void,
-      { currentUsername: string } & UpdateCredentialsRequestDto
+      { currentUsername: string } & UpdateCredentialsRequest
     >({
       query: ({ currentUsername, ...newCredentials }) => ({
         url: `/users/${currentUsername}/update-credentials`,

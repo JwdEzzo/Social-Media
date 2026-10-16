@@ -8,8 +8,8 @@ import {
 } from "@/api/comments/commentRepliesApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import type {
-  GetCommentResponseDto,
-  GetUserResponseDto,
+  GetCommentResponse,
+  GetUserResponse,
 } from "@/types/response-types";
 import { Heart, MessageCircle } from "lucide-react";
 import { memo, useCallback, useState } from "react";
@@ -19,12 +19,12 @@ import { useDeleteCommentMutation } from "@/api/comments/commentApi";
 import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
 
 interface CommentCardProps {
-  comment: GetCommentResponseDto;
+  comment: GetCommentResponse;
   handleToggleCommentLike: (commentId: number) => void;
   isTogglingCommentLike: boolean;
   onReply: (commentId: number, username: string) => void;
   navigateToSelectedUserProfile: (username: string) => void;
-  loggedInUser: GetUserResponseDto | undefined;
+  loggedInUser: GetUserResponse | undefined;
   postUsername: string;
   focusRef: React.RefObject<HTMLInputElement | null>;
   onEditComment: (commentId: number) => void;

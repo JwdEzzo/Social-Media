@@ -7,7 +7,7 @@ export interface LoginResponse {
 }
 
 // =============== USER =================
-export interface GetUserResponseDto {
+export interface GetUserResponse {
   id: number;
   email: string;
   username: string;
@@ -19,7 +19,7 @@ export interface GetUserResponseDto {
   posts: GetPostResponse[];
 }
 
-export interface SearchUserResponseDto {
+export interface SearchUserResponse {
   id: number;
   username: string;
   bioText: string;
@@ -42,27 +42,27 @@ export interface GetPostResponse {
   description: string;
   createdAt: string;
   updatedAt: string;
-  comments: GetCommentResponseDto[];
+  comments: GetCommentResponse[];
 }
 
 // ================ COMMENTS =================
-export interface GetCommentResponseDto {
+export interface GetCommentResponse {
   id: number;
   content: string;
   createdAt: string;
-  appUser: GetUserResponseDto;
+  appUser: GetUserResponse;
 }
 
 // ================ REPLIES =================
-export interface GetReplyResponseDto {
+export interface GetReplyResponse {
   id: number;
   content: string;
   createdAt: string;
-  appUser: GetUserResponseDto;
+  appUser: GetUserResponse;
 }
 
 // ================ FOLLOW =================
-export interface FollowRequestResponseDto {
+export interface FollowRequestResponse {
   requestId: number;
   requesterUsername: string;
   requesterProfilePictureUrl: string | null;
@@ -73,16 +73,16 @@ export interface FollowRequestResponseDto {
 }
 
 // ================ SEARCH =================
-export interface GetSearchResponseDto {
+export interface GetSearchResponse {
   id: number;
   searchTerm: string;
   createdAt: string;
 }
 
 // ================ NOTIFICATIONS =================
-export interface NotificationResponseDto {
+export interface NotificationResponse {
   id: number;
-  sender: GetUserResponseDto;
+  sender: GetUserResponse;
   notificationType: NotificationType;
   entityId: number;
   isRead: boolean;

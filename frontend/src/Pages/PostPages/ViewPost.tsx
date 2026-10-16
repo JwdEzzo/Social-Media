@@ -33,7 +33,7 @@ import {
 } from "react";
 import CommentCard from "../CommentPages/CommentCard";
 import "@/components/scrollbar.css";
-import type { GetUserResponseDto } from "@/types/response-types";
+import type { GetUserResponse } from "@/types/response-types";
 import {
   useGetPostLikeCountQuery,
   useIsPostLikedQuery,
@@ -74,7 +74,7 @@ interface ViewPostProps {
   isOpen: boolean;
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
-  loggedInUser: GetUserResponseDto | undefined;
+  loggedInUser: GetUserResponse | undefined;
 }
 
 function ViewPost({

@@ -1,6 +1,6 @@
 import { api } from "@/api/api";
-import { type WriteCommentRequestDto } from "@/types/request-types";
-import { type GetCommentResponseDto } from "@/types/response-types";
+import { type WriteCommentRequest } from "@/types/request-types";
+import { type GetCommentResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
   pagedInfiniteQueryOptions,
@@ -10,7 +10,7 @@ import {
 
 export const commentApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    createComment: builder.mutation<void, WriteCommentRequestDto>({
+    createComment: builder.mutation<void, WriteCommentRequest>({
       query: (requestDto) => ({
         url: "/comments/create-comment",
         body: requestDto,
@@ -24,7 +24,7 @@ export const commentApi = api.injectEndpoints({
     // Infinite query: one cache entry per post holds every page fetched so far.
     // Oldest first, so the conversation reads top to bottom and new comments land at the end.
     getCommentsByPostId: builder.infiniteQuery<
-      PagedModel<GetCommentResponseDto>,
+      PagedModel<GetCommentResponse>,
       { postId: number },
       number
     >({

@@ -22,6 +22,7 @@ export const api = createApi({
     "Followings",
     "Follow",
     "Notification",
+    "RecentSearch",
   ],
   // Refetch everything that's on screen after the connection comes back.
   // refetchOnFocus is opted into per hook instead (see notification hooks), since doing it

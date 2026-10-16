@@ -1,5 +1,5 @@
 // ================ POST =================
-export interface EditPostWithUploadRequestDto {
+export interface EditPostWithUploadRequest {
   description: string;
   // Omit to keep the post's current image
   image?: File;
@@ -18,7 +18,7 @@ export interface LoginRequest {
 }
 
 // =============== UPDATE USER =================
-export interface UpdateCredentialsRequestDto {
+export interface UpdateCredentialsRequest {
   email: string;
   username: string;
   oldPassword: string;
@@ -26,18 +26,18 @@ export interface UpdateCredentialsRequestDto {
 }
 
 // =============== COMMENTS =================
-export interface WriteCommentRequestDto {
+export interface WriteCommentRequest {
   content: string;
   postId: number;
 }
 
 // =============== REPLIES =================
-export interface WriteReplyRequestDto {
+export interface WriteReplyRequest {
   content: string;
   commentId: number;
 }
 
 // =============== SEARCH =================
-export interface CreateSearchRequestDto {
+export interface CreateSearchRequest {
   searchTerm: string;
 }

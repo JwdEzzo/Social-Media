@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { cn } from "@/utils/errors";
 import { NotificationType } from "@/types/enums";
-import type { NotificationResponseDto } from "@/types/response-types";
+import type { NotificationResponse } from "@/types/response-types";
 import NavigateBack from "@/components/custom/navigate-back";
 
 function NotificationPage() {
@@ -141,7 +141,7 @@ function NotificationPage() {
   };
 
   const handleNotificationClick = async (
-    notification: NotificationResponseDto,
+    notification: NotificationResponse,
   ) => {
     // Mark as read if unread
     if (!notification.isRead) {
