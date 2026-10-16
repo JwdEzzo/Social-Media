@@ -1,4 +1,7 @@
-import { useSearchUsersByUsernameInfiniteQuery } from "@/api/users/userApi";
+import {
+  useCreateRecentSearchMutation,
+  useSearchUsersByUsernameInfiniteQuery,
+} from "@/api/search/searchApi";
 import { useAuth } from "@/auth/useAuth";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
@@ -23,7 +26,13 @@ function UserSearchResults({ query }: UserSearchResultsProps) {
   const searchedUsers = usePagedList(searchedUsersQuery);
   const users = searchedUsers.items;
 
+  const [createRecentSearch] = useCreateRecentSearchMutation();
+
   function handleUserClick(username: string) {
+    // The opened profile goes into recent searches. Fire and forget, so a failed
+    // save never blocks navigation.
+    createRecentSearch({ searchTerm: username });
+
     if (username === loggedInUsername) {
       navigate(`/userprofile/${username}`);
     } else {

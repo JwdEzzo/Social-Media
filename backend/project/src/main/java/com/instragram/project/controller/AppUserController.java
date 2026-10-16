@@ -1,5 +1,17 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.dto.security.request.LoginRequest;
+import com.instragram.project.dto.security.request.SignUpRequest;
+import com.instragram.project.dto.security.response.LoginResponse;
+import com.instragram.project.dto.user.request.DeleteAccountRequest;
+import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
+import com.instragram.project.dto.user.request.UpdateProfileRequest;
+import com.instragram.project.dto.user.response.GetUserResponse;
+import com.instragram.project.dto.user.response.SignUpResponse;
+import com.instragram.project.enums.AccountStatus;
+import com.instragram.project.service.AppUserService;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -25,26 +37,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.instragram.project.dto.security.request.LoginRequest;
-import com.instragram.project.dto.security.request.SignUpRequest;
-import com.instragram.project.dto.security.response.LoginResponse;
-import com.instragram.project.dto.user.request.DeleteAccountRequest;
-import com.instragram.project.dto.user.request.SearchUserResponse;
-import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
-import com.instragram.project.dto.user.request.UpdateProfileRequest;
-import com.instragram.project.dto.user.response.GetUserResponse;
-import com.instragram.project.dto.user.response.SignUpResponse;
-import com.instragram.project.enums.AccountStatus;
-import com.instragram.project.service.AppUserService;
-
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * Successful responses carry their payload directly - no envelope. The status line already
- * reports success, so wrapping it adds a nesting level the client has to unwrap for nothing.
- * Failures are the exception: {@code GlobalExceptionHandler} renders every one of them as an
- * {@code ApiResponse}, which is where the per-field {@code errors} map earns its place.
+ * Successful responses carry their payload directly - no envelope. The status
+ * line already reports success, so wrapping it adds a nesting level the client
+ * has to unwrap for nothing. Failures are the exception:
+ * {@code GlobalExceptionHandler} renders every one of them as an
+ * {@code ApiResponse}, which is where the per-field {@code errors} map earns
+ * its place.
  */
 @RestController
 @CrossOrigin("*")
@@ -52,164 +51,147 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppUserController {
 
-    private final AppUserService appUserService;
+	private final AppUserService appUserService;
 
-    public AppUserController(AppUserService appUserService) {
-        this.appUserService = appUserService;
-    }
+	public AppUserController(AppUserService appUserService) {
+		this.appUserService = appUserService;
+	}
 
-    // POST: Login
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        LoginResponse response = appUserService.login(loginRequest);
-        return ResponseEntity.ok(response);
-    }
+	// POST: Login
+	@PostMapping("/login")
+	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+		LoginResponse response = appUserService.login(loginRequest);
+		return ResponseEntity.ok(response);
+	}
 
-    // POST: Sign Up
-    @PostMapping("/sign-up")
-    public ResponseEntity<SignUpResponse> signUp(@Valid @RequestBody SignUpRequest request) {
-        SignUpResponse response = appUserService.signUp(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+	// POST: Sign Up
+	@PostMapping("/sign-up")
+	public ResponseEntity<SignUpResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+		SignUpResponse response = appUserService.signUp(request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 
-    // PATCH: Toggle the caller's own account status
-    @PatchMapping("/toggle-account-status")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AccountStatus> toggleAccountStatus(Authentication authentication) {
-        AccountStatus newStatus = appUserService.toggleAccountStatus(authentication.getName());
-        return ResponseEntity.ok(newStatus);
-    }
+	// PATCH: Toggle the caller's own account status
+	@PatchMapping("/toggle-account-status")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<AccountStatus> toggleAccountStatus(Authentication authentication) {
+		AccountStatus newStatus = appUserService.toggleAccountStatus(authentication.getName());
+		return ResponseEntity.ok(newStatus);
+	}
 
-    // GET: All users, paginated — ?page=0&size=20&sort=username,asc
-    @GetMapping
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PagedModel<GetUserResponse>> getAllUsers(
-            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
-        Page<GetUserResponse> page = appUserService.getAllUsers(pageable);
-        return ResponseEntity.ok(new PagedModel<>(page));
-    }
+	// GET: All users, paginated — ?page=0&size=20&sort=username,asc
+	@GetMapping
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PagedModel<GetUserResponse>> getAllUsers(
+			@PageableDefault(size = 10, sort = "id") Pageable pageable) {
+		Page<GetUserResponse> page = appUserService.getAllUsers(pageable);
+		return ResponseEntity.ok(new PagedModel<>(page));
+	}
 
-    // GET: User by username
-    @GetMapping("/username/{username}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<GetUserResponse> getUserByUsername(@PathVariable String username) {
-        GetUserResponse response = appUserService.getUserByUsername(username);
-        return ResponseEntity.ok(response);
-    }
+	// GET: User by username
+	@GetMapping("/username/{username}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<GetUserResponse> getUserByUsername(@PathVariable String username) {
+		GetUserResponse response = appUserService.getUserByUsername(username);
+		return ResponseEntity.ok(response);
+	}
 
-    // GET: User by ID
-    @GetMapping("/id/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<GetUserResponse> getUserById(@PathVariable Long id) {
-        GetUserResponse response = appUserService.getUserById(id);
-        return ResponseEntity.ok(response);
-    }
+	// GET: User by ID
+	@GetMapping("/id/{id}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<GetUserResponse> getUserById(@PathVariable Long id) {
+		GetUserResponse response = appUserService.getUserById(id);
+		return ResponseEntity.ok(response);
+	}
 
-    // GET: All users except the currently logged in user, paginated — ?page=0&size=20&sort=username,asc
-    @GetMapping("/excluded")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PagedModel<GetUserResponse>> getAllUsersExcludingCurrentUser(
-            @PageableDefault(size = 10, sort = "id") Pageable pageable,
-            Authentication authentication) {
-        Page<GetUserResponse> page = appUserService.getAllUsersExcludingCurrentUser(authentication.getName(), pageable);
-        return ResponseEntity.ok(new PagedModel<>(page));
-    }
+	// GET: All users except the currently logged in user, paginated —
+	// ?page=0&size=20&sort=username,asc
+	@GetMapping("/excluded")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PagedModel<GetUserResponse>> getAllUsersExcludingCurrentUser(
+			@PageableDefault(size = 10, sort = "id") Pageable pageable, Authentication authentication) {
+		Page<GetUserResponse> page = appUserService.getAllUsersExcludingCurrentUser(authentication.getName(), pageable);
+		return ResponseEntity.ok(new PagedModel<>(page));
+	}
 
-    // GET: All followers of a user, paginated — ?page=0&size=20&sort=username,asc
-    @GetMapping("/followers/{userId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowers(
-            @PathVariable Long userId,
-            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
-        Page<GetUserResponse> page = appUserService.getAllFollowers(userId, pageable);
-        return ResponseEntity.ok(new PagedModel<>(page));
-    }
+	// GET: All followers of a user, paginated — ?page=0&size=20&sort=username,asc
+	@GetMapping("/followers/{userId}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowers(@PathVariable Long userId,
+			@PageableDefault(size = 10, sort = "id") Pageable pageable) {
+		Page<GetUserResponse> page = appUserService.getAllFollowers(userId, pageable);
+		return ResponseEntity.ok(new PagedModel<>(page));
+	}
 
-    // GET: All users that a user follows, paginated — ?page=0&size=20&sort=username,asc
-    @GetMapping("/followings/{userId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowings(
-            @PathVariable Long userId,
-            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
-        Page<GetUserResponse> page = appUserService.getAllFollowings(userId, pageable);
-        return ResponseEntity.ok(new PagedModel<>(page));
-    }
+	// GET: All users that a user follows, paginated —
+	// ?page=0&size=20&sort=username,asc
+	@GetMapping("/followings/{userId}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PagedModel<GetUserResponse>> getAllFollowings(@PathVariable Long userId,
+			@PageableDefault(size = 10, sort = "id") Pageable pageable) {
+		Page<GetUserResponse> page = appUserService.getAllFollowings(userId, pageable);
+		return ResponseEntity.ok(new PagedModel<>(page));
+	}
 
-    // GET: Search users by username, paginated — ?page=0&size=20&sort=username,asc
-    @GetMapping("/search/{username}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PagedModel<SearchUserResponse>> searchUsers(
-            @PathVariable String username,
-            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
-        Page<SearchUserResponse> page = appUserService.searchUsers(username, pageable);
-        return ResponseEntity.ok(new PagedModel<>(page));
-    }
+	// GET: serve image bytes for a post
+	@GetMapping(value = "/{id}/profile-image/preview")
+	public ResponseEntity<Resource> getProfileImage(@PathVariable Long id) {
+		byte[] bytes = appUserService.getProfileImageBytes(id);
+		String contentType = appUserService.getProfileImageContentType(id);
+		ByteArrayResource resource = new ByteArrayResource(bytes);
+		return ResponseEntity.ok().header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
+				.contentType(MediaType
+						.parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
+				.body(resource);
+	}
 
-    // GET: serve image bytes for a post
-    @GetMapping(value = "/{id}/profile-image/preview")
-    public ResponseEntity<Resource> getProfileImage(@PathVariable Long id) {
-        byte[] bytes = appUserService.getProfileImageBytes(id);
-        String contentType = appUserService.getProfileImageContentType(id);
-        ByteArrayResource resource = new ByteArrayResource(bytes);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(bytes.length))
-                .contentType(MediaType
-                        .parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
-                .body(resource);
-    }
+	// PUT: Update credentials (email, username, password)
+	@PutMapping("/{username}/update-credentials")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> updateUserCredentials(@PathVariable String username,
+			@RequestBody UpdateCredentialsRequest request, Authentication authentication) {
 
-    // PUT: Update credentials (email, username, password)
-    @PutMapping("/{username}/update-credentials")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> updateUserCredentials(
-            @PathVariable String username,
-            @RequestBody UpdateCredentialsRequest request,
-            Authentication authentication) {
+		if (!authentication.getName().equals(username)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 
-        if (!authentication.getName().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+		appUserService.updateUserCredentials(username, request);
+		return ResponseEntity.noContent().build();
+	}
 
-        appUserService.updateUserCredentials(username, request);
-        return ResponseEntity.noContent().build();
-    }
+	// PUT: Update profile with image upload
+	@PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> updateUserProfileWithUpload(@PathVariable String username,
+			@RequestParam(value = "bioText", required = false) String bioText,
+			@RequestParam(value = "profileImage", required = false) MultipartFile image,
+			Authentication authentication) {
 
-    // PUT: Update profile with image upload
-    @PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> updateUserProfileWithUpload(
-            @PathVariable String username,
-            @RequestParam(value = "bioText", required = false) String bioText,
-            @RequestParam(value = "profileImage", required = false) MultipartFile image,
-            Authentication authentication) {
+		if (!authentication.getName().equals(username)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 
-        if (!authentication.getName().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+		UpdateProfileRequest update = new UpdateProfileRequest();
+		if (bioText != null && !bioText.trim().isEmpty()) {
+			update.setBioText(bioText);
+		}
 
-        UpdateProfileRequest update = new UpdateProfileRequest();
-        if (bioText != null && !bioText.trim().isEmpty()) {
-            update.setBioText(bioText);
-        }
+		appUserService.updateUserProfileWithUpload(username, update, image);
+		return ResponseEntity.noContent().build();
+	}
 
-        appUserService.updateUserProfileWithUpload(username, update, image);
-        return ResponseEntity.noContent().build();
-    }
+	// DELETE: Delete own account
+	@DeleteMapping("/{username}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> deleteUser(@PathVariable String username,
+			@Valid @RequestBody DeleteAccountRequest request, Authentication authentication) {
 
-    // DELETE: Delete own account
-    @DeleteMapping("/{username}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteUser(
-            @PathVariable String username,
-            @Valid @RequestBody DeleteAccountRequest request,
-            Authentication authentication) {
+		if (!authentication.getName().equals(username)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 
-        if (!authentication.getName().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        appUserService.deleteUser(username, request.getPassword());
-        return ResponseEntity.noContent().build();
-    }
+		appUserService.deleteUser(username, request.getPassword());
+		return ResponseEntity.noContent().build();
+	}
 
 }

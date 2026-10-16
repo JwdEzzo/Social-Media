@@ -1,11 +1,5 @@
 package com.instragram.project.service;
 
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
 import com.instragram.project.dto.notification.NotificationResponse;
 import com.instragram.project.enums.NotificationType;
 import com.instragram.project.exception.ForbiddenException;
@@ -14,128 +8,127 @@ import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Notification;
 import com.instragram.project.repository.NotificationRepository;
-
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository;
-    private final MappingMethods mappingMethods;
+	private final NotificationRepository notificationRepository;
+	private final MappingMethods mappingMethods;
 
-    public NotificationService(
-            NotificationRepository notificationRepository,
-            MappingMethods mappingMethods) {
-        this.notificationRepository = notificationRepository;
-        this.mappingMethods = mappingMethods;
-    }
+	public NotificationService(NotificationRepository notificationRepository, MappingMethods mappingMethods) {
+		this.notificationRepository = notificationRepository;
+		this.mappingMethods = mappingMethods;
+	}
 
-    // Create notification by recepient, sender, type and entityId
-    // Internal — called in follow service , comment service , comment reply service and like service
-    public void createNotification(
-            AppUser recipient,
-            AppUser sender,
-            NotificationType type,
-            Long entityId) {
+	// Create notification by recepient, sender, type and entityId
+	// Internal — called in follow service , comment service , comment reply service
+	// and like service
+	public void createNotification(AppUser recipient, AppUser sender, NotificationType type, Long entityId) {
 
-        // Entities are already loaded by the calling service, no extra DB call needed
-        if (recipient.getId().equals(sender.getId())) return;
+		// Entities are already loaded by the calling service, no extra DB call needed
+		if (recipient.getId().equals(sender.getId()))
+			return;
 
-        Notification notification = new Notification();
-        notification.setRecipient(recipient);
-        notification.setSender(sender);
-        notification.setNotificationType(type);
-        notification.setEntityId(entityId);
+		Notification notification = new Notification();
+		notification.setRecipient(recipient);
+		notification.setSender(sender);
+		notification.setNotificationType(type);
+		notification.setEntityId(entityId);
 
-        notificationRepository.save(notification);
-    }
+		notificationRepository.save(notification);
+	}
 
-    /**
-     * Get a page of a user's notifications.
-     * The {@code Pageable} carries the page number, size and sort, and the returned
-     * {@link Page} carries the total count so the caller can render pagination controls.
-     * <p>
-     * Read operations query by id directly, no AppUser fetch needed, to avoid heavy DB calls.
-     */
-    public Page<NotificationResponse> getNotificationsForUser(Long recipientId, Long requestingUserId, Pageable pageable) {
-        verifyOwnership(recipientId, requestingUserId);
+	/**
+	 * Get a page of a user's notifications. The {@code Pageable} carries the page
+	 * number, size and sort, and the returned {@link Page} carries the total count
+	 * so the caller can render pagination controls.
+	 * <p>
+	 * Read operations query by id directly, no AppUser fetch needed, to avoid heavy
+	 * DB calls.
+	 */
+	public Page<NotificationResponse> getNotificationsForUser(Long recipientId, Long requestingUserId,
+			Pageable pageable) {
+		verifyOwnership(recipientId, requestingUserId);
 
-        return notificationRepository
-                .findByRecipientId(recipientId, pageable)
-                .map(mappingMethods::convertNotificationToNotificationResponse);
-    }
+		return notificationRepository.findByRecipientId(recipientId, pageable)
+				.map(mappingMethods::convertNotificationToNotificationResponse);
+	}
 
-    public long getUnreadCount(Long recipientId, Long requestingUserId) {
-        verifyOwnership(recipientId, requestingUserId);
-        return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
-    }
+	public long getUnreadCount(Long recipientId, Long requestingUserId) {
+		verifyOwnership(recipientId, requestingUserId);
+		return notificationRepository.countByRecipientIdAndIsRead(recipientId, false);
+	}
 
-    /**
-     * The notification bell dropdown: a fixed top-3, so it stays a {@code List}.
-     * The query is already bounded, and a page number/size would have no meaning here.
-     * Callers that need to walk the whole inbox use {@link #getNotificationsForUser} instead.
-     */
-    public List<NotificationResponse> getLatest3Notifications(Long recipientId, Long requestingUserId) {
-        verifyOwnership(recipientId, requestingUserId);
-        List<Notification> notifications = notificationRepository.findFirst3ByRecipientIdOrderByCreatedAtDesc(recipientId);
-        return mappingMethods.convertListNotificationToListNotificationResponse(notifications);
-    }
+	/**
+	 * The notification bell dropdown: a fixed top-3, so it stays a {@code List}.
+	 * The query is already bounded, and a page number/size would have no meaning
+	 * here. Callers that need to walk the whole inbox use
+	 * {@link #getNotificationsForUser} instead.
+	 */
+	public List<NotificationResponse> getLatest3Notifications(Long recipientId, Long requestingUserId) {
+		verifyOwnership(recipientId, requestingUserId);
+		List<Notification> notifications = notificationRepository
+				.findFirst3ByRecipientIdOrderByCreatedAtDesc(recipientId);
+		return mappingMethods.convertListNotificationToListNotificationResponse(notifications);
+	}
 
-    // Mark as read operations
-    public void markAsRead(Long notificationId, Long requestingUserId) {
-        // Single query — checks existence and ownership together
-        if (!notificationRepository.existsByIdAndRecipientId(notificationId, requestingUserId)) {
-            throw new ForbiddenException("You do not have permission to access these notifications.");
-        }
+	// Mark as read operations
+	public void markAsRead(Long notificationId, Long requestingUserId) {
+		// Single query — checks existence and ownership together
+		if (!notificationRepository.existsByIdAndRecipientId(notificationId, requestingUserId)) {
+			throw new ForbiddenException("You do not have permission to access these notifications.");
+		}
 
-        Notification notification = getNotificationOrThrow(notificationId);
+		Notification notification = getNotificationOrThrow(notificationId);
 
-        notification.setRead(true);
-        notificationRepository.save(notification);
-    }
+		notification.setRead(true);
+		notificationRepository.save(notification);
+	}
 
-    public void markAllAsRead(Long recipientId, Long requestingUserId) {
-        log.info("Marking all notifications as read for user: {}", recipientId);
-        verifyOwnership(recipientId, requestingUserId);
+	public void markAllAsRead(Long recipientId, Long requestingUserId) {
+		log.info("Marking all notifications as read for user: {}", recipientId);
+		verifyOwnership(recipientId, requestingUserId);
 
-        log.info("Checking for unread notifications for user: {}", recipientId);
-        List<Notification> unread =
-                notificationRepository.findByRecipientIdAndIsRead(recipientId, false);
+		log.info("Checking for unread notifications for user: {}", recipientId);
+		List<Notification> unread = notificationRepository.findByRecipientIdAndIsRead(recipientId, false);
 
-        if (unread.isEmpty()) return;
+		if (unread.isEmpty())
+			return;
 
-        log.info("Marking {} notifications as read for user: {}", unread.size(), recipientId);
-        unread.forEach(n -> n.setRead(true));
-        notificationRepository.saveAll(unread);
-        log.info("Successfully marked all notifications as read for user: {}", recipientId);
-    }
+		log.info("Marking {} notifications as read for user: {}", unread.size(), recipientId);
+		unread.forEach(n -> n.setRead(true));
+		notificationRepository.saveAll(unread);
+		log.info("Successfully marked all notifications as read for user: {}", recipientId);
+	}
 
-    // Helper Method
-    private void verifyOwnership(Long recipientId, Long requestingUserId) {
-        if (!recipientId.equals(requestingUserId)) {
-            throw new ForbiddenException("You do not have permission to access these notifications.");
-        }
-    }
+	// Helper Method
+	private void verifyOwnership(Long recipientId, Long requestingUserId) {
+		if (!recipientId.equals(requestingUserId)) {
+			throw new ForbiddenException("You do not have permission to access these notifications.");
+		}
+	}
 
-    // Called when a like is removed : entityId identifies which post/comment was unliked
-    public void deleteEntityNotification(Long recipientId, Long senderId,
-                                NotificationType type, Long entityId) {
-        notificationRepository
-                .deleteByRecipientIdAndSenderIdAndNotificationTypeAndEntityId(
-                        recipientId, senderId, type, entityId);
-    }
+	// Called when a like is removed : entityId identifies which post/comment was
+	// unliked
+	public void deleteEntityNotification(Long recipientId, Long senderId, NotificationType type, Long entityId) {
+		notificationRepository.deleteByRecipientIdAndSenderIdAndNotificationTypeAndEntityId(recipientId, senderId, type,
+				entityId);
+	}
 
-    // Called when a follow is removed : no entityId involved
-    public void deleteFollowNotification(Long recipientId, Long senderId, NotificationType type) {
-        notificationRepository
-                .deleteByRecipientIdAndSenderIdAndNotificationType(
-                        recipientId, senderId, type);
-    }
+	// Called when a follow is removed : no entityId involved
+	public void deleteFollowNotification(Long recipientId, Long senderId, NotificationType type) {
+		notificationRepository.deleteByRecipientIdAndSenderIdAndNotificationType(recipientId, senderId, type);
+	}
 
-    private Notification getNotificationOrThrow(Long id) {
-        return notificationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Notification with id " + id + " was not found."));
-    }
+	private Notification getNotificationOrThrow(Long id) {
+		return notificationRepository.findById(id)
+				.orElseThrow(() -> new NotFoundException("Notification with id " + id + " was not found."));
+	}
 
 }

@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WriteReplyRequest {
-   private String content;
+	private String content;
 
-   @NotBlank(message = "Comment ID is required")
-   private Long commentId;
+	@NotBlank(message = "Comment ID is required")
+	private Long commentId;
 }

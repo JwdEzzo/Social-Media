@@ -16,6 +16,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class FieldViolation {
-    private String field;
-    private String message;
+	private String field;
+	private String message;
 }

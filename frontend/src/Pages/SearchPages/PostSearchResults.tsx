@@ -1,7 +1,5 @@
-import {
-  useGetPostsByDescriptionInfiniteQuery,
-  useGetPostsExcludingCurrentUserInfiniteQuery,
-} from "@/api/posts/postApi";
+import { useGetPostsExcludingCurrentUserInfiniteQuery } from "@/api/posts/postApi";
+import { useGetPostsByDescriptionInfiniteQuery } from "@/api/search/searchApi";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";

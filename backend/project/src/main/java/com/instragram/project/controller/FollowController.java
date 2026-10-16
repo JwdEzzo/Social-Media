@@ -1,5 +1,6 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.service.FollowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -10,62 +11,56 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.service.FollowService;
-
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/follows")
 public class FollowController {
 
-   private final FollowService followService;
+	private final FollowService followService;
 
-   public FollowController(FollowService followService) {
-      this.followService = followService;
-   }
+	public FollowController(FollowService followService) {
+		this.followService = followService;
+	}
 
-   // POST : Toggle Follow
-   @PostMapping("/following/{followingUsername}")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> toggleFollow(
-         @PathVariable String followingUsername,
-         Authentication authentication) {
+	// POST : Toggle Follow
+	@PostMapping("/following/{followingUsername}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> toggleFollow(@PathVariable String followingUsername, Authentication authentication) {
 
-      String followerUsername = authentication.getName();
-      followService.toggleFollow(followerUsername, followingUsername);
-      return ResponseEntity.noContent().build();
-   }
+		String followerUsername = authentication.getName();
+		followService.toggleFollow(followerUsername, followingUsername);
+		return ResponseEntity.noContent().build();
+	}
 
-   // GET : followers count
-   @GetMapping("/{username}/follower-count")
-   public ResponseEntity<Long> getFollowersCount(@PathVariable String username) {
-      long count = followService.getFollowersCount(username);
-      return ResponseEntity.ok(count);
-   }
+	// GET : followers count
+	@GetMapping("/{username}/follower-count")
+	public ResponseEntity<Long> getFollowersCount(@PathVariable String username) {
+		long count = followService.getFollowersCount(username);
+		return ResponseEntity.ok(count);
+	}
 
-   // GET : following count
-   @GetMapping("/{username}/following-count")
-   public ResponseEntity<Long> getFollowingCount(@PathVariable String username) {
-      long count = followService.getFollowingCount(username);
-      return ResponseEntity.ok(count);
-   }
+	// GET : following count
+	@GetMapping("/{username}/following-count")
+	public ResponseEntity<Long> getFollowingCount(@PathVariable String username) {
+		long count = followService.getFollowingCount(username);
+		return ResponseEntity.ok(count);
+	}
 
-   // GET : If a user already follows another
-   @GetMapping("/already-follows/{followingUsername}")
-   public ResponseEntity<Boolean> isFollowed(@PathVariable String followingUsername, Authentication authentication) {
-      String followerUsername = authentication.getName();
-      boolean status = followService.isFollowed(followerUsername, followingUsername);
-      return ResponseEntity.ok(status);
-   }
+	// GET : If a user already follows another
+	@GetMapping("/already-follows/{followingUsername}")
+	public ResponseEntity<Boolean> isFollowed(@PathVariable String followingUsername, Authentication authentication) {
+		String followerUsername = authentication.getName();
+		boolean status = followService.isFollowed(followerUsername, followingUsername);
+		return ResponseEntity.ok(status);
+	}
 
-   @GetMapping("/pending-request/{targetUsername}")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Long> getPendingRequestId(
-         @PathVariable String targetUsername,
-         Authentication authentication) {
+	@GetMapping("/pending-request/{targetUsername}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Long> getPendingRequestId(@PathVariable String targetUsername,
+			Authentication authentication) {
 
-      Long requestId = followService.getPendingRequestId(
-               authentication.getName(), targetUsername);
+		Long requestId = followService.getPendingRequestId(authentication.getName(), targetUsername);
 
-      return ResponseEntity.ok(requestId != null ? requestId : 0L);
-   }
+		return ResponseEntity.ok(requestId != null ? requestId : 0L);
+	}
 }

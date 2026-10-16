@@ -4,7 +4,6 @@ import type {
 } from "@/types/request-types";
 import type {
   GetUserResponseDto,
-  SearchUserResponseDto,
   SignUpResponse,
 } from "@/types/response-types";
 import { api } from "@/api/api";
@@ -95,21 +94,6 @@ export const userApi = api.injectEndpoints({
         providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
     }),
 
-    searchUsersByUsername: builder.infiniteQuery<
-      PagedModel<SearchUserResponseDto>,
-      string,
-      number
-    >({
-      infiniteQueryOptions: pagedInfiniteQueryOptions,
-      query: ({ queryArg: username, pageParam }) => ({
-        url: `/users/search/${username}`,
-        method: "GET",
-        params: userPageParams(pageParam),
-      }),
-      providesTags: (result) =>
-        providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
-    }),
-
     updateUserCredentials: builder.mutation<
       void,
       { currentUsername: string } & UpdateCredentialsRequestDto
@@ -171,7 +155,6 @@ export const {
   useGetFollowersByUserIdInfiniteQuery,
   useGetFollowingsByUserIdInfiniteQuery,
   useGetUsersExcludingCurrentUserInfiniteQuery,
-  useSearchUsersByUsernameInfiniteQuery,
   useUpdateUserCredentialsMutation,
   useUpdateUserProfileWithUploadMutation,
   useToggleAccountStatusMutation,

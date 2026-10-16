@@ -6,7 +6,5 @@ package com.instragram.project.enums;
  * {@code DECLINED}
  */
 public enum FollowRequestStatus {
-    PENDING,
-    ACCEPTED,
-    DECLINED
+	PENDING, ACCEPTED, DECLINED
 }

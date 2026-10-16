@@ -1,5 +1,9 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.dto.reply.request.WriteReplyRequest;
+import com.instragram.project.dto.reply.response.GetReplyResponse;
+import com.instragram.project.service.CommentReplyService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,76 +23,67 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.reply.request.WriteReplyRequest;
-import com.instragram.project.dto.reply.response.GetReplyResponse;
-import com.instragram.project.service.CommentReplyService;
-
-import lombok.extern.slf4j.Slf4j;
-
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/comment-replies")
 @Slf4j
 public class CommentReplyController {
 
-   private final CommentReplyService commentReplyService;
+	private final CommentReplyService commentReplyService;
 
-   public CommentReplyController(CommentReplyService commentReplyService) {
-      this.commentReplyService = commentReplyService;
-   }
+	public CommentReplyController(CommentReplyService commentReplyService) {
+		this.commentReplyService = commentReplyService;
+	}
 
-   // Create Comment Reply
-   @PostMapping("/create-reply")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> createCommentReply(
-         @RequestBody WriteReplyRequest requestDto,
-         Authentication authentication) {
-      String username = authentication.getName();
-      commentReplyService.createCommentReply(requestDto, username);
-      return ResponseEntity.status(HttpStatus.CREATED).build();
-   }
+	// Create Comment Reply
+	@PostMapping("/create-reply")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> createCommentReply(@RequestBody WriteReplyRequest requestDto,
+			Authentication authentication) {
+		String username = authentication.getName();
+		commentReplyService.createCommentReply(requestDto, username);
+		return ResponseEntity.status(HttpStatus.CREATED).build();
+	}
 
-   // GET: Reply Count on a Comment
-   @GetMapping("/comment/{commentId}/reply-count")
-   public ResponseEntity<Long> getReplyCount(@PathVariable Long commentId) {
-      try {
-         Long count = commentReplyService.getReplyCount(commentId);
-         return ResponseEntity.ok(count);
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+	// GET: Reply Count on a Comment
+	@GetMapping("/comment/{commentId}/reply-count")
+	public ResponseEntity<Long> getReplyCount(@PathVariable Long commentId) {
+		try {
+			Long count = commentReplyService.getReplyCount(commentId);
+			return ResponseEntity.ok(count);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-   // Get Replies By CommentId, paginated — ?page=0&size=20&sort=createdAt,desc
-   @GetMapping("/comment/{commentId}")
-   public ResponseEntity<PagedModel<GetReplyResponse>> getRepliesByCommentId(
-         @PathVariable Long commentId,
-         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-      try {
-         Page<GetReplyResponse> commentReplies = commentReplyService.findByCommentId(commentId, pageable);
-         return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(commentReplies));
-      } catch (Exception e) {
-         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-   }
+	// Get Replies By CommentId, paginated — ?page=0&size=20&sort=createdAt,desc
+	@GetMapping("/comment/{commentId}")
+	public ResponseEntity<PagedModel<GetReplyResponse>> getRepliesByCommentId(@PathVariable Long commentId,
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		try {
+			Page<GetReplyResponse> commentReplies = commentReplyService.findByCommentId(commentId, pageable);
+			return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(commentReplies));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-   // Update Comment
-   @PutMapping("/edit-reply/{commentReplyId:\\d+}")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> editCommentReply(@PathVariable Long commentReplyId, @RequestBody String content, Authentication authentication) {
-      String username = authentication.getName();
-      commentReplyService.editCommentReply(commentReplyId, content, username);
-      return ResponseEntity.status(HttpStatus.OK).build();
-   }
+	// Update Comment
+	@PutMapping("/edit-reply/{commentReplyId:\\d+}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> editCommentReply(@PathVariable Long commentReplyId, @RequestBody String content,
+			Authentication authentication) {
+		String username = authentication.getName();
+		commentReplyService.editCommentReply(commentReplyId, content, username);
+		return ResponseEntity.status(HttpStatus.OK).build();
+	}
 
-   @DeleteMapping("/delete-reply/{commentReplyId:\\d+}")
-   @PreAuthorize("isAuthenticated()")
-   public ResponseEntity<Void> deleteCommentReply(
-         @PathVariable Long commentReplyId,
-         Authentication authentication) {
-      log.info("Started deleting process for comment reply ID: {}", commentReplyId);
-      commentReplyService.deleteCommentReplyByPostOrCommentOrReplyOwner(commentReplyId, authentication.getName());
-      return ResponseEntity.noContent().build();
-   }
+	@DeleteMapping("/delete-reply/{commentReplyId:\\d+}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> deleteCommentReply(@PathVariable Long commentReplyId, Authentication authentication) {
+		log.info("Started deleting process for comment reply ID: {}", commentReplyId);
+		commentReplyService.deleteCommentReplyByPostOrCommentOrReplyOwner(commentReplyId, authentication.getName());
+		return ResponseEntity.noContent().build();
+	}
 
 }

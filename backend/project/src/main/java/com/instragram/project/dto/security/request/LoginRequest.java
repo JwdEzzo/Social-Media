@@ -15,12 +15,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginRequest {
 
-   @NotBlank(message = "Username is required")
-   @Size(min = 8, message = "Username must be at least 8 characters long")
-   private String username;
+	@NotBlank(message = "Username is required")
+	@Size(min = 8, message = "Username must be at least 8 characters long")
+	private String username;
 
-   @NotBlank(message = "Password is required")
-   @Size(min = 8, message = "Password must be at least 8 characters long")
-   private String password;
+	@NotBlank(message = "Password is required")
+	@Size(min = 8, message = "Password must be at least 8 characters long")
+	private String password;
 
 }

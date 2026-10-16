@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SearchUserResponse {
 
-   private Long id;
-   private String username;
-   private String bioText;
-   private String profilePictureUrl;
+	private Long id;
+	private String username;
+	private String bioText;
+	private String profilePictureUrl;
 }

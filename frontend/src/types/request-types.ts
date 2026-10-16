@@ -36,3 +36,8 @@ export interface WriteReplyRequestDto {
   content: string;
   commentId: number;
 }
+
+// =============== SEARCH =================
+export interface CreateSearchRequestDto {
+  searchTerm: string;
+}

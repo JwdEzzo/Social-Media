@@ -14,6 +14,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateUserProfileResponse {
-    private String bioText;
-    private String profilePictureUrl;
+	private String bioText;
+	private String profilePictureUrl;
 }

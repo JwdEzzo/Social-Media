@@ -1,10 +1,6 @@
 package com.instragram.project.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -19,6 +15,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @Setter
@@ -29,41 +27,41 @@ import lombok.Setter;
 @Table(name = "profile_pictures")
 public class ProfilePicture {
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-   @OneToOne(fetch = FetchType.LAZY, optional = false)
-   @JoinColumn(name = "app_user_id", nullable = false, unique = true)
-   @OnDelete(action = OnDeleteAction.CASCADE)
-   private AppUser appUser;
+	@OneToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "app_user_id", nullable = false, unique = true)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private AppUser appUser;
 
-   @Column(name = "image_data", nullable = false)
-   @JsonIgnore
-   private byte[] imageData;
+	@Column(name = "image_data", nullable = false)
+	@JsonIgnore
+	private byte[] imageData;
 
-   @Column(name = "image_name")
-   private String imageName;
+	@Column(name = "image_name")
+	private String imageName;
 
-   @Column(name = "image_type")
-   private String imageType;
+	@Column(name = "image_type")
+	private String imageType;
 
-   @Column(name = "image_size")
-   private Long imageSize; // File size in bytes
+	@Column(name = "image_size")
+	private Long imageSize; // File size in bytes
 
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) {
-         return true;
-      }
-      if (!(o instanceof ProfilePicture other)) {
-         return false;
-      }
-      return id != null && id.equals(other.getId());
-   }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof ProfilePicture other)) {
+			return false;
+		}
+		return id != null && id.equals(other.getId());
+	}
 
-   @Override
-   public int hashCode() {
-      return getClass().hashCode();
-   }
+	@Override
+	public int hashCode() {
+		return getClass().hashCode();
+	}
 }

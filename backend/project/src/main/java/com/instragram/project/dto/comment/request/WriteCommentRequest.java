@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WriteCommentRequest {
 
-   @NotBlank(message = "Content is required")
-   private String content;
+	@NotBlank(message = "Content is required")
+	private String content;
 
-   @NotBlank(message = "Post ID is required")
-   private Long postId;
+	@NotBlank(message = "Post ID is required")
+	private Long postId;
 
-   // VERY IMPORTANT !!!!!!!!!!!
-   // Regarding the appUser field:
-   // The authenticated user ID should come from security context
+	// VERY IMPORTANT !!!!!!!!!!!
+	// Regarding the appUser field:
+	// The authenticated user ID should come from security context
 }

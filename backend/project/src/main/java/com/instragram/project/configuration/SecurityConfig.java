@@ -1,7 +1,8 @@
 package com.instragram.project.configuration;
 
+import com.instragram.project.security.jwt.JwtFilter;
+import com.instragram.project.security.users.AppUserDetailsService;
 import java.util.Arrays;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,68 +21,61 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.instragram.project.security.jwt.JwtFilter;
-import com.instragram.project.security.users.AppUserDetailsService;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-   private final AppUserDetailsService appUserDetailsService;
-   private final JwtFilter jwtFilter;
+	private final AppUserDetailsService appUserDetailsService;
+	private final JwtFilter jwtFilter;
 
-   public SecurityConfig(AppUserDetailsService appUserDetailsService, JwtFilter jwtFilter) {
-      this.appUserDetailsService = appUserDetailsService;
-      this.jwtFilter = jwtFilter;
-   }
+	public SecurityConfig(AppUserDetailsService appUserDetailsService, JwtFilter jwtFilter) {
+		this.appUserDetailsService = appUserDetailsService;
+		this.jwtFilter = jwtFilter;
+	}
 
-   @Bean
-   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-      return http
-            .csrf(customizer -> customizer.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(request -> request
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		return http.csrf(customizer -> customizer.disable())
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.authorizeHttpRequests(request -> request
 
-                  .requestMatchers("/*")
-                  .permitAll()
-                  .anyRequest().permitAll())
-            .httpBasic(Customizer.withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-            .build();
-   }
+						.requestMatchers("/*").permitAll().anyRequest().permitAll())
+				.httpBasic(Customizer.withDefaults())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class).build();
+	}
 
-   @Bean
-   public AuthenticationManager customAuthenticationManager() {
-      return new ProviderManager(appUserAuthenticationProvider());
-   }
+	@Bean
+	public AuthenticationManager customAuthenticationManager() {
+		return new ProviderManager(appUserAuthenticationProvider());
+	}
 
-   @SuppressWarnings("deprecation")
-   @Bean
-   public AuthenticationProvider appUserAuthenticationProvider() {
-      DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-      provider.setPasswordEncoder(passwordEncoder());
-      provider.setUserDetailsService(appUserDetailsService);
-      return provider;
-   }
+	@SuppressWarnings("deprecation")
+	@Bean
+	public AuthenticationProvider appUserAuthenticationProvider() {
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+		provider.setPasswordEncoder(passwordEncoder());
+		provider.setUserDetailsService(appUserDetailsService);
+		return provider;
+	}
 
-   @Bean
-   public CorsConfigurationSource corsConfigurationSource() {
-      CorsConfiguration configuration = new CorsConfiguration();
-      configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-      configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-      configuration.setAllowedHeaders(Arrays.asList("*"));
-      configuration.setAllowCredentials(true);
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+		configuration.setAllowedHeaders(Arrays.asList("*"));
+		configuration.setAllowCredentials(true);
 
-      UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-      source.registerCorsConfiguration("/**", configuration);
-      return source;
-   }
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
 
-   @Bean
-   public BCryptPasswordEncoder passwordEncoder() {
-      return new BCryptPasswordEncoder(12);
-   }
+	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder(12);
+	}
 
 }

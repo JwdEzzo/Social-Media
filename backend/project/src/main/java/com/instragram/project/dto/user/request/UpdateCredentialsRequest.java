@@ -17,16 +17,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateCredentialsRequest {
 
-   @Email
-   private String email;
+	@Email
+	private String email;
 
-   @Size(min = 8, message = "Username must be at least 8 characters long")
-   private String username;
+	@Size(min = 8, message = "Username must be at least 8 characters long")
+	private String username;
 
-   @Size(min = 8, message = "Password must be at least 8 characters long")
-   private String oldPassword;
+	@Size(min = 8, message = "Password must be at least 8 characters long")
+	private String oldPassword;
 
-   @Size(min = 8, message = "Password must be at least 8 characters long")
-   private String newPassword;
+	@Size(min = 8, message = "Password must be at least 8 characters long")
+	private String newPassword;
 
 }

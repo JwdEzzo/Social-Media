@@ -5,18 +5,19 @@ package com.instragram.project.exception;
  * Bad login credentials, or a missing, expired or malformed token. <br>
  * Answers {@code 401}.
  * <p>
- * Despite the HTTP status being named "Unauthorized", 401 means <b>unauthenticated</b>:
- * the server does not know who is calling, so presenting valid credentials would change
- * the outcome. Once identity is established and the caller simply is not allowed to touch
- * the resource, use {@link ForbiddenException} instead.
+ * Despite the HTTP status being named "Unauthorized", 401 means
+ * <b>unauthenticated</b>: the server does not know who is calling, so
+ * presenting valid credentials would change the outcome. Once identity is
+ * established and the caller simply is not allowed to touch the resource, use
+ * {@link ForbiddenException} instead.
  */
 public class UnauthorizedException extends BaseException {
 
-    public UnauthorizedException(String message) {
-        super(message);
-    }
+	public UnauthorizedException(String message) {
+		super(message);
+	}
 
-    public UnauthorizedException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public UnauthorizedException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

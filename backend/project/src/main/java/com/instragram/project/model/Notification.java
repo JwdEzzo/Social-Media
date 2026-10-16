@@ -1,12 +1,6 @@
 package com.instragram.project.model;
 
-import java.time.LocalDateTime;
-
 import com.instragram.project.enums.NotificationType;
-
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,45 +12,48 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 public class Notification {
-    
-    @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private Long id;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="recipient_id", nullable=false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private AppUser recipient;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="sender_id", nullable=false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private AppUser sender;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "recipient_id", nullable = false)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private AppUser recipient;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable=false)
-    private NotificationType notificationType;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sender_id", nullable = false)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private AppUser sender;
 
-    @Column(name="entity_id")
-    private Long entityId;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private NotificationType notificationType;
 
-    @Column(name="is_read" , nullable=false)
-    private boolean isRead = false;
+	@Column(name = "entity_id")
+	private Long entityId;
 
-    private LocalDateTime createdAt;
+	@Column(name = "is_read", nullable = false)
+	private boolean isRead = false;
 
-    @PrePersist
-    public void onCreate() {
-        createdAt = LocalDateTime.now();
-        isRead = false;
-    }
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	public void onCreate() {
+		createdAt = LocalDateTime.now();
+		isRead = false;
+	}
 }

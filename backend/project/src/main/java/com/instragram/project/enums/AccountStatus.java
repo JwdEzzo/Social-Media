@@ -6,6 +6,5 @@ package com.instragram.project.enums;
  * {@code PRIVATE}
  */
 public enum AccountStatus {
-    PUBLIC,
-    PRIVATE
+	PUBLIC, PRIVATE
 }

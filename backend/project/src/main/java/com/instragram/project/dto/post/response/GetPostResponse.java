@@ -1,10 +1,8 @@
 package com.instragram.project.dto.post.response;
 
+import com.instragram.project.dto.comment.response.GetCommentResponse;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.instragram.project.dto.comment.response.GetCommentResponse;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,14 +22,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GetPostResponse {
 
-   private Long id;
-   private String username;
-   private String profilePictureUrl;
-   private String imageUrl;
-   private String description;
-   private LocalDateTime createdAt;
-   private LocalDateTime updatedAt;
+	private Long id;
+	private String username;
+	private String profilePictureUrl;
+	private String imageUrl;
+	private String description;
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 
-   private List<GetCommentResponse> comments;
+	private List<GetCommentResponse> comments;
 
 }

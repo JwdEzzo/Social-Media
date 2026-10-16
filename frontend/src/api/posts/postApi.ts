@@ -135,16 +135,6 @@ export const postApi = api.injectEndpoints({
       providesTags: (result) => providePagedPostTags(result, [{ type: 'Post', id: 'FOLLOWING_POSTS' }]),
     }),
 
-    getPostsByDescription: builder.infiniteQuery<PostsPage, string, number>({
-      infiniteQueryOptions: pagedInfiniteQueryOptions,
-      query: ({ queryArg: description, pageParam }) => ({
-        url: `/posts/search-posts/containing/${description}`,
-        method: 'GET',
-        params: postPageParams(pageParam),
-      }),
-      providesTags: (result) => providePagedPostTags(result),
-    }),
-
     editPostWithUpload: builder.mutation<void, EditPostWithUploadRequestDto & { postId: number }>({
       query: ({ postId, ...body }) => {
         const formData = new FormData();
@@ -188,7 +178,6 @@ export const {
   useGetPostsLikedByCurrentUserInfiniteQuery,
   useGetFollowingPostsByUserIdInfiniteQuery,
   useGetPostsSavedByCurrentUserInfiniteQuery,
-  useGetPostsByDescriptionInfiniteQuery,
   useEditPostWithUploadMutation,
   useDeletePostByPostIdMutation,
 } = postApi;

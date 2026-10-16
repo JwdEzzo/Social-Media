@@ -1,12 +1,16 @@
 package com.instragram.project.exception;
 
+import com.instragram.project.utils.ApiResponse;
+import com.instragram.project.utils.FieldViolation;
+import com.instragram.project.utils.SqlErrors;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,116 +28,107 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.instragram.project.utils.ApiResponse;
-import com.instragram.project.utils.FieldViolation;
-
-import lombok.extern.log4j.Log4j2;
-
 @RestControllerAdvice
 @Log4j2
 public class GlobalExceptionHandler {
 
-   /**
+	/**
 	 * The Client hits an endpoint to get a user. <br>
 	 * User doesn't exist in the database <br>
 	 * Throws a NotFoundException <br>
-     * {@code 404} - client error.
-	*/
+	 * {@code 404} - client error.
+	 */
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException ex) {
 		String msg = ex.getMessage();
-		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-							 .body(ApiResponse.error(404, msg));
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, msg));
 	}
 
 	/**
 	 * The Client hits an endpoint to create a user. <br>
 	 * User already exists in the database <br>
 	 * Throws a AlreadyExistsException <br>
-     * {@code 409} - client error.
+	 * {@code 409} - client error.
 	 */
 	@ExceptionHandler(AlreadyExistsException.class)
 	public ResponseEntity<ApiResponse<Void>> handleAlreadyExists(AlreadyExistsException ex) {
 		String msg = ex.getMessage();
-		return ResponseEntity.status(HttpStatus.CONFLICT)
-							 .body(ApiResponse.error(409, msg));
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(409, msg));
 	}
 
 	/**
-	 * The Client hits an endpoint whose request collides with more than one existing resource. <br>
+	 * The Client hits an endpoint whose request collides with more than one
+	 * existing resource. <br>
 	 * Example: User signs up with a username and an email that are both taken <br>
 	 * Throws a ConflictException <br>
 	 * {@code 409} - client error.
 	 */
 	@ExceptionHandler(ConflictException.class)
-	public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex){
+	public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex) {
 		// Step 1: Initialize the errors map to collect field-specific violations.
 		Map<String, List<String>> errors = new LinkedHashMap<>();
-	
+
 		// Step 2: Populate the errors map with field-specific violations.
 		for (FieldViolation violation : ex.getViolations()) {
 			List<String> messages = errors.computeIfAbsent(violation.getField(), field -> new ArrayList<>());
 			messages.add(violation.getMessage());
 		}
-	
+
 		// Step 3: Log the warning and return the response.
 		log.warn("Conflict [{}] on: {}", ex.getMessage(), errors.keySet());
-	
-		return ResponseEntity.status(HttpStatus.CONFLICT)
-							 .body(ApiResponse.withErrors(409, ex.getMessage(), errors));
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.withErrors(409, ex.getMessage(), errors));
 	}
 
 	/**
 	 * The Client hits an endpoint with values that cannot be acted on. <br>
 	 * Re-submitting the current email, username or password as a change <br>
 	 * Throws a BadRequestException <br>
-     * {@code 400} - client error.
+	 * {@code 400} - client error.
 	 */
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
 		String msg = ex.getMessage();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-							 .body(ApiResponse.error(400, msg));
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, msg));
 	}
 
 	/**
 	 * The Client is authenticated, but acts on a resource they shouldn't <br>
 	 * Editing or deleting another user's account <br>
 	 * Throws a ForbiddenException <br>
-     * {@code 403} - client error.
+	 * {@code 403} - client error.
 	 */
 	@ExceptionHandler(ForbiddenException.class)
 	public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
 		String msg = ex.getMessage();
-		return ResponseEntity.status(HttpStatus.FORBIDDEN)
-							 .body(ApiResponse.error(403, msg));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(403, msg));
 	}
 
 	/**
 	 * The Client has not proven who they are. <br>
 	 * Signing in with a wrong username or password <br>
 	 * Throws an UnauthorizedException <br>
-     * {@code 401} - client error.
+	 * {@code 401} - client error.
 	 */
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
 		String msg = ex.getMessage();
-		return ResponseEntity
-				.status(HttpStatus.UNAUTHORIZED)
-				.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
 				.body(ApiResponse.error(401, msg));
 	}
 
 	/**
-	 * The Client is denied by method security, from a failed {@code @PreAuthorize} check. <br>
-	 * This exception covers two different situations, so the status depends on who is calling:
-	 * 1) an anonymous caller was never authenticated ({@code 401}), while a real one is authenticated but not permitted here ({@code 403}). <br>
+	 * The Client is denied by method security, from a failed {@code @PreAuthorize}
+	 * check. <br>
+	 * This exception covers two different situations, so the status depends on who
+	 * is calling: 1) an anonymous caller was never authenticated ({@code 401}),
+	 * while a real one is authenticated but not permitted here ({@code 403}). <br>
 	 * 2) any other access denial not covered by the above. <br>
-	 * Caught as the parent {@code AccessDeniedException} so it also covers denials that are not
-	 * the {@code AuthorizationDeniedException} subtype. <br>
-	 * This reaches the advice at all, rather than Spring Security's ExceptionTranslationFilter,
-	 * because method security runs inside the dispatcher - after the filter chain has already
-	 * passed the request through.
+	 * Caught as the parent {@code AccessDeniedException} so it also covers denials
+	 * that are not the {@code AuthorizationDeniedException} subtype. <br>
+	 * This reaches the advice at all, rather than Spring Security's
+	 * ExceptionTranslationFilter, because method security runs inside the
+	 * dispatcher - after the filter chain has already passed the request through.
 	 */
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
@@ -142,63 +137,58 @@ public class GlobalExceptionHandler {
 
 		if (anonymous) {
 			log.warn("Unauthenticated request denied: {}", ex.getMessage());
-			return ResponseEntity
-					.status(HttpStatus.UNAUTHORIZED)
-					.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
 					.body(ApiResponse.error(401, "Authentication is required to access this resource."));
 		}
 
 		log.warn("Access denied for '{}': {}", auth.getName(), ex.getMessage());
 		return ResponseEntity.status(HttpStatus.FORBIDDEN)
-							 .body(ApiResponse.error(403, "You are not authorized to perform this action."));
+				.body(ApiResponse.error(403, "You are not authorized to perform this action."));
 	}
 
 	/**
-	 * The Client sends a body Jackson cannot parse
-	 * Example: malformed JSON, a stray/missing comma, or a value of the wrong type. <br>
+	 * The Client sends a body Jackson cannot parse Example: malformed JSON, a
+	 * stray/missing comma, or a value of the wrong type. <br>
 	 * {@code 400} - client error.
 	 */
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ApiResponse<Void>> handleUnreadableMessage(HttpMessageNotReadableException ex) {
 		log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
-		return ResponseEntity
-				.status(HttpStatus.BAD_REQUEST)
-				.body(ApiResponse.error(400, "The request body could not be read. Please check the format and try again."));
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+				ApiResponse.error(400, "The request body could not be read. Please check the format and try again."));
 	}
 
 	/**
-	 * The Client sends a well-formed body that fails {@code @Valid} bean validation <br>
+	 * The Client sends a well-formed body that fails {@code @Valid} bean validation
+	 * <br>
 	 * Example: renaming {@code password} to {@code passwor}. <br>
 	 * This leaves the real field null and {@code @NotBlank} rejects it <br>
-	 * Every failed field's message is collected so the caller sees all problems at once. <br>
+	 * Every failed field's message is collected so the caller sees all problems at
+	 * once. <br>
 	 * {@code 400} - client error.
 	 */
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
 
-		Map<String, List<String>> errors = ex.getBindingResult()
-											 .getFieldErrors()
-											 .stream()
+		Map<String, List<String>> errors = ex.getBindingResult().getFieldErrors().stream()
 				.collect(Collectors.groupingBy(FieldError::getField, LinkedHashMap::new,
-						Collectors.mapping(DefaultMessageSourceResolvable::getDefaultMessage,
-											Collectors.toList())));
+						Collectors.mapping(DefaultMessageSourceResolvable::getDefaultMessage, Collectors.toList())));
 
-		List<String> global = ex.getBindingResult()
-								.getGlobalErrors()
-								.stream()
-								.map(DefaultMessageSourceResolvable::getDefaultMessage)
-								.toList();
+		List<String> global = ex.getBindingResult().getGlobalErrors().stream()
+				.map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
 
-		if (!global.isEmpty()) errors.put("_form", global);
+		if (!global.isEmpty())
+			errors.put("_form", global);
 		log.warn("Validation failed: {}", errors);
-		
+
 		return ResponseEntity.badRequest()
 				.body(ApiResponse.validationError("Validation failed for one or more fields.", errors));
 	}
 
 	/**
 	 * The Client omits a required query/form parameter entirely. <br>
-	 * Safe to tell the user the error that occured, it helps the user to send what we need. <br>
+	 * Safe to tell the user the error that occured, it helps the user to send what
+	 * we need. <br>
 	 * {@code 400} - client error.
 	 */
 	@ExceptionHandler(MissingServletRequestParameterException.class)
@@ -209,21 +199,23 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
-	 * The Client sends a parameter whose value cannot be converted to the expected type. <br>
+	 * The Client sends a parameter whose value cannot be converted to the expected
+	 * type. <br>
 	 * Example : {@code /users/abc} where a numeric id is required. <br>
 	 * {@code 400} - client error.
 	 */
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-		log.warn("Type mismatch for parameter '{}': value [{}] could not be converted to {}",
-				ex.getName(), ex.getValue(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "?");
+		log.warn("Type mismatch for parameter '{}': value [{}] could not be converted to {}", ex.getName(),
+				ex.getValue(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "?");
 		String msg = "The parameter '" + ex.getName() + "' has an invalid value.";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, msg));
 	}
 
 	/**
 	 * Handles the case when a URL is not found. <br>
-	 * User hits a URL that does not correspond to any defined controller endpoint. <br>
+	 * User hits a URL that does not correspond to any defined controller endpoint.
+	 * <br>
 	 * {@code 404} - client error.
 	 */
 	@ExceptionHandler(NoResourceFoundException.class)
@@ -234,7 +226,8 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
-	 * Handles the case when an HTTP method is not supported for a given endpoint. <br>
+	 * Handles the case when an HTTP method is not supported for a given endpoint.
+	 * <br>
 	 * {@code 405} - client error.
 	 */
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -245,13 +238,42 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * The Client's write collides with a rule the database enforces, usually
+	 * because a concurrent request got there first. <br>
+	 * Unique violation (a username taken a moment ago, a double-submitted insert) →
+	 * {@code 409} <br>
+	 * Foreign key violation (commenting on a post that was just deleted) →
+	 * {@code 404} <br>
+	 * The raw database message names constraints and columns, so it is logged,
+	 * never returned. <br>
+	 * Any other violation is a bug rather than a client error, so it falls through
+	 * to {@code 500}.
+	 */
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+		log.warn("Data integrity violation [{}]: {}", SqlErrors.sqlState(ex), ex.getMostSpecificCause().getMessage());
+
+		if (SqlErrors.isUniqueViolation(ex)) {
+			String msg = "This action conflicts with a change made at the same time. Please refresh and try again.";
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(409, msg));
+		}
+		if (SqlErrors.isForeignKeyViolation(ex)) {
+			String msg = "The item you are acting on no longer exists.";
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, msg));
+		}
+		return handleGeneric(ex);
+	}
+
+	/**
 	 * Handle any unhandled exceptions that occur during request processing. <br>
-	 * Logs the exception and returns a generic 500 Internal Server Error response. <br>
+	 * Logs the exception and returns a generic 500 Internal Server Error response.
+	 * <br>
 	 * {@code 500} - server error.
 	 */
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex) {
 		log.error("Unhandled exception", ex);
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(500, "An unexpected error occurred. Please try again later."));
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponse.error(500, "An unexpected error occurred. Please try again later."));
 	}
 }

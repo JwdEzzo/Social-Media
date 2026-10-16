@@ -1,10 +1,6 @@
 package com.instragram.project.model;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import com.instragram.project.enums.AccountStatus;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +15,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,52 +29,52 @@ import lombok.ToString;
 @Setter
 @Entity
 @Table(name = "app_users")
-@ToString(exclude = { "posts", "comments", "likes" }) // Exclude collections to prevent circular reference
+@ToString(exclude = {"posts", "comments", "likes"}) // Exclude collections to prevent circular reference
 public class AppUser {
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-   @Email(message = "Email is not valid")
-   @NotBlank(message = "Email is required")
-   @Column(nullable = false, unique = true)
-   private String email;
+	@Email(message = "Email is not valid")
+	@NotBlank(message = "Email is required")
+	@Column(nullable = false, unique = true)
+	private String email;
 
-   @NotBlank(message = "Username is required")
-   @Size(min = 8, message = "Username must be at least 8 characters long")
-   @Column(nullable = false, unique = true)
-   private String username;
+	@NotBlank(message = "Username is required")
+	@Size(min = 8, message = "Username must be at least 8 characters long")
+	@Column(nullable = false, unique = true)
+	private String username;
 
-   @NotBlank(message = "Password is required")
-   @Size(min = 8, message = "Username must be at least 8 characters long")
-   private String password;
+	@NotBlank(message = "Password is required")
+	@Size(min = 8, message = "Username must be at least 8 characters long")
+	private String password;
 
-   private String bioText;
+	private String bioText;
 
-   @Column(name = "has_profile_picture", nullable = false, columnDefinition = "boolean default false")
-   private boolean hasProfilePicture;
+	@Column(name = "has_profile_picture", nullable = false, columnDefinition = "boolean default false")
+	private boolean hasProfilePicture;
 
-   private LocalDateTime createdAt;
+	private LocalDateTime createdAt;
 
-   private LocalDateTime updatedAt;
+	private LocalDateTime updatedAt;
 
-   @Column(name = "account_status")
-   @Enumerated(EnumType.STRING)
-   private AccountStatus accountStatus;
+	@Column(name = "account_status")
+	@Enumerated(EnumType.STRING)
+	private AccountStatus accountStatus;
 
-   @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
-   private List<Post> posts;
+	@OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
+	private List<Post> posts;
 
-   @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
-   private List<Comment> comments;
+	@OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
+	private List<Comment> comments;
 
-   @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
-   private List<PostLike> likes;
+	@OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL)
+	private List<PostLike> likes;
 
-   @PrePersist
-   public void onCreate() {
-      createdAt = LocalDateTime.now();
-      accountStatus = AccountStatus.PUBLIC;
-   }
+	@PrePersist
+	public void onCreate() {
+		createdAt = LocalDateTime.now();
+		accountStatus = AccountStatus.PUBLIC;
+	}
 }

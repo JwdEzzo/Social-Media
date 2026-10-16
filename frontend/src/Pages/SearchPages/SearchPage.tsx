@@ -1,3 +1,4 @@
+import { useCreateRecentSearchMutation } from "@/api/search/searchApi";
 import { Input } from "@/components/ui/input";
 import PostSearchResults from "@/Pages/SearchPages/PostSearchResults";
 import UserSearchResults from "@/Pages/SearchPages/UserSearchResults";
@@ -32,6 +33,8 @@ function SearchPage() {
 
   const [inputValue, setInputValue] = useState<string>(searchQuery);
 
+  const [createRecentSearch] = useCreateRecentSearchMutation();
+
   // setSearchParams replaces every param, so q and type are always written together
   const writeSearchParams = useCallback(
     (query: string, type: SearchType) => {
@@ -65,6 +68,12 @@ function SearchPage() {
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextQuery = inputValue.trim();
+
+    // Only Enter saves to recent searches, never the debounced search-as-you-type.
+    // Saved before the early return: on the Users tab the debounce may already have
+    // run this query. Fire and forget, so a failed save never blocks the search.
+    if (nextQuery) createRecentSearch({ searchTerm: nextQuery });
+
     if (nextQuery === searchQuery) return;
     writeSearchParams(nextQuery, searchType);
   }

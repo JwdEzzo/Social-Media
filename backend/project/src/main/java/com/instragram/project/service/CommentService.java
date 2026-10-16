@@ -1,10 +1,5 @@
 package com.instragram.project.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import org.springframework.stereotype.Service;
-
 import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.enums.NotificationType;
 import com.instragram.project.exception.ForbiddenException;
@@ -14,103 +9,101 @@ import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Comment;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class CommentService {
 
-   private final CommentRepository commentRepository;
+	private final CommentRepository commentRepository;
 
-   private final AppUserRepository appUserRepository;
+	private final AppUserRepository appUserRepository;
 
-   private final MappingMethods mappingMethods;
+	private final MappingMethods mappingMethods;
 
-   private final NotificationService notificationService;
+	private final NotificationService notificationService;
 
-   public CommentService(CommentRepository commentRepository, AppUserRepository appUserRepository,
-         MappingMethods mappingMethods, NotificationService notificationService) {
-      this.commentRepository = commentRepository;
-      this.appUserRepository = appUserRepository;
-      this.mappingMethods = mappingMethods;
-      this.notificationService = notificationService;
-   }
+	public CommentService(CommentRepository commentRepository, AppUserRepository appUserRepository,
+			MappingMethods mappingMethods, NotificationService notificationService) {
+		this.commentRepository = commentRepository;
+		this.appUserRepository = appUserRepository;
+		this.mappingMethods = mappingMethods;
+		this.notificationService = notificationService;
+	}
 
-   // Create Comment
-   @Transactional
-   public void createComment(WriteCommentRequest requestDto, String username) {
-      AppUser appUser = getUserOrThrow(username);
+	// Create Comment
+	@Transactional
+	public void createComment(WriteCommentRequest requestDto, String username) {
+		AppUser appUser = getUserOrThrow(username);
 
-      Comment comment = mappingMethods.convertWriteCommentRequestToCommentEntity(appUser, requestDto);
-      commentRepository.save(comment);
+		Comment comment = mappingMethods.convertWriteCommentRequestToCommentEntity(appUser, requestDto);
+		commentRepository.save(comment);
 
-      notificationService.createNotification(
-            comment.getPost().getAppUser(), // recipient - the post owner
-            appUser, // sender - the person commenting
-            NotificationType.COMMENT,
-            requestDto.getPostId() // entityId
-      );
-   }
+		notificationService.createNotification(comment.getPost().getAppUser(), // recipient - the post owner
+				appUser, // sender - the person commenting
+				NotificationType.COMMENT, requestDto.getPostId() // entityId
+		);
+	}
 
-   /**
-    * Get a page of the comments on a post.
-    * The {@code Pageable} carries the page number, size and sort, and the returned
-    * {@link Page} carries the total count so the caller can render pagination controls.
-    */
-   public Page<Comment> findByPostId(Long postId, Pageable pageable) {
-      return commentRepository.findByPostId(postId, pageable);
-   }
+	/**
+	 * Get a page of the comments on a post. The {@code Pageable} carries the page
+	 * number, size and sort, and the returned {@link Page} carries the total count
+	 * so the caller can render pagination controls.
+	 */
+	public Page<Comment> findByPostId(Long postId, Pageable pageable) {
+		return commentRepository.findByPostId(postId, pageable);
+	}
 
-   // Update a comment
-   @Transactional
-   public void editComment(Long commentId, String content, String username) {
-      Comment comment = getCommentOrThrow(commentId);
-      if (!comment.getAppUser().getUsername().equals(username)) {
-         throw new ForbiddenException("You do not have permission to edit this comment.");
-      }
-      comment.setContent(content);
-      commentRepository.save(comment);
-   }
-   
-   // Delete comment by Post/Comment Owner
-   @Transactional
-   public void deleteCommentByPostOrCommentOwner(Long commentId, String username) {
-      AppUser appUser = getUserOrThrow(username);
+	// Update a comment
+	@Transactional
+	public void editComment(Long commentId, String content, String username) {
+		Comment comment = getCommentOrThrow(commentId);
+		if (!comment.getAppUser().getUsername().equals(username)) {
+			throw new ForbiddenException("You do not have permission to edit this comment.");
+		}
+		comment.setContent(content);
+		commentRepository.save(comment);
+	}
 
-      Comment comment = getCommentOrThrow(commentId);
-      boolean isCommentOwner = comment.getAppUser().getId().equals(appUser.getId());
-      boolean isPostOwner = comment.getPost().getAppUser().getId().equals(appUser.getId());
+	// Delete comment by Post/Comment Owner
+	@Transactional
+	public void deleteCommentByPostOrCommentOwner(Long commentId, String username) {
+		AppUser appUser = getUserOrThrow(username);
 
-      if (!isCommentOwner && !isPostOwner) {
-         throw new ForbiddenException("You do not have permission to delete this comment.");
-      }
+		Comment comment = getCommentOrThrow(commentId);
+		boolean isCommentOwner = comment.getAppUser().getId().equals(appUser.getId());
+		boolean isPostOwner = comment.getPost().getAppUser().getId().equals(appUser.getId());
 
-      // Sender is always the commenter — regardless of who is performing the deletion
-      notificationService.deleteEntityNotification(
-            comment.getPost().getAppUser().getId(), // recipient — post owner
-            comment.getAppUser().getId(), // sender — commenter
-            NotificationType.COMMENT,
-            comment.getPost().getId() // entityId
-         ); 
+		if (!isCommentOwner && !isPostOwner) {
+			throw new ForbiddenException("You do not have permission to delete this comment.");
+		}
 
-      commentRepository.deleteById(commentId);
-   }
+		// Sender is always the commenter — regardless of who is performing the deletion
+		notificationService.deleteEntityNotification(comment.getPost().getAppUser().getId(), // recipient — post owner
+				comment.getAppUser().getId(), // sender — commenter
+				NotificationType.COMMENT, comment.getPost().getId() // entityId
+		);
 
-   // Get number of comments on a post
-   public long getCommentCount(Long postId) {
-      return commentRepository.countByPostId(postId);
-   }
+		commentRepository.deleteById(commentId);
+	}
 
-   private AppUser getUserOrThrow(String username) {
-      return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
-   }
+	// Get number of comments on a post
+	public long getCommentCount(Long postId) {
+		return commentRepository.countByPostId(postId);
+	}
 
-   private Comment getCommentOrThrow(Long id) {
-      return commentRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Comment with id " + id + " was not found."));
-   }
+	private AppUser getUserOrThrow(String username) {
+		return appUserRepository.findByUsername(username)
+				.orElseThrow(() -> new NotFoundException("User '" + username + "' was not found."));
+	}
+
+	private Comment getCommentOrThrow(Long id) {
+		return commentRepository.findById(id)
+				.orElseThrow(() -> new NotFoundException("Comment with id " + id + " was not found."));
+	}
 
 }

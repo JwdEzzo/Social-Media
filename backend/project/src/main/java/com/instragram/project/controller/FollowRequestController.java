@@ -1,5 +1,7 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.dto.follow.response.FollowRequestResponse;
+import com.instragram.project.service.FollowService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,86 +18,76 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.instragram.project.dto.follow.response.FollowRequestResponse;
-import com.instragram.project.service.FollowService;
-
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/follow-requests")
 @PreAuthorize("isAuthenticated()") // all endpoints here require auth
 public class FollowRequestController {
 
-    private final FollowService followService;
+	private final FollowService followService;
 
-    public FollowRequestController(FollowService followService) {
-        this.followService = followService;
-    }
+	public FollowRequestController(FollowService followService) {
+		this.followService = followService;
+	}
 
-    // GET: Get all outgoing follow requests (the notification list), paginated
-    @GetMapping("/outgoing")
-    public ResponseEntity<PagedModel<FollowRequestResponse>> getOutgoingRequests(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            Authentication authentication) {
+	// GET: Get all outgoing follow requests (the notification list), paginated
+	@GetMapping("/outgoing")
+	public ResponseEntity<PagedModel<FollowRequestResponse>> getOutgoingRequests(
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+			Authentication authentication) {
 
-        Page<FollowRequestResponse> requests =
-                followService.getAllOutgoingRequests(authentication.getName(), pageable);
-        return ResponseEntity.ok(new PagedModel<>(requests));
-    }
+		Page<FollowRequestResponse> requests = followService.getAllOutgoingRequests(authentication.getName(), pageable);
+		return ResponseEntity.ok(new PagedModel<>(requests));
+	}
 
-    // GET: Get count of outgoing follow requests
-    @GetMapping("/outgoing/count")
-    public ResponseEntity<Long> getOutgoingRequestsCount(Authentication authentication) {
-        long count = followService.getOutgoingRequestsCount(authentication.getName());
-        return ResponseEntity.ok(count);
-    }
+	// GET: Get count of outgoing follow requests
+	@GetMapping("/outgoing/count")
+	public ResponseEntity<Long> getOutgoingRequestsCount(Authentication authentication) {
+		long count = followService.getOutgoingRequestsCount(authentication.getName());
+		return ResponseEntity.ok(count);
+	}
 
-    // GET: Get all pending incoming follow requests (the notification list), paginated
-    @GetMapping("/incoming")
-    public ResponseEntity<PagedModel<FollowRequestResponse>> getIncomingRequests(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            Authentication authentication) {
+	// GET: Get all pending incoming follow requests (the notification list),
+	// paginated
+	@GetMapping("/incoming")
+	public ResponseEntity<PagedModel<FollowRequestResponse>> getIncomingRequests(
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+			Authentication authentication) {
 
-        Page<FollowRequestResponse> requests =
-                followService.getAllPendingIncomingRequests(authentication.getName(), pageable);
-        return ResponseEntity.ok(new PagedModel<>(requests));
-    }
+		Page<FollowRequestResponse> requests = followService.getAllPendingIncomingRequests(authentication.getName(),
+				pageable);
+		return ResponseEntity.ok(new PagedModel<>(requests));
+	}
 
-    // GET: Get count of follow requests for an account
-    @GetMapping("/incoming/count")
-    public ResponseEntity<Long> getFollowRequestsCount(Authentication authentication) {
-        long count = followService.getFollowRequestsCount(authentication.getName());
-        return ResponseEntity.ok(count);
-    }
+	// GET: Get count of follow requests for an account
+	@GetMapping("/incoming/count")
+	public ResponseEntity<Long> getFollowRequestsCount(Authentication authentication) {
+		long count = followService.getFollowRequestsCount(authentication.getName());
+		return ResponseEntity.ok(count);
+	}
 
-    // PUT: Accept a follow request
-    @PutMapping("/{requestId}/accept")
-    public ResponseEntity<Void> acceptFollowRequest(
-            @PathVariable Long requestId,
-            Authentication authentication) {
+	// PUT: Accept a follow request
+	@PutMapping("/{requestId}/accept")
+	public ResponseEntity<Void> acceptFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
-        followService.respondToFollowRequest(requestId, authentication.getName(), true);
-        return ResponseEntity.noContent().build();
-    }
+		followService.respondToFollowRequest(requestId, authentication.getName(), true);
+		return ResponseEntity.noContent().build();
+	}
 
-    // PUT: Decline a follow request
-    @PutMapping("/{requestId}/decline")
-    public ResponseEntity<Void> declineFollowRequest(
-            @PathVariable Long requestId,
-            Authentication authentication) {
+	// PUT: Decline a follow request
+	@PutMapping("/{requestId}/decline")
+	public ResponseEntity<Void> declineFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
-        followService.respondToFollowRequest(requestId, authentication.getName(), false);
-        return ResponseEntity.noContent().build();
-    }
+		followService.respondToFollowRequest(requestId, authentication.getName(), false);
+		return ResponseEntity.noContent().build();
+	}
 
-    // DELETE: Cancel an outgoing follow request (requester withdraws it)
-    @DeleteMapping("/{requestId}/cancel")
-    public ResponseEntity<Void> cancelFollowRequest(
-            @PathVariable Long requestId,
-            Authentication authentication) {
+	// DELETE: Cancel an outgoing follow request (requester withdraws it)
+	@DeleteMapping("/{requestId}/cancel")
+	public ResponseEntity<Void> cancelFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
-        followService.cancelFollowRequest(requestId, authentication.getName());
-        return ResponseEntity.noContent().build();
-    }
-
+		followService.cancelFollowRequest(requestId, authentication.getName());
+		return ResponseEntity.noContent().build();
+	}
 
 }

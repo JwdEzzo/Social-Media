@@ -9,16 +9,16 @@ package com.instragram.project.exception;
  */
 public class NotFoundException extends BaseException {
 
-    public NotFoundException(String message) {
-        super(message);
-    }
+	public NotFoundException(String message) {
+		super(message);
+	}
 
-    /**
-     * Re-declares {@link BaseException}'s cause-carrying constructor so callers can reach it.
-     * Constructors are not inherited, so without this the {@code Throwable} could not be
-     * passed through — losing the stack trace.
-     */
-    public NotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	/**
+	 * Re-declares {@link BaseException}'s cause-carrying constructor so callers can
+	 * reach it. Constructors are not inherited, so without this the
+	 * {@code Throwable} could not be passed through — losing the stack trace.
+	 */
+	public NotFoundException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

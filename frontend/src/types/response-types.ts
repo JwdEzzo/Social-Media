@@ -72,6 +72,13 @@ export interface FollowRequestResponseDto {
   createdAt: string;
 }
 
+// ================ SEARCH =================
+export interface GetSearchResponseDto {
+  id: number;
+  searchTerm: string;
+  createdAt: string;
+}
+
 // ================ NOTIFICATIONS =================
 export interface NotificationResponseDto {
   id: number;
