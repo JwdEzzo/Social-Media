@@ -21,6 +21,7 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/custom/follow-button";
 import { usePostActions } from "@/hooks/usePostActions";
+import UserAvatar from "@/components/custom/user-avatar";
 
 interface HomePagePostCardProps {
   post: GetPostResponse;
@@ -68,7 +69,7 @@ const HomePagePostCard = memo(
               <div className="flex items-center gap-3 justify-between">
                 <div className="flex min-w-0 items-center gap-2.5">
                   {/* Profile Picture with lazy loading */}
-                  <img
+                  <UserAvatar
                     src={post.profilePictureUrl}
                     alt={post.description}
                     className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"

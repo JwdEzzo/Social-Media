@@ -5,7 +5,7 @@ import {
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
-import ViewPost from "../PostPages/ViewPost";
+import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -220,10 +220,10 @@ function HomePage() {
         </div>
 
         {/* View Post Modal */}
-        {/* // In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
+        {/* // In both ProfilePage and HomePage, we have the ViewPostModal.tsx as a child component.
           // We call the state from Redux store in both components
-          // We then pass them as props to the ViewPost component */}
-        <ViewPost
+          // We then pass them as props to the ViewPostModal component */}
+        <ViewPostModal
           isOpen={isViewModalOpen}
           handleCloseViewModal={handleCloseViewModal}
           selectedPostId={selectedPostId}

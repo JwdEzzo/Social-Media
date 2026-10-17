@@ -20,6 +20,7 @@ import {
 } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import UserAvatar from "@/components/custom/user-avatar";
 
 const updateProfileSchema = z.object({
   bioText: z.string().nullable().optional(),
@@ -235,15 +236,13 @@ function EditProfile() {
                 </div>
 
                 {/* Image Preview */}
-                {displayedImage ? (
-                  <div className="flex justify-center pt-1">
-                    <img
-                      src={displayedImage}
-                      alt="Preview"
-                      className="size-32 rounded-full border border-border object-cover"
-                    />
-                  </div>
-                ) : null}
+                <div className="flex justify-center pt-1">
+                  <UserAvatar
+                    src={displayedImage}
+                    alt="Preview"
+                    className="size-32 rounded-full border border-border object-cover"
+                  />
+                </div>
 
                 {/* Submit Button */}
                 <Button

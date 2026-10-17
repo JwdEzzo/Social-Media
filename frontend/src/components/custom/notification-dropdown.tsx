@@ -12,7 +12,7 @@ import {
 } from "../ui/dropdown-menu";
 import NotificationButton from "./notification-button";
 import { NotificationType } from "@/types/enums";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import UserAvatar from "./user-avatar";
 import { Skeleton } from "../ui/skeleton";
 import {
   Heart,
@@ -171,16 +171,11 @@ function NotificationDropdown() {
                   )}
                 >
                   <div className="relative shrink-0">
-                    <Avatar className="size-9 ring-1 ring-border">
-                      <AvatarImage
-                        src={notification.sender.profilePictureUrl}
-                        alt={notification.sender.username}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="bg-muted text-xs font-semibold uppercase text-muted-foreground">
-                        {notification.sender.username.substring(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      src={notification.sender.profilePictureUrl}
+                      alt={notification.sender.username}
+                      className="size-9 rounded-full object-cover ring-1 ring-border"
+                    />
                     <span
                       className={cn(
                         "absolute -right-1 -bottom-1 flex size-[18px] items-center justify-center rounded-full border-2 border-popover",

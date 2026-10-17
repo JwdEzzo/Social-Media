@@ -17,6 +17,7 @@ import ReplyCard from "../ReplyPages/ReplyCard";
 
 import { useDeleteCommentMutation } from "@/api/comments/commentApi";
 import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
+import UserAvatar from "@/components/custom/user-avatar";
 
 interface CommentCardProps {
   comment: GetCommentResponse;
@@ -99,7 +100,7 @@ const CommentCard = memo(
       <div className={`py-2.5`}>
         <div className="flex items-start gap-3">
           {/* Profile Picture */}
-          <img
+          <UserAvatar
             src={comment.appUser.profilePictureUrl}
             alt={comment.appUser.username}
             className="size-8 shrink-0 cursor-pointer rounded-full object-cover ring-1 ring-border"

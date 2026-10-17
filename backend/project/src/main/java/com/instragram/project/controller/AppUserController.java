@@ -4,6 +4,7 @@ import com.instragram.project.dto.security.request.LoginRequest;
 import com.instragram.project.dto.security.request.SignUpRequest;
 import com.instragram.project.dto.security.response.LoginResponse;
 import com.instragram.project.dto.user.request.DeleteAccountRequest;
+import com.instragram.project.dto.user.request.SearchUserResponse;
 import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
 import com.instragram.project.dto.user.request.UpdateProfileRequest;
 import com.instragram.project.dto.user.response.GetUserResponse;
@@ -131,6 +132,14 @@ public class AppUserController {
 			@PageableDefault(size = 10, sort = "id") Pageable pageable) {
 		Page<GetUserResponse> page = appUserService.getAllFollowings(userId, pageable);
 		return ResponseEntity.ok(new PagedModel<>(page));
+	}
+
+	// GET : Users who liked a post, most recent like first, paginated
+	@GetMapping("/liked-post/{postId}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PagedModel<SearchUserResponse>> getUsersWhoLikedPost(@PathVariable Long postId,
+			@PageableDefault(size = 20) Pageable pageable) {
+		return ResponseEntity.ok(new PagedModel<>(appUserService.getUsersWhoLikedPost(postId, pageable)));
 	}
 
 	// GET: serve image bytes for a post

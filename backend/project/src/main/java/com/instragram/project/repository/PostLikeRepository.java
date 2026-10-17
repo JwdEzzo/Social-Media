@@ -48,4 +48,13 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 			ON CONFLICT (app_user_id, post_id) DO NOTHING
 			""", nativeQuery = true)
 	int insertIfAbsent(@Param("userId") Long userId, @Param("postId") Long postId);
+
+	// Users who liked a post, most recent like first
+	@Query("""
+			SELECT pl.appUser
+			FROM PostLike pl
+			WHERE pl.post.id = :postId
+			ORDER BY pl.createdAt DESC
+			""")
+	Page<AppUser> findLikersByPostId(@Param("postId") Long postId, Pageable pageable);
 }

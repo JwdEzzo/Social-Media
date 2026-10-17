@@ -21,12 +21,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
-import ViewPost from "@/Pages/PostPages/ViewPost";
+import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import FollowButton from "@/components/custom/follow-button";
 import { useProfileLogic } from "@/hooks/useProfilePageHook";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import LoadingPostTiles from "@/components/custom/loading-post-tiles";
+import UserAvatar from "@/components/custom/user-avatar";
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -121,7 +122,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
               onClick={isOwnProfile ? actions.navigateToEditProfile : undefined}
             >
               <div className="size-24 overflow-hidden rounded-full border border-border bg-muted sm:size-36">
-                <img
+                <UserAvatar
                   src={profileUser?.profilePictureUrl}
                   alt={profileUser?.username}
                   className="w-full h-full object-cover"
@@ -455,7 +456,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       )}
 
       {/* View Post Modal: opens when a post tile is clicked */}
-      <ViewPost
+      <ViewPostModal
         isOpen={state.isViewModalOpen}
         handleCloseViewModal={actions.handleCloseViewModal}
         selectedPostId={state.selectedPostId}

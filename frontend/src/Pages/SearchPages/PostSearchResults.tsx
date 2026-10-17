@@ -7,7 +7,7 @@ import LoadingPostTiles from "@/components/custom/loading-post-tiles";
 import { Button } from "@/components/ui/button";
 import { usePagedList } from "@/hooks/usePagedList";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
-import ViewPost from "@/Pages/PostPages/ViewPost";
+import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
 import { closePostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
 import { RotateCcw } from "lucide-react";
@@ -18,7 +18,7 @@ interface PostSearchResultsProps {
 }
 
 // Posts tab of the search page: explore posts while the query is empty, otherwise
-// the posts whose description matches. Clicking a tile opens the ViewPost modal.
+// the posts whose description matches. Clicking a tile opens the ViewPostModal.
 function PostSearchResults({ query }: PostSearchResultsProps) {
   const dispatch = useDispatch();
 
@@ -107,7 +107,7 @@ function PostSearchResults({ query }: PostSearchResultsProps) {
       />
 
       {/* View Post Modal: opens when a post tile is clicked */}
-      <ViewPost
+      <ViewPostModal
         isOpen={isViewModalOpen}
         handleCloseViewModal={handleCloseViewModal}
         selectedPostId={selectedPostId}

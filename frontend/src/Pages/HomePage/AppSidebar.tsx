@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useState } from "react";
+import UserAvatar from "@/components/custom/user-avatar";
 
 const navButtonClass =
   "h-10 cursor-pointer gap-3 px-1 font-medium transition-colors group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1!";
@@ -182,7 +183,7 @@ function AppSidebar() {
                   onClick={navigateBackToProfile}
                 >
                   <div className="shrink-0">
-                    <img
+                    <UserAvatar
                       src={loggedInUser?.profilePictureUrl}
                       alt=""
                       className="size-6 rounded-full object-cover"

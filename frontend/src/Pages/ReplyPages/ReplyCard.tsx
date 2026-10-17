@@ -12,6 +12,7 @@ import type {
 } from "@/types/response-types";
 import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
+import UserAvatar from "@/components/custom/user-avatar";
 
 interface ReplyCardProps {
   reply: GetReplyResponse;
@@ -67,7 +68,7 @@ const ReplyCard = memo(
       <div className="pt-3">
         <div className="flex items-start gap-2.5">
           {/* Profile Picture */}
-          <img
+          <UserAvatar
             src={reply.appUser.profilePictureUrl}
             alt={reply.appUser.username}
             className="size-6 shrink-0 cursor-pointer rounded-full object-cover ring-1 ring-border"

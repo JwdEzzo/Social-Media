@@ -12,7 +12,7 @@ export interface GetUserResponse {
   email: string;
   username: string;
   bioText: string;
-  profilePictureUrl: string;
+  profilePictureUrl: string | null;
   createdAt: string;
   updatedAt: string;
   accountStatus: AccountStatus;
@@ -23,7 +23,7 @@ export interface SearchUserResponse {
   id: number;
   username: string;
   bioText: string;
-  profilePictureUrl: string;
+  profilePictureUrl: string | null;
 }
 
 export interface SignUpResponse {
@@ -37,7 +37,7 @@ export interface SignUpResponse {
 export interface GetPostResponse {
   id: number;
   username: string;
-  profilePictureUrl: string;
+  profilePictureUrl: string | null;
   imageUrl: string;
   description: string;
   createdAt: string;

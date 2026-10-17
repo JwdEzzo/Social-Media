@@ -33,7 +33,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "@/auth/authSlice";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
-import ViewPost from "@/Pages/PostPages/ViewPost";
+import ViewPost from "@/Pages/PostPages/ViewPostModal";
 import type { RootState } from "@/store/store";
 import { closePostModal } from "@/slices/viewPostSlice";
 import { useTogglePostLikeMutation } from "@/api/posts/postLikesApi";

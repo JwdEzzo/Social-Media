@@ -91,6 +91,17 @@ export const userApi = api.injectEndpoints({
         providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
     }),
 
+    getUsersWhoLikedPost: builder.infiniteQuery<UsersPage, number, number>({
+      infiniteQueryOptions: pagedInfiniteQueryOptions,
+      query: ({ queryArg: postId, pageParam }) => ({
+        url: `/users/liked-post/${postId}`,
+        method: "GET",
+        params: userPageParams(pageParam),
+      }),
+      providesTags: (result) =>
+        providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
+    }),
+
     updateUserCredentials: builder.mutation<
       void,
       { currentUsername: string } & UpdateCredentialsRequest

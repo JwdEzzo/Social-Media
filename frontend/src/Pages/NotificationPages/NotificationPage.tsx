@@ -6,7 +6,7 @@ import {
 import { usePagedList } from "@/hooks/usePagedList";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserAvatar from "@/components/custom/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Heart,
@@ -284,16 +284,11 @@ function NotificationPage() {
                     <div className="flex min-w-0 items-center gap-3">
                       {/* Avatar container with relative badge placement */}
                       <div className="relative shrink-0">
-                        <Avatar className="size-11 ring-1 ring-border">
-                          <AvatarImage
-                            src={notification.sender.profilePictureUrl}
-                            alt={notification.sender.username}
-                            className="object-cover"
-                          />
-                          <AvatarFallback className="bg-muted font-semibold uppercase text-muted-foreground">
-                            {notification.sender.username.substring(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <UserAvatar
+                          src={notification.sender.profilePictureUrl}
+                          alt={notification.sender.username}
+                          className="size-11 rounded-full object-cover ring-1 ring-border"
+                        />
                         <span
                           className={cn(
                             "absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 border-background",

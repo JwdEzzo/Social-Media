@@ -24,9 +24,9 @@ import {
 } from "@/api/users/userApi";
 import { usePagedList } from "@/hooks/usePagedList";
 
-// In both ProfilePage and HomePage, we have the ViewPost.tsx as a child component.
+// In both ProfilePage and HomePage, we have the ViewPostModal.tsx as a child component.
 // We call the state from Redux store in both components
-// We then pass them as props to the ViewPost component
+// We then pass them as props to the ViewPostModal component
 
 export const useProfileLogic = (isOwnProfile: boolean) => {
   const navigate = useNavigate();
@@ -129,7 +129,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
   // --- HANDLERS ---
-  // Like / save live in usePostActions, called by ViewPost itself
+  // Like / save live in usePostActions, called by ViewPostModal itself
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");

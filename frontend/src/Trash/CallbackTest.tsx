@@ -5,7 +5,7 @@ import {
 import { useAuth } from "@/auth/useAuth";
 import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
-import ViewPost from "../Pages/PostPages/ViewPost";
+import ViewPost from "@/Pages/PostPages/ViewPostModal";
 import {
   SidebarProvider,
   SidebarInset,

@@ -3,6 +3,7 @@ package com.instragram.project.service;
 import com.instragram.project.dto.security.request.LoginRequest;
 import com.instragram.project.dto.security.request.SignUpRequest;
 import com.instragram.project.dto.security.response.LoginResponse;
+import com.instragram.project.dto.user.request.SearchUserResponse;
 import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
 import com.instragram.project.dto.user.request.UpdateProfileRequest;
 import com.instragram.project.dto.user.response.GetUserResponse;
@@ -20,6 +21,7 @@ import com.instragram.project.model.AppUser;
 import com.instragram.project.model.ProfilePicture;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
+import com.instragram.project.repository.PostLikeRepository;
 import com.instragram.project.repository.ProfilePictureRepository;
 import com.instragram.project.security.jwt.JwtService;
 import com.instragram.project.utils.FieldViolation;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -44,6 +48,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class AppUserService {
 
 	private final AppUserRepository appUserRepository;
@@ -53,17 +58,7 @@ public class AppUserService {
 	private final FollowRepository followRepository;
 	private final MappingMethods mappingMethods;
 	private final ProfilePictureRepository profilePictureRepository;
-
-	public AppUserService(AppUserRepository appUserRepository, JwtService jwtService,
-			AuthenticationManager authenticationManager, FollowRepository followRepository,
-			MappingMethods mappingMethods, ProfilePictureRepository profilePictureRepository) {
-		this.appUserRepository = appUserRepository;
-		this.jwtService = jwtService;
-		this.authenticationManager = authenticationManager;
-		this.followRepository = followRepository;
-		this.mappingMethods = mappingMethods;
-		this.profilePictureRepository = profilePictureRepository;
-	}
+	private final PostLikeRepository postLikeRepository;
 
 	/**
 	 * Sign up a new user with the {@link SignUpRequest} <br>
@@ -160,6 +155,14 @@ public class AppUserService {
 	}
 
 	/**
+	 * Get Users who liked a post, most recent like first
+	 */
+	public Page<SearchUserResponse> getUsersWhoLikedPost(Long postId, Pageable pageable) {
+		return postLikeRepository.findLikersByPostId(postId, pageable)
+				.map(mappingMethods::convertAppUserEntityToSearchUserResponse);
+	}
+
+	/**
 	 * Update the credentials of the caller, including email, username, and
 	 * password. <br>
 	 * The old password must be provided for verification. <br>
@@ -182,7 +185,7 @@ public class AppUserService {
 		if (!encoder.matches(newUser.getOldPassword(), user.getPassword())) {
 			throw new BadRequestException("The old password provided does not match the current password.");
 		}
-		// Step 3: Check and update email if provided
+		// Step 3: Check if request fields are provided
 		if (StringUtils.hasText(newUser.getEmail())) {
 			if (newUser.getEmail().equalsIgnoreCase(user.getEmail())) {
 				throw new BadRequestException("The new email must be different from the current email.");
@@ -190,7 +193,7 @@ public class AppUserService {
 			checkUserExistsByEmailOrThrow(newUser.getEmail());
 			user.setEmail(newUser.getEmail());
 		}
-		// Step 4: Check and update username if provided
+
 		if (StringUtils.hasText(newUser.getUsername())) {
 			if (newUser.getUsername().equals(user.getUsername())) {
 				throw new BadRequestException("The new username must be different from the current username.");
@@ -198,19 +201,14 @@ public class AppUserService {
 			checkUserExistsByUsernameOrThrow(newUser.getUsername());
 			user.setUsername(newUser.getUsername());
 		}
-		// Step 5: Check and update password if provided
+
 		if (StringUtils.hasText(newUser.getNewPassword())) {
 			if (encoder.matches(newUser.getNewPassword(), user.getPassword())) {
 				throw new BadRequestException("The new password must be different from the current password.");
 			}
 			user.setPassword(encoder.encode(newUser.getNewPassword()));
 		}
-		// Step 6: Update the timestamp, save, and return the user.
-		// The existence checks above can both pass for two concurrent requests claiming
-		// the same
-		// username or email; the unique index then rejects the second. saveAndFlush
-		// surfaces that
-		// here instead of at commit, so it answers 409 with a message naming the cause.
+		// Step 4: Update the timestamp, save, and return the user.
 		user.setUpdatedAt(LocalDateTime.now());
 		try {
 			appUserRepository.saveAndFlush(user);

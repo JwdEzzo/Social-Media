@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePagedList } from "@/hooks/usePagedList";
 import { Dot, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import UserAvatar from "@/components/custom/user-avatar";
 
 interface UserSearchResultsProps {
   query: string;
@@ -93,8 +94,8 @@ function UserSearchResults({ query }: UserSearchResultsProps) {
           className="flex items-center gap-2 bg-background/85 py-3 backdrop-blur-md cursor-pointer hover:bg-sidebar-accent rounded-full px-2"
           onClick={() => handleUserClick(user.username)}
         >
-          <img
-            src={`${user.profilePictureUrl}`}
+          <UserAvatar
+            src={user.profilePictureUrl}
             className="rounded-full size-10"
           />
           <h2>{user.username}</h2>

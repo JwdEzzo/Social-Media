@@ -31,7 +31,7 @@ import {
   useEffect,
   type FormEvent,
 } from "react";
-import CommentCard from "../CommentPages/CommentCard";
+import CommentCard from "@/Pages/CommentPages/CommentCard";
 import "@/components/scrollbar.css";
 import type { GetUserResponse } from "@/types/response-types";
 import {
@@ -69,20 +69,21 @@ import {
   enterEditCommentMode,
   enterEditReplyMode,
 } from "@/slices/editModeSlice";
+import UserAvatar from "@/components/custom/user-avatar";
 
-interface ViewPostProps {
+interface ViewPostModalProps {
   isOpen: boolean;
   handleCloseViewModal: () => void;
   selectedPostId: number | null;
   loggedInUser: GetUserResponse | undefined;
 }
 
-function ViewPost({
+function ViewPostModal({
   isOpen,
   handleCloseViewModal,
   selectedPostId,
   loggedInUser,
-}: ViewPostProps) {
+}: ViewPostModalProps) {
   //
   const {
     handleTogglePostLike,
@@ -466,7 +467,7 @@ function ViewPost({
           {/* Top Header - Contains poster info and actions */}
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
-              <img
+              <UserAvatar
                 src={post?.profilePictureUrl}
                 alt={post?.description}
                 className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
@@ -527,7 +528,7 @@ function ViewPost({
             {/* Post Description Section */}
             <div className="mb-3 flex shrink-0 items-start gap-3">
               <div className="shrink-0">
-                <img
+                <UserAvatar
                   src={post?.profilePictureUrl}
                   alt={post?.description}
                   className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
@@ -656,7 +657,7 @@ function ViewPost({
               className="flex w-full items-center gap-3"
               onSubmit={handleAddComment}
             >
-              <img
+              <UserAvatar
                 src={loggedInUser?.profilePictureUrl}
                 alt="Your profile"
                 className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border"
@@ -708,4 +709,4 @@ function ViewPost({
   );
 }
 
-export default ViewPost;
+export default ViewPostModal;

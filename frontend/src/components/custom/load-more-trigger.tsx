@@ -8,7 +8,7 @@ interface LoadMoreTriggerProps {
 
 // Infinite scroll for plain (non-Virtuoso) lists: place it after the last item.
 // It renders an invisible sentinel and calls onLoadMore when it scrolls into view.
-// Also works inside scroll containers (e.g. the comments in ViewPost), since the
+// Also works inside scroll containers (e.g. the comments in ViewPostModal), since the
 // observer clips the sentinel by its overflow ancestors.
 function LoadMoreTrigger({
   hasNextPage,
