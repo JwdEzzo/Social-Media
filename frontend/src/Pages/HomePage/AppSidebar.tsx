@@ -22,9 +22,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "@/auth/authSlice";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useLogout } from "@/hooks/useLogout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,9 +40,9 @@ const headerButtonClass =
   "cursor-pointer rounded-md my-1 p-1 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring";
 
 function AppSidebar() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const handleLogout = useLogout();
   const { loggedInUser, loggedInUsername: username } = useCurrentUser();
   const { setOpen } = useSidebar();
   // Sidebar expands while hovered, and stays expanded while the "More" menu is open
@@ -66,11 +65,6 @@ function AppSidebar() {
     if (!isOpen && !isHovered) setOpen(false);
   }
 
-  function handleLogout() {
-    dispatch(logout());
-    navigate("/");
-  }
-
   function getBackToHomeOrScrollToTop() {
     if (location.pathname === `/home/${username}`) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -80,7 +74,7 @@ function AppSidebar() {
   }
 
   function navigateBackToProfile() {
-    navigate(`/userprofile/${username}`);
+    navigate("/me");
   }
 
   function navigateToSearchPage() {

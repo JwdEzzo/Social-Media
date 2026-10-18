@@ -104,7 +104,7 @@ function SignUp() {
         }),
       );
 
-      navigate(`/userprofile/${response.username}/set-profile`);
+      navigate("/me/set-profile");
     } catch (error) {
       console.error("Auto login after sign up failed:", error);
       // Typed so the banner can offer a way forward instead of only reporting the failure.

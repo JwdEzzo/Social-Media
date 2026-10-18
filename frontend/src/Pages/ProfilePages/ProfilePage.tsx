@@ -28,6 +28,10 @@ import { useProfileLogic } from "@/hooks/useProfilePageHook";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import LoadingPostTiles from "@/components/custom/loading-post-tiles";
 import UserAvatar from "@/components/custom/user-avatar";
+import {
+  FullPageLoading,
+  FullPageStatus,
+} from "@/components/custom/status-card";
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -35,7 +39,7 @@ interface ProfilePageProps {
 
 function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const { state, actions } = useProfileLogic(isOwnProfile);
-  const { profileUser, loggedInUser, viewMode } = state;
+  const { profileUser, viewMode } = state;
 
   // Posts section: which list the active tab shows, and which state it's in
   const isPostsTab = viewMode === "posts";
@@ -66,46 +70,28 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
   // Loading state
   if (!state.profileUser || state.isUserLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background px-4">
-        <div className="text-center">
-          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Loading profile...
-          </p>
-        </div>
-      </div>
-    );
+    return <FullPageLoading label="Loading profile..." />;
   }
 
   // Error states
   if (state.isUserError || state.isPostsError) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
-          <h2 className="mb-1 text-lg font-semibold text-destructive">Error</h2>
-          <p className="text-sm text-muted-foreground">
-            Could not load profile
-          </p>
-          <Button onClick={() => window.location.reload()} className="mt-6">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <FullPageStatus
+        isError
+        title="Error"
+        message="Could not load profile"
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
   // User not found
   if (!profileUser) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
-          <h2 className="mb-1 text-lg font-semibold">User Not Found</h2>
-          <p className="text-sm text-muted-foreground">
-            The requested user does not exist
-          </p>
-        </div>
-      </div>
+      <FullPageStatus
+        title="User Not Found"
+        message="The requested user does not exist"
+      />
     );
   }
 
@@ -199,9 +185,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                             <DropdownMenuItem
                               className="cursor-pointer"
                               onClick={() =>
-                                actions.navigate(
-                                  `/userprofile/${profileUser?.username}/edit-profile`,
-                                )
+                                actions.navigate("/me/edit-profile")
                               }
                             >
                               Edit Profile
@@ -210,9 +194,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                             {/* Edit Credentials */}
                             <DropdownMenuItem
                               onClick={() =>
-                                actions.navigate(
-                                  `/userprofile/${profileUser?.username}/edit-credentials`,
-                                )
+                                actions.navigate("/me/edit-credentials")
                               }
                               className="cursor-pointer"
                             >
@@ -456,12 +438,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
       )}
 
       {/* View Post Modal: opens when a post tile is clicked */}
-      <ViewPostModal
-        isOpen={state.isViewModalOpen}
-        handleCloseViewModal={actions.handleCloseViewModal}
-        selectedPostId={state.selectedPostId}
-        loggedInUser={loggedInUser}
-      />
+      <ViewPostModal />
     </div>
   );
 }

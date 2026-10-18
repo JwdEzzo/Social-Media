@@ -1,31 +1,25 @@
 import {
-  useGetCommentLikeCountQuery,
-  useIsCommentLikedQuery,
-} from "@/api/comments/commentLikesApi";
-import {
   useGetCommentReplyCountQuery,
   useGetRepliesByCommentIdInfiniteQuery,
 } from "@/api/comments/commentRepliesApi";
+import { useCommentLike } from "@/hooks/useCommentLike";
 import { usePagedList } from "@/hooks/usePagedList";
-import type {
-  GetCommentResponse,
-  GetUserResponse,
-} from "@/types/response-types";
-import { Heart, MessageCircle } from "lucide-react";
+import type { GetCommentResponse } from "@/types/response-types";
+import { MessageCircle } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import ReplyCard from "../ReplyPages/ReplyCard";
 
 import { useDeleteCommentMutation } from "@/api/comments/commentApi";
 import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
+import LikeButton from "@/components/custom/like-button";
 import UserAvatar from "@/components/custom/user-avatar";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { formatDate } from "@/utils/helpers";
 
 interface CommentCardProps {
   comment: GetCommentResponse;
-  handleToggleCommentLike: (commentId: number) => void;
-  isTogglingCommentLike: boolean;
   onReply: (commentId: number, username: string) => void;
   navigateToSelectedUserProfile: (username: string) => void;
-  loggedInUser: GetUserResponse | undefined;
   postUsername: string;
   focusRef: React.RefObject<HTMLInputElement | null>;
   onEditComment: (commentId: number) => void;
@@ -35,28 +29,23 @@ interface CommentCardProps {
 const CommentCard = memo(
   ({
     comment,
-    handleToggleCommentLike,
-    isTogglingCommentLike,
     onReply,
     navigateToSelectedUserProfile,
-    loggedInUser,
     postUsername,
     onEditComment,
     onEditReply,
     focusRef,
   }: CommentCardProps) => {
+    const { isMe } = useCurrentUser();
     // Each comment now has its own showReplies state
     const [showReplies, setShowReplies] = useState(false);
 
-    const { data: commentLikeCount } = useGetCommentLikeCountQuery(
-      comment?.id ?? 0,
-      {
-        skip: !comment?.id || comment.id === 0,
-      },
-    );
-    const { data: isCommentLiked } = useIsCommentLikedQuery(comment?.id ?? 0, {
-      skip: !comment?.id || comment.id === 0,
-    });
+    const {
+      isCommentLiked,
+      commentLikeCount,
+      isTogglingCommentLike,
+      toggleCommentLike,
+    } = useCommentLike(comment.id);
 
     const { data: commentReplyCount } = useGetCommentReplyCountQuery(
       comment?.id ?? 0,
@@ -92,9 +81,9 @@ const CommentCard = memo(
       isFetchingNextPage: isFetchingMoreReplies,
     } = usePagedList(repliesQuery);
 
+    // Comment and post owners can edit/delete the comment
     const isAuthenticated =
-      comment.appUser.username === loggedInUser?.username ||
-      loggedInUser?.username === postUsername;
+      isMe(comment.appUser.username) || isMe(postUsername);
 
     return (
       <div className={`py-2.5`}>
@@ -124,7 +113,7 @@ const CommentCard = memo(
                   {comment.appUser.username}
                 </span>
                 <span className="hidden text-xs text-muted-foreground [@media(min-width:745px)]:block">
-                  {comment.createdAt.substring(0, 10)}
+                  {formatDate(comment.createdAt)}
                 </span>
               </div>
               <EditDeleteDropdown
@@ -143,19 +132,12 @@ const CommentCard = memo(
 
             {/* Comment Actions */}
             <div className="flex items-center">
-              <Heart
-                className={`size-3.5 cursor-pointer text-muted-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
-                  isCommentLiked
-                    ? "fill-current text-red-500 dark:text-red-500"
-                    : ""
-                } ${
-                  isTogglingCommentLike ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                onClick={() => handleToggleCommentLike(comment.id)}
+              <LikeButton
+                isLiked={isCommentLiked}
+                likeCount={commentLikeCount}
+                isToggling={isTogglingCommentLike}
+                onToggle={toggleCommentLike}
               />
-              <span className="pr-3 pl-1 text-xs font-medium text-muted-foreground">
-                {commentLikeCount}
-              </span>
               <MessageCircle
                 className="size-3.5 -scale-x-100 cursor-pointer text-muted-foreground transition-opacity hover:opacity-60"
                 onClick={() => {
@@ -205,7 +187,6 @@ const CommentCard = memo(
                         }
                         postUsername={postUsername}
                         comment={comment}
-                        loggedInUser={loggedInUser}
                         onEditReply={onEditReply}
                         //
                       />
@@ -237,9 +218,7 @@ const CommentCard = memo(
   (prevProps, nextProps) => {
     // Only re-render if the comment ID or callbacks changed
     const commentUnchanged = prevProps.comment.id === nextProps.comment.id;
-    const callbacksUnchanged =
-      prevProps.handleToggleCommentLike === nextProps.handleToggleCommentLike &&
-      prevProps.onReply === nextProps.onReply;
+    const callbacksUnchanged = prevProps.onReply === nextProps.onReply;
 
     return commentUnchanged && callbacksUnchanged;
   },

@@ -11,20 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import NotificationButton from "./notification-button";
-import { NotificationType } from "@/types/enums";
 import UserAvatar from "./user-avatar";
 import { Skeleton } from "../ui/skeleton";
-import {
-  Heart,
-  MessageCircle,
-  UserPlus,
-  BellOff,
-  ArrowRight,
-} from "lucide-react";
+import { BellOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/utils/errors";
 import { Button } from "../ui/button";
 import { formatTimeAgo } from "@/utils/helpers";
+import { getNotificationDetails } from "@/utils/notification-details";
 
 function NotificationDropdown() {
   const { data: latest3Notifications, isLoading } =
@@ -33,75 +27,6 @@ function NotificationDropdown() {
     });
   const navigate = useNavigate();
   const [markAllAsRead] = useMarkAllAsReadMutation();
-
-  const getNotificationDetails = (type: NotificationType) => {
-    switch (type) {
-      case NotificationType.POST_LIKE:
-        return {
-          message: "liked your post",
-          icon: <Heart className="size-2.5 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.COMMENT_LIKE:
-        return {
-          message: "liked your comment",
-          icon: <Heart className="size-2.5 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.REPLY_LIKE:
-        return {
-          message: "liked your reply",
-          icon: <Heart className="size-2.5 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.COMMENT:
-        return {
-          message: "commented on your post",
-          icon: (
-            <MessageCircle className="size-2.5 fill-current text-blue-500" />
-          ),
-          bgColor: "bg-blue-100 dark:bg-blue-950/50",
-        };
-      case NotificationType.REPLY:
-        return {
-          message: "replied to your comment",
-          icon: (
-            <MessageCircle className="size-2.5 fill-current text-purple-500" />
-          ),
-          bgColor: "bg-purple-100 dark:bg-purple-950/50",
-        };
-      case NotificationType.FOLLOW:
-        return {
-          message: "started following you",
-          icon: (
-            <UserPlus className="size-2.5 text-green-600 dark:text-green-400" />
-          ),
-          bgColor: "bg-green-100 dark:bg-green-950/50",
-        };
-      case NotificationType.FOLLOW_REQUEST_SENT:
-        return {
-          message: "sent you a follow request",
-          icon: (
-            <UserPlus className="size-2.5 text-yellow-600 dark:text-yellow-400" />
-          ),
-          bgColor: "bg-yellow-100 dark:bg-yellow-950/50",
-        };
-      case NotificationType.FOLLOW_REQUEST_ACCEPTED:
-        return {
-          message: "accepted your follow request",
-          icon: (
-            <UserPlus className="size-2.5 text-indigo-600 dark:text-indigo-400" />
-          ),
-          bgColor: "bg-indigo-100 dark:bg-indigo-950/50",
-        };
-      default:
-        return {
-          message: "interacted with you",
-          icon: <BellOff className="size-2.5 text-muted-foreground" />,
-          bgColor: "bg-muted",
-        };
-    }
-  };
 
   return (
     <DropdownMenu>
@@ -182,7 +107,9 @@ function NotificationDropdown() {
                         details.bgColor,
                       )}
                     >
-                      {details.icon}
+                      <details.icon
+                        className={cn("size-2.5", details.iconClassName)}
+                      />
                     </span>
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col gap-0.5">

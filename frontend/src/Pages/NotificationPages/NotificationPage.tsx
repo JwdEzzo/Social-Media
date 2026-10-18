@@ -8,26 +8,17 @@ import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/custom/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Heart,
-  MessageCircle,
-  UserPlus,
-  BellOff,
-  CheckCheck,
-  RotateCcw,
-  Bell,
-  ArrowRight,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { BellOff, CheckCheck, ArrowRight } from "lucide-react";
+import { useNavigateToProfile } from "@/hooks/useNavigateToProfile";
 import { cn } from "@/utils/errors";
-import { NotificationType } from "@/types/enums";
+import { formatTimeAgo } from "@/utils/helpers";
+import { getNotificationDetails } from "@/utils/notification-details";
 import type { NotificationResponse } from "@/types/response-types";
 import NavigateBack from "@/components/custom/navigate-back";
+import { StatusCard } from "@/components/custom/status-card";
 
 function NotificationPage() {
-  const { isMe } = useCurrentUser();
-  const navigate = useNavigate();
+  const navigateToProfile = useNavigateToProfile();
 
   const [markAllAsRead, { isLoading: isMarkingAll }] =
     useMarkAllAsReadMutation();
@@ -51,95 +42,6 @@ function NotificationPage() {
   // Only checks the pages loaded so far; newest-first ordering puts unread ones on top
   const hasUnread = notifications.some((n) => !n.isRead);
 
-  const formatTimeAgo = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      if (isNaN(diffMs)) return "";
-      const diffSecs = Math.floor(diffMs / 1000);
-      const diffMins = Math.floor(diffSecs / 60);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-
-      if (diffSecs < 60) return "just now";
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      return `${diffDays}d ago`;
-    } catch {
-      return "";
-    }
-  };
-
-  const getNotificationDetails = (type: NotificationType) => {
-    switch (type) {
-      case NotificationType.POST_LIKE:
-        return {
-          message: "liked your post",
-          icon: <Heart className="h-3 w-3 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.COMMENT_LIKE:
-        return {
-          message: "liked your comment",
-          icon: <Heart className="h-3 w-3 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.REPLY_LIKE:
-        return {
-          message: "liked your reply",
-          icon: <Heart className="h-3 w-3 fill-current text-red-500" />,
-          bgColor: "bg-red-100 dark:bg-red-950/50",
-        };
-      case NotificationType.COMMENT:
-        return {
-          message: "commented on your post",
-          icon: (
-            <MessageCircle className="h-3 w-3 fill-current text-blue-500" />
-          ),
-          bgColor: "bg-blue-100 dark:bg-blue-950/50",
-        };
-      case NotificationType.REPLY:
-        return {
-          message: "replied to your comment",
-          icon: (
-            <MessageCircle className="h-3 w-3 fill-current text-purple-500" />
-          ),
-          bgColor: "bg-purple-100 dark:bg-purple-950/50",
-        };
-      case NotificationType.FOLLOW:
-        return {
-          message: "started following you",
-          icon: (
-            <UserPlus className="h-3 w-3 text-green-600 dark:text-green-400" />
-          ),
-          bgColor: "bg-green-100 dark:bg-green-950/50",
-        };
-      case NotificationType.FOLLOW_REQUEST_SENT:
-        return {
-          message: "sent you a follow request",
-          icon: (
-            <UserPlus className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-          ),
-          bgColor: "bg-yellow-100 dark:bg-yellow-950/50",
-        };
-      case NotificationType.FOLLOW_REQUEST_ACCEPTED:
-        return {
-          message: "accepted your follow request",
-          icon: (
-            <UserPlus className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-          ),
-          bgColor: "bg-indigo-100 dark:bg-indigo-950/50",
-        };
-      default:
-        return {
-          message: "interacted with you",
-          icon: <Bell className="h-3 w-3 text-muted-foreground" />,
-          bgColor: "bg-muted",
-        };
-    }
-  };
-
   const handleNotificationClick = async (
     notification: NotificationResponse,
   ) => {
@@ -153,12 +55,7 @@ function NotificationPage() {
     }
 
     // Navigate to appropriate profile page
-    const senderUsername = notification.sender.username;
-    if (isMe(senderUsername)) {
-      navigate(`/userprofile/${senderUsername}`);
-    } else {
-      navigate(`/searcheduserprofile/${senderUsername}`);
-    }
+    navigateToProfile(notification.sender.username);
   };
 
   // Loading state
@@ -199,21 +96,12 @@ function NotificationPage() {
         </header>
         <main className="flex-1 bg-background pt-16 pb-10">
           <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 text-center">
-              <h2 className="mb-2 text-lg font-semibold text-destructive">
-                Error Loading Notifications
-              </h2>
-              <p className="mb-6 text-sm text-muted-foreground">
-                We couldn't retrieve your notifications. Please check your
-                network connection and try again.
-              </p>
-              <Button
-                onClick={refetchNotifications}
-                className="w-full flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="h-4 w-4" /> Try Again
-              </Button>
-            </div>
+            <StatusCard
+              isError
+              title="Error Loading Notifications"
+              message="We couldn't retrieve your notifications. Please check your network connection and try again."
+              onRetry={refetchNotifications}
+            />
           </div>
         </main>
       </div>
@@ -295,7 +183,9 @@ function NotificationPage() {
                             details.bgColor,
                           )}
                         >
-                          {details.icon}
+                          <details.icon
+                            className={cn("size-3", details.iconClassName)}
+                          />
                         </span>
                       </div>
 

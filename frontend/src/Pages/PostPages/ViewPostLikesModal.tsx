@@ -2,8 +2,9 @@ import { useGetUsersWhoLikedPostInfiniteQuery } from "@/api/users/userApi";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import FollowButton from "@/components/custom/follow-button";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import UserAvatar from "@/components/custom/user-avatar";
-import { Button } from "@/components/ui/button";
+import Spinner from "@/components/custom/spinner";
+import { ErrorState } from "@/components/custom/status-card";
+import UserRow from "@/components/custom/user-row";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { usePagedList } from "@/hooks/usePagedList";
-import { RotateCcw } from "lucide-react";
 import "@/components/css/scrollbar.css";
 
 interface ViewPostLikesModalProps {
@@ -58,22 +58,15 @@ function ViewPostLikesModal({
           {/* Loading State: spinner while the first page loads */}
           {likers.isLoadingFirstPage ? (
             <div className="flex justify-center py-10">
-              <div className="size-6 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+              <Spinner />
             </div>
           ) : likersQuery.isError ? (
             /* Error State: message with a retry button */
-            <div className="py-10 text-center">
-              <p className="text-sm font-semibold text-foreground">
-                Couldn't load likes
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => likersQuery.refetch()}
-              >
-                <RotateCcw className="size-4" /> Try Again
-              </Button>
-            </div>
+            <ErrorState
+              className="py-10"
+              message="Couldn't load likes"
+              onRetry={() => likersQuery.refetch()}
+            />
           ) : likers.items.length === 0 ? (
             /* Empty State: nobody has liked the post */
             <p className="py-10 text-center text-sm text-muted-foreground">
@@ -83,27 +76,18 @@ function ViewPostLikesModal({
             /* Loaded State: liker rows plus infinite-scroll trigger */
             <>
               {likers.items.map((liker) => (
-                <div
+                <UserRow
                   key={liker.id}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
-                  <div
-                    className="flex min-w-0 cursor-pointer items-center gap-3"
-                    onClick={() => handleUserClick(liker.username)}
-                  >
-                    <UserAvatar
-                      className="size-11 shrink-0 rounded-full object-cover ring-1 ring-border"
-                      src={liker.profilePictureUrl}
-                      alt={`${liker.username} pic`}
-                    />
-                    <span className="truncate text-sm font-semibold hover:opacity-60">
-                      {liker.username}
-                    </span>
-                  </div>
-                  {!isMe(liker.username) && (
-                    <FollowButton username={liker.username} />
-                  )}
-                </div>
+                  className="py-2"
+                  username={liker.username}
+                  profilePictureUrl={liker.profilePictureUrl}
+                  onClick={() => handleUserClick(liker.username)}
+                  action={
+                    !isMe(liker.username) && (
+                      <FollowButton username={liker.username} />
+                    )
+                  }
+                />
               ))}
               <LoadMoreTrigger
                 hasNextPage={likers.hasNextPage}

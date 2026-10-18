@@ -2,13 +2,16 @@ import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useAuth } from "@/auth/useAuth";
 import { skipToken } from "@reduxjs/toolkit/query/react";
 
-// The logged-in user's full profile (GetUserResponse), plus their username from the
-// auth slice. Call it wherever a component needs the current user, instead of
-// pairing useAuth with useGetUserByUsernameQuery or receiving loggedInUser as a prop.
-// RTK Query caches the result, so calling it in many components still sends one request.
-// - loggedInUser: undefined until loaded, or when nobody is logged in
-// - isMe: whether a username belongs to the logged-in user
-// - isLoading / isError / refetch: from the underlying query
+/**
+ * The logged-in user's full profile (GetUserResponse), plus their username from the
+ * auth slice. Call it wherever a component needs the current user, instead of
+ * pairing useAuth with useGetUserByUsernameQuery or receiving loggedInUser as a prop.
+ *
+ * RTK Query caches the result, so calling it in many components still sends one request.
+ *  - loggedInUser: undefined until loaded, or when nobody is logged in
+ *  - isMe: whether a username belongs to the logged-in user
+ *  - isLoading / isError / refetch: from the underlying query
+ */
 export function useCurrentUser() {
   const { username: loggedInUsername } = useAuth();
 

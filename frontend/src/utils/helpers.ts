@@ -18,3 +18,7 @@ export const formatTimeAgo = (dateString: string) => {
     return "";
   }
 };
+
+// The calendar date of an ISO timestamp from the API, e.g. "2026-10-18T13:03:02Z" -> "2026-10-18".
+// Shown under posts, comments and replies.
+export const formatDate = (dateString: string) => dateString.substring(0, 10);

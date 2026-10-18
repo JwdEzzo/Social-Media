@@ -1,6 +1,7 @@
 import type { GetPostResponse } from "@/types/response-types";
 import { Virtuoso } from "react-virtuoso";
 import HomePagePostCard from "../HomePagePostCard";
+import Spinner from "@/components/custom/spinner";
 
 interface RenderedPostsProps {
   posts: GetPostResponse[];
@@ -20,7 +21,7 @@ function Footer({ context }: { context?: FooterContext }) {
   if (!context?.isFetchingMore) return null;
   return (
     <div className="flex justify-center py-6">
-      <div className="size-6 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+      <Spinner />
     </div>
   );
 }

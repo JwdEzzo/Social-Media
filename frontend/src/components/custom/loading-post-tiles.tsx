@@ -1,3 +1,5 @@
+import Spinner from "@/components/custom/spinner";
+
 interface LoadingPostTilesProps {
   count?: number;
 }
@@ -10,7 +12,8 @@ function LoadingPostTiles({ count = 9 }: LoadingPostTilesProps) {
       key={`loading-${index}`}
       className="relative flex aspect-square items-center justify-center bg-muted"
     >
-      <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+      {/* Muted colours, since the default border-muted would vanish on the bg-muted tile */}
+      <Spinner className="border-muted-foreground/30 border-t-muted-foreground" />
     </div>
   ));
 }

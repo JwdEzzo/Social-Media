@@ -1,12 +1,3 @@
-import { useGetPostCommentCountQuery } from "@/api/comments/commentApi";
-import {
-  useGetPostLikeCountQuery,
-  useIsPostLikedQuery,
-} from "@/api/posts/postLikesApi";
-import {
-  useGetPostSaveCountQuery,
-  useIsPostSavedQuery,
-} from "@/api/posts/postSavesApi";
 import {
   Card,
   CardContent,
@@ -18,10 +9,12 @@ import {
 import type { GetPostResponse } from "@/types/response-types";
 import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
 import { memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigateToProfile } from "@/hooks/useNavigateToProfile";
 import FollowButton from "@/components/custom/follow-button";
 import { usePostActions } from "@/hooks/usePostActions";
 import UserAvatar from "@/components/custom/user-avatar";
+import { usePostStats } from "@/hooks/usePostStats";
+import { formatDate } from "@/utils/helpers";
 
 interface HomePagePostCardProps {
   post: GetPostResponse;
@@ -30,7 +23,7 @@ interface HomePagePostCardProps {
 
 const HomePagePostCard = memo(
   ({ post, onViewComments }: HomePagePostCardProps) => {
-    const navigate = useNavigate();
+    const navigateToProfile = useNavigateToProfile();
     const {
       handleTogglePostLike,
       isTogglingPostLike,
@@ -38,28 +31,13 @@ const HomePagePostCard = memo(
       isTogglingSavePost,
     } = usePostActions();
 
-    const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
-      skip: !post?.id || post.id === 0,
-    });
-
-    const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
-      skip: !post?.id || post.id === 0,
-    });
-
-    const { data: isPostSaved } = useIsPostSavedQuery(post?.id ?? 0, {
-      skip: !post?.id || post.id === 0,
-    });
-
-    const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
-      skip: !post?.id || post.id === 0,
-    });
-
-    const { data: postCommentCount } = useGetPostCommentCountQuery(
-      post?.id ?? 0,
-      {
-        skip: !post?.id || post.id === 0,
-      },
-    );
+    const {
+      postLikeCount,
+      postCommentCount,
+      postSaveCount,
+      isPostLiked,
+      isPostSaved,
+    } = usePostStats(post.id);
 
     return (
       <div className="w-full">
@@ -75,15 +53,11 @@ const HomePagePostCard = memo(
                     className="size-8 cursor-pointer rounded-full object-cover ring-1 ring-border"
                     loading="lazy"
                     decoding="async"
-                    onClick={() =>
-                      navigate(`/searcheduserprofile/${post.username}`)
-                    }
+                    onClick={() => navigateToProfile(post.username)}
                   />
                   <h1
                     className="cursor-pointer truncate text-sm font-semibold hover:opacity-70"
-                    onClick={() =>
-                      navigate(`/searcheduserprofile/${post.username}`)
-                    }
+                    onClick={() => navigateToProfile(post.username)}
                   >
                     {post.username}
                   </h1>
@@ -154,7 +128,7 @@ const HomePagePostCard = memo(
             </div>
           </CardContent>
           <CardFooter className="px-3 pt-1.5 pb-4 text-xs tracking-wide text-muted-foreground">
-            {post.createdAt.substring(0, 10)}
+            {formatDate(post.createdAt)}
           </CardFooter>
         </Card>
       </div>

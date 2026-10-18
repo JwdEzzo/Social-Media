@@ -6,7 +6,6 @@ import {
   useCreateCommentMutation,
   useEditCommentMutation,
   useGetCommentsByPostIdInfiniteQuery,
-  useGetPostCommentCountQuery,
 } from "@/api/comments/commentApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import { usePostActions } from "@/hooks/usePostActions";
@@ -20,7 +19,6 @@ import {
   Heart,
   MessageCircle,
   MoreHorizontal,
-  RotateCcw,
   Share2,
   Trash2,
 } from "lucide-react";
@@ -34,12 +32,6 @@ import {
 import CommentCard from "@/Pages/CommentPages/CommentCard";
 import ViewPostLikesModal from "@/Pages/PostPages/ViewPostLikesModal";
 import "@/components/css/scrollbar.css";
-import type { GetUserResponse } from "@/types/response-types";
-import {
-  useGetPostLikeCountQuery,
-  useIsPostLikedQuery,
-} from "@/api/posts/postLikesApi";
-import { useToggleCommentLikeMutation } from "@/api/comments/commentLikesApi";
 import { useDispatch, useSelector } from "react-redux";
 import {
   closePostModal,
@@ -58,11 +50,7 @@ import {
   useCreateReplyMutation,
   useEditReplyMutation,
 } from "@/api/comments/commentRepliesApi";
-import {
-  useGetPostSaveCountQuery,
-  useIsPostSavedQuery,
-} from "@/api/posts/postSavesApi";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useNavigateToProfile } from "@/hooks/useNavigateToProfile";
 import type { RootState } from "@/store/store";
 import { enterReplyMode, resetReplyMode } from "@/slices/replyModeSlice";
 import {
@@ -71,21 +59,23 @@ import {
   enterEditReplyMode,
 } from "@/slices/editModeSlice";
 import UserAvatar from "@/components/custom/user-avatar";
+import { usePostStats } from "@/hooks/usePostStats";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Spinner from "@/components/custom/spinner";
+import { StatusCard } from "@/components/custom/status-card";
+import { formatDate } from "@/utils/helpers";
 
-interface ViewPostModalProps {
-  isOpen: boolean;
-  handleCloseViewModal: () => void;
-  selectedPostId: number | null;
-  loggedInUser: GetUserResponse | undefined;
-}
-
-function ViewPostModal({
-  isOpen,
-  handleCloseViewModal,
-  selectedPostId,
-  loggedInUser,
-}: ViewPostModalProps) {
+// The post viewer opened from a post tile or "View Comments". Whether it's open and
+// which post it shows live in the viewPostModal slice (openPostModal / closePostModal),
+// so a page only needs to render <ViewPostModal /> once and dispatch openPostModal.
+function ViewPostModal() {
   //
+  const { isOpen, selectedPostId, modalScrollPosition } = useSelector(
+    (state: RootState) => state.viewPostModal,
+  );
+  const { loggedInUser, isMe } = useCurrentUser();
+
   const {
     handleTogglePostLike,
     isTogglingPostLike,
@@ -112,18 +102,12 @@ function ViewPostModal({
 
   // Ref to track scroll position in the comments area
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const modalScrollPosition = useSelector(
-    (state: RootState) => state.viewPostModal.modalScrollPosition,
-  );
 
   // Redux actions
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isMe } = useCurrentUser();
+  const navigateToProfile = useNavigateToProfile();
   const scrollPositionRef = useRef<number>(0);
-
-  const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
-    useToggleCommentLikeMutation();
 
   const [
     createComment,
@@ -139,11 +123,13 @@ function ViewPostModal({
     { postId: selectedPostId! },
     { skip: !selectedPostId },
   );
+
   const {
     isLoading: isCommentsLoading,
     isError: isCommentsError,
     refetch: refetchComments,
   } = commentsQuery;
+
   const {
     items: comments,
     loadMore: loadMoreComments,
@@ -157,36 +143,32 @@ function ViewPostModal({
     isLoading: isPostLoading,
     isError: isPostError,
     refetch: refetchPost,
-  } = useGetPostByIdQuery(selectedPostId!);
+  } = useGetPostByIdQuery(selectedPostId ?? skipToken);
 
-  // Fetch post like status and count
-  const { data: isPostLiked } = useIsPostLikedQuery(post?.id ?? 0, {
-    skip: !post?.id || post.id === 0,
-  });
-  const { data: postLikeCount } = useGetPostLikeCountQuery(post?.id ?? 0, {
-    skip: !post?.id || post.id === 0,
-  });
-
-  // Fetch comment count for the post
-  const { data: postCommentCount } = useGetPostCommentCountQuery(
-    post?.id ?? 0,
-    {
-      skip: !post?.id || post.id === 0,
-    },
-  );
-
-  // Fetch save count and status for the post
-  const { data: postSaveCount } = useGetPostSaveCountQuery(post?.id ?? 0, {
-    skip: !post?.id || post.id === 0,
-  });
-
-  const { data: isPostSaved } = useIsPostSavedQuery(post?.id ?? 0, {
-    skip: !post?.id || post.id === 0,
-  });
+  const {
+    postSaveCount,
+    postCommentCount,
+    postLikeCount,
+    isPostLiked,
+    isPostSaved,
+  } = usePostStats(post?.id);
 
   // Mutation for deleting the post
   const [deletePostById, { isLoading: isPostDeleting }] =
     useDeletePostByPostIdMutation();
+
+  function handleCloseViewModal(): void {
+    dispatch(closePostModal());
+  }
+
+  // Lock page scrolling behind the modal while it's open
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   function navigateToSelectedUserProfile(username: string): void {
     // Save current modal scroll position before navigating
@@ -194,19 +176,11 @@ function ViewPostModal({
       dispatch(saveModalScrollPosition(scrollContainerRef.current.scrollTop));
     }
 
-    if (isMe(username)) {
-      navigate(`/userprofile/${username}`, {
-        state: { fromModal: true, previousPostId: selectedPostId },
-      });
-      dispatch(closePostModal({ preserveState: true }));
-      window.scrollTo(0, 0);
-    } else {
-      navigate(`/searcheduserprofile/${username}`, {
-        state: { fromModal: true, previousPostId: selectedPostId },
-      });
-      dispatch(closePostModal({ preserveState: true }));
-      window.scrollTo(0, 0);
-    }
+    navigateToProfile(username, {
+      state: { fromModal: true, previousPostId: selectedPostId },
+    });
+    dispatch(closePostModal({ preserveState: true }));
+    window.scrollTo(0, 0);
   }
 
   // Restore modal scroll position when it opens
@@ -221,18 +195,6 @@ function ViewPostModal({
       return () => clearTimeout(timer);
     }
   }, [isOpen, modalScrollPosition, comments]);
-
-  // Callback to toggle comment like status
-  const handleToggleCommentLike = useCallback(
-    async (commentId: number) => {
-      try {
-        await toggleCommentLike(commentId).unwrap();
-      } catch (error) {
-        console.log("Error: ", error);
-      }
-    },
-    [toggleCommentLike],
-  );
 
   // Callback to handle adding a new comment or reply
   const handleAddComment = useCallback(
@@ -361,46 +323,22 @@ function ViewPostModal({
 
   if (!isOpen) return null;
 
-  // Show loading screen if post data doesn't match selected post ID
-  if (post?.id !== selectedPostId) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
-        onClick={handleCloseViewModal}
-      >
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
-          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading post...</p>
-        </div>
-      </div>
-    );
-  }
+  // Post data matches the selected post ID and nothing is still loading
+  const isPostReady =
+    post?.id === selectedPostId && !isPostLoading && !isCommentsLoading;
 
-  // Show loading screen while post or comments are loading
-  if (isPostLoading || isCommentsLoading) {
+  // Show loading screen while the post loads, or while it's being deleted
+  if (!isPostReady || isPostDeleting) {
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
-          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading post...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading screen while post is being deleted
-  if (isPostDeleting) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
-        onClick={handleCloseViewModal}
-      >
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 shadow-xl">
-          <div className="mx-auto size-8 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Deleting Post...</p>
+          <Spinner className="mx-auto size-8" />
+          <p className="mt-4 text-sm text-muted-foreground">
+            {isPostReady ? "Deleting Post..." : "Loading post..."}
+          </p>
         </div>
       </div>
     );
@@ -413,28 +351,22 @@ function ViewPostModal({
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 sm:p-4 md:p-8"
         onClick={handleCloseViewModal}
       >
-        <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-xl">
-          <h2 className="mb-2 text-center text-lg font-semibold text-destructive">
-            Error Loading Content
-          </h2>
-          <p className="mb-6 text-center text-sm text-muted-foreground">
-            {isPostError ? "Failed to load post" : "Failed to load comments"}
-          </p>
-          <div className="flex gap-2 justify-center">
-            <Button
-              onClick={() => {
-                if (isPostError) refetchPost();
-                if (isCommentsError) refetchComments();
-              }}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="size-4" /> Try Again
-            </Button>
-            <Button variant="outline" onClick={handleCloseViewModal}>
-              Close
-            </Button>
-          </div>
-        </div>
+        <StatusCard
+          className="max-w-md shadow-xl"
+          isError
+          title="Error Loading Content"
+          message={
+            isPostError ? "Failed to load post" : "Failed to load comments"
+          }
+          onRetry={() => {
+            if (isPostError) refetchPost();
+            if (isCommentsError) refetchComments();
+          }}
+        >
+          <Button variant="outline" onClick={handleCloseViewModal}>
+            Close
+          </Button>
+        </StatusCard>
       </div>
     );
   }
@@ -482,7 +414,7 @@ function ViewPostModal({
               </h1>
             </div>
             {/* Dropdown menu for post owner actions (edit/delete) */}
-            {loggedInUser && loggedInUser.username === post?.username && (
+            {isMe(post?.username) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <MoreHorizontal className="size-5 cursor-pointer text-foreground transition-opacity hover:opacity-60" />
@@ -497,11 +429,7 @@ function ViewPostModal({
                     <div className="flex cursor-pointer items-center justify-between gap-3 pr-2">
                       <DropdownMenuItem
                         className="flex-1 cursor-pointer font-medium"
-                        onClick={() =>
-                          navigate(
-                            `/userprofile/${post?.username}/post/edit/${post.id}`,
-                          )
-                        }
+                        onClick={() => navigate(`/me/posts/${post.id}/edit`)}
                       >
                         Edit
                       </DropdownMenuItem>
@@ -544,7 +472,7 @@ function ViewPostModal({
                   {post?.description}
                 </div>
                 <div className="mt-1.5 text-xs text-muted-foreground">
-                  {post?.createdAt.substring(0, 10)}
+                  {formatDate(post.createdAt)}
                 </div>
               </div>
             </div>
@@ -557,11 +485,8 @@ function ViewPostModal({
                   postUsername={post.username}
                   key={`${comment.id}-${comment.content}`}
                   comment={comment}
-                  handleToggleCommentLike={handleToggleCommentLike}
-                  isTogglingCommentLike={isTogglingCommentLike}
                   onReply={handleReplyToComment}
                   navigateToSelectedUserProfile={navigateToSelectedUserProfile}
-                  loggedInUser={loggedInUser}
                   onEditComment={handleEditComment}
                   onEditReply={handleEditReply}
                   focusRef={focusRef}

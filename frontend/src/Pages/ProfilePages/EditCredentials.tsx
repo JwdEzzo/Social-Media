@@ -100,7 +100,7 @@ function EditCredentials() {
         oldPassword: "",
       });
 
-      navigate(`/userprofile/${username}`);
+      navigate("/me");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Update credentials error:", error);
@@ -130,7 +130,7 @@ function EditCredentials() {
               <div className="flex shrink-0 items-center gap-1">
                 <Button
                   className="h-8 cursor-pointer rounded-lg border-0 bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-none hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80"
-                  onClick={() => navigate(`/userprofile/${username}`)}
+                  onClick={() => navigate("/me")}
                 >
                   <Undo />
                   Back

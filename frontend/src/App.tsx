@@ -35,7 +35,7 @@ function App() {
             <Route element={<Layout />}>
               {/* Public, but still shows the sidebar */}
               <Route
-                path="/searcheduserprofile/:searchedUsername"
+                path="/users/:username"
                 element={<UserProfilePageRouted />}
               />
 
@@ -45,46 +45,34 @@ function App() {
 
                 <Route path="/notifications" element={<NotificationPage />} />
 
-                <Route
-                  path="/userprofile/:username"
-                  element={<YourProfilePageRouted />}
-                />
+                <Route path="/home/:username" element={<HomePage />} />
 
+                {/* The logged-in user's own pages */}
+                <Route path="/me" element={<YourProfilePageRouted />} />
                 <Route
-                  path="/userprofile/:username/edit-credentials"
+                  path="/me/edit-credentials"
                   element={<EditCredentials />}
                 />
+                <Route path="/me/edit-profile" element={<EditProfile />} />
+                <Route path="/me/set-profile" element={<SetProfile />} />
                 <Route
-                  path="/userprofile/:username/edit-profile"
-                  element={<EditProfile />}
-                />
-                <Route
-                  path="/userprofile/:username/set-profile"
-                  element={<SetProfile />}
-                />
-                <Route path="/home/:username" element={<HomePage />} />
-                <Route
-                  path="/userprofile/:username/yourfollowers"
+                  path="/me/followers"
                   element={<YourFollowerListRouted />}
                 />
-
                 <Route
-                  path="/userprofile/:username/userfollowers"
-                  element={<UserFollowerListRouted />}
-                />
-
-                <Route
-                  path="/userprofile/:username/yourfollowings"
+                  path="/me/following"
                   element={<YourFollowingListRouted />}
                 />
-                <Route
-                  path="/userprofile/:username/userfollowings"
-                  element={<UserFollowingListRouted />}
-                />
+                <Route path="/me/posts/:postId/edit" element={<EditPost />} />
 
+                {/* Another user's follow lists */}
                 <Route
-                  path="/userprofile/:username/post/edit/:postId"
-                  element={<EditPost />}
+                  path="/users/:username/followers"
+                  element={<UserFollowerListRouted />}
+                />
+                <Route
+                  path="/users/:username/following"
+                  element={<UserFollowingListRouted />}
                 />
               </Route>
             </Route>

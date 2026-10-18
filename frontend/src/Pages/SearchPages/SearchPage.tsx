@@ -4,13 +4,13 @@ import {
   useDeleteSearchForUserMutation,
   useGetSearchesForUserInfiniteQuery,
 } from "@/api/search/searchApi";
-import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/custom/status-card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePagedList } from "@/hooks/usePagedList";
 import PostSearchResults from "@/Pages/SearchPages/PostSearchResults";
 import UserSearchResults from "@/Pages/SearchPages/UserSearchResults";
-import { ChevronDown, ChevronLeft, RotateCcw, Search, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, Search, X } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -280,18 +280,10 @@ function SearchPage() {
 
               {/* Error State: message with a retry button */}
               {isRecentSearchesError && (
-                <div className="py-12 text-center">
-                  <p className="text-sm font-semibold text-foreground">
-                    Couldn't load recent searches
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => refetchRecentSearches()}
-                  >
-                    <RotateCcw className="size-4" /> Try Again
-                  </Button>
-                </div>
+                <ErrorState
+                  message="Couldn't load recent searches"
+                  onRetry={() => refetchRecentSearches()}
+                />
               )}
 
               {/* Empty State */}

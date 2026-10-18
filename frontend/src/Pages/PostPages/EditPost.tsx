@@ -26,7 +26,7 @@ function EditPost() {
         ...editRequest,
         postId: parseInt(postId!),
       }).unwrap();
-      navigate(`/userprofile/${post?.username}`);
+      navigate("/me");
     } catch (error) {
       console.error("Failed to edit post:", error);
     }

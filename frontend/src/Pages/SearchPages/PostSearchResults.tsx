@@ -2,15 +2,10 @@ import { useGetPostsExcludingCurrentUserInfiniteQuery } from "@/api/posts/postAp
 import { useGetPostsByDescriptionInfiniteQuery } from "@/api/search/searchApi";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import LoadingPostTiles from "@/components/custom/loading-post-tiles";
-import { Button } from "@/components/ui/button";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ErrorState } from "@/components/custom/status-card";
 import { usePagedList } from "@/hooks/usePagedList";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
-import { closePostModal } from "@/slices/viewPostSlice";
-import type { RootState } from "@/store/store";
-import { RotateCcw } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
 
 interface PostSearchResultsProps {
   query: string;
@@ -19,13 +14,6 @@ interface PostSearchResultsProps {
 // Posts tab of the search page: explore posts while the query is empty, otherwise
 // the posts whose description matches. Clicking a tile opens the ViewPostModal.
 function PostSearchResults({ query }: PostSearchResultsProps) {
-  const dispatch = useDispatch();
-  const { loggedInUser } = useCurrentUser();
-
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal,
-  );
-
   // Explore posts, shown while the search box is empty
   const explorePostsQuery = useGetPostsExcludingCurrentUserInfiniteQuery(
     undefined,
@@ -43,10 +31,6 @@ function PostSearchResults({ query }: PostSearchResultsProps) {
   const activeQuery = isSearching ? searchedPostsQuery : explorePostsQuery;
   const activeList = isSearching ? searchedPosts : explorePosts;
 
-  function handleCloseViewModal() {
-    dispatch(closePostModal());
-  }
-
   // Loading State: placeholder tiles while the first page loads
   if (activeList.isLoadingFirstPage) {
     return (
@@ -59,18 +43,13 @@ function PostSearchResults({ query }: PostSearchResultsProps) {
   // Error State: message with a retry button
   if (activeQuery.isError) {
     return (
-      <div className="py-16 text-center">
-        <p className="text-base font-semibold text-foreground">
-          {isSearching ? "Couldn't load search results" : "Couldn't load posts"}
-        </p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => activeQuery.refetch()}
-        >
-          <RotateCcw className="size-4" /> Try Again
-        </Button>
-      </div>
+      <ErrorState
+        className="py-16"
+        message={
+          isSearching ? "Couldn't load search results" : "Couldn't load posts"
+        }
+        onRetry={() => activeQuery.refetch()}
+      />
     );
   }
 
@@ -101,12 +80,7 @@ function PostSearchResults({ query }: PostSearchResultsProps) {
       />
 
       {/* View Post Modal: opens when a post tile is clicked */}
-      <ViewPostModal
-        isOpen={isViewModalOpen}
-        handleCloseViewModal={handleCloseViewModal}
-        selectedPostId={selectedPostId}
-        loggedInUser={loggedInUser}
-      />
+      <ViewPostModal />
     </>
   );
 }

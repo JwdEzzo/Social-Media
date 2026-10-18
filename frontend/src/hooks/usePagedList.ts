@@ -12,14 +12,16 @@ interface PagedQueryResult<T> {
   fetchNextPage: () => unknown;
 }
 
-// Turns an infinite query result into what a list renders:
-// - items: every loaded page flattened into one array, memoized so its identity only
-//   changes when a page is added or refetched
-// - loadMore: fetches the next page; the guards stop duplicate requests when it's
-//   called repeatedly (Virtuoso's endReached, an IntersectionObserver, ...)
-// - isLoadingFirstPage: true while the first page for the current arg is loading,
-//   including when the arg changes (e.g. a new search); false during loadMore and refetches
-// - totalElements: the server-side total, not just what's loaded
+/**
+ * Turns an infinite query result into what a list renders:
+ * - items: every loaded page flattened into one array, memoized so its identity only
+ *   changes when a page is added or refetched
+ * - loadMore: fetches the next page; the guards stop duplicate requests when it's
+ *   called repeatedly (Virtuoso's endReached, an IntersectionObserver, ...)
+ * - isLoadingFirstPage: true while the first page for the current arg is loading,
+ *   including when the arg changes (e.g. a new search); false during loadMore and refetches
+ * - totalElements: the server-side total, not just what's loaded
+ */
 export function usePagedList<T>({
   data,
   currentData,

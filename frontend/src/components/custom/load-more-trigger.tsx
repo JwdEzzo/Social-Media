@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import Spinner from "@/components/custom/spinner";
 
 interface LoadMoreTriggerProps {
   hasNextPage: boolean;
@@ -36,7 +37,7 @@ function LoadMoreTrigger({
   if (isFetchingNextPage) {
     return (
       <div className="flex justify-center py-4">
-        <div className="size-5 animate-spin rounded-full border-2 border-muted border-t-foreground"></div>
+        <Spinner className="size-5" />
       </div>
     );
   }

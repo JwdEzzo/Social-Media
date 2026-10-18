@@ -1,25 +1,21 @@
 import { useDeleteReplyMutation } from "@/api/comments/commentRepliesApi";
-import {
-  useGetReplyLikeCountQuery,
-  useIsReplyLikedQuery,
-  useToggleReplyLikeMutation,
-} from "@/api/comments/commentReplyLikesApi";
 import EditDeleteDropdown from "@/components/custom/edit-delete-dropdown";
+import LikeButton from "@/components/custom/like-button";
+import { useReplyLike } from "@/hooks/useReplyLike";
 import type {
   GetCommentResponse,
   GetReplyResponse,
-  GetUserResponse,
 } from "@/types/response-types";
-import { Heart } from "lucide-react";
 import { memo, useCallback } from "react";
 import UserAvatar from "@/components/custom/user-avatar";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { formatDate } from "@/utils/helpers";
 
 interface ReplyCardProps {
   reply: GetReplyResponse;
   navigateToSelectedUserProfile: (username: string) => void;
   comment: GetCommentResponse;
   postUsername: string;
-  loggedInUser: GetUserResponse | undefined;
   onEditReply: (replyId: number) => void;
 }
 
@@ -29,24 +25,17 @@ const ReplyCard = memo(
     navigateToSelectedUserProfile,
     comment,
     postUsername,
-    loggedInUser,
     onEditReply,
     //
   }: ReplyCardProps) => {
-    const [toggleReplyLike, { isLoading: isLikeToggling }] =
-      useToggleReplyLikeMutation();
+    const { isMe } = useCurrentUser();
 
-    const { data: replyLikeCount } = useGetReplyLikeCountQuery(reply?.id ?? 0, {
-      skip: !reply?.id || reply.id === 0,
-    });
-
-    const { data: isReplyLiked } = useIsReplyLikedQuery(reply?.id ?? 0, {
-      skip: !reply?.id || reply.id === 0,
-    });
-
-    const handleToggleLike = useCallback(() => {
-      toggleReplyLike(reply.id);
-    }, [toggleReplyLike, reply.id]);
+    const {
+      isReplyLiked,
+      replyLikeCount,
+      isTogglingReplyLike,
+      toggleReplyLike,
+    } = useReplyLike(reply.id);
 
     const [deleteReply] = useDeleteReplyMutation();
 
@@ -60,9 +49,9 @@ const ReplyCard = memo(
 
     // Post/Comment/Reply owners have the authority to delete the reply
     const isAuthenticated =
-      comment.appUser.username === loggedInUser?.username ||
-      postUsername === loggedInUser?.username ||
-      reply.appUser.username === loggedInUser?.username;
+      isMe(comment.appUser.username) ||
+      isMe(postUsername) ||
+      isMe(reply.appUser.username);
 
     return (
       <div className="pt-3">
@@ -111,20 +100,15 @@ const ReplyCard = memo(
             {/* Reply Actions */}
             <div className="flex items-center">
               <span className="hidden pr-3 text-xs text-muted-foreground [@media(min-width:770px)]:block">
-                {reply.createdAt.substring(0, 10)}
+                {formatDate(reply.createdAt)}
               </span>
 
-              <Heart
-                className={`size-3.5 cursor-pointer text-muted-foreground transition-[opacity,transform] hover:opacity-60 active:scale-90 ${
-                  isReplyLiked
-                    ? "fill-current text-red-500 dark:text-red-500"
-                    : ""
-                } ${isLikeToggling ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={handleToggleLike}
+              <LikeButton
+                isLiked={isReplyLiked}
+                likeCount={replyLikeCount}
+                isToggling={isTogglingReplyLike}
+                onToggle={toggleReplyLike}
               />
-              <span className="pr-3 pl-1 text-xs font-medium text-muted-foreground">
-                {replyLikeCount}
-              </span>
             </div>
           </div>
         </div>

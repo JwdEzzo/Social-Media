@@ -1,10 +1,8 @@
 // useProfileLogic.ts
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { logout } from "@/auth/authSlice";
-import { closePostModal, openPostModal } from "@/slices/viewPostSlice";
-import type { RootState } from "@/store/store";
+import { useDispatch } from "react-redux";
+import { openPostModal } from "@/slices/viewPostSlice";
 import {
   useGetFollowerCountQuery,
   useGetFollowingCountQuery,
@@ -23,17 +21,15 @@ import {
 } from "@/api/users/userApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import { useCurrentUser } from "./useCurrentUser";
-
-// In both ProfilePage and HomePage, we have the ViewPostModal.tsx as a child component.
-// We call the state from Redux store in both components
-// We then pass them as props to the ViewPostModal component
+import { useLogout } from "./useLogout";
 
 export const useProfileLogic = (isOwnProfile: boolean) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { loggedInUsername, loggedInUser } = useCurrentUser();
-  const { searchedUsername } = useParams<{ searchedUsername: string }>();
+  const handleLogout = useLogout();
+  const { loggedInUsername } = useCurrentUser();
+  const { username: routeUsername } = useParams<{ username: string }>();
 
   const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
     "posts",
@@ -41,10 +37,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
 
-  const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
-    (state: RootState) => state.viewPostModal,
-  );
-  const profileUsername = isOwnProfile ? loggedInUsername : searchedUsername;
+  const profileUsername = isOwnProfile ? loggedInUsername : routeUsername;
 
   // --- API QUERIES ---
   const {
@@ -125,12 +118,6 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
 
   // --- HANDLERS ---
   // Like / save live in usePostActions, called by ViewPostModal itself
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/");
-  };
-  const handleCloseViewModal = () => dispatch(closePostModal());
-
   useEffect(() => {
     if (location.state?.fromModal && location.state?.previousPostId) {
       const handlePopState = () =>
@@ -143,11 +130,8 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   return {
     state: {
       profileUser,
-      loggedInUser,
       viewMode,
       showCreatePostModal,
-      isViewModalOpen,
-      selectedPostId,
       isUserLoading,
       isUserError,
       isPostsLoading,
@@ -173,20 +157,21 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
       setViewMode,
       setShowCreatePostModal,
       handleLogout,
-      handleCloseViewModal,
       toggleAccountStatus,
       navigate,
       navigateToFollowers: () =>
         navigate(
-          `/userprofile/${profileUsername}/${isOwnProfile ? "yourfollowers" : "userfollowers"}`,
+          isOwnProfile
+            ? "/me/followers"
+            : `/users/${profileUsername}/followers`,
         ),
       navigateToFollowing: () =>
         navigate(
-          `/userprofile/${profileUsername}/${isOwnProfile ? "yourfollowings" : "userfollowings"}`,
+          isOwnProfile
+            ? "/me/following"
+            : `/users/${profileUsername}/following`,
         ),
-      navigateToEditProfile: () =>
-        isOwnProfile &&
-        navigate(`/userprofile/${profileUser?.username}/edit-profile`),
+      navigateToEditProfile: () => isOwnProfile && navigate("/me/edit-profile"),
     },
   };
 };

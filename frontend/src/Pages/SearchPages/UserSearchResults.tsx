@@ -2,13 +2,12 @@ import {
   useCreateRecentSearchMutation,
   useSearchUsersByUsernameInfiniteQuery,
 } from "@/api/search/searchApi";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useNavigateToProfile } from "@/hooks/useNavigateToProfile";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/custom/status-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePagedList } from "@/hooks/usePagedList";
-import { Dot, RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Dot } from "lucide-react";
 import UserAvatar from "@/components/custom/user-avatar";
 
 interface UserSearchResultsProps {
@@ -19,8 +18,7 @@ interface UserSearchResultsProps {
 // live matches under the search box while typing. Renders nothing while the query is
 // empty. Clicking a row opens that profile.
 function UserSearchResults({ query }: UserSearchResultsProps) {
-  const navigate = useNavigate();
-  const { isMe } = useCurrentUser();
+  const navigateToProfile = useNavigateToProfile();
 
   const searchedUsersQuery = useSearchUsersByUsernameInfiniteQuery(query, {
     skip: !query,
@@ -35,11 +33,7 @@ function UserSearchResults({ query }: UserSearchResultsProps) {
     // save never blocks navigation.
     createRecentSearch({ searchTerm: username });
 
-    if (isMe(username)) {
-      navigate(`/userprofile/${username}`);
-    } else {
-      navigate(`/searcheduserprofile/${username}`);
-    }
+    navigateToProfile(username);
   }
 
   if (!query) return null;
@@ -61,18 +55,11 @@ function UserSearchResults({ query }: UserSearchResultsProps) {
   // Error State: message with a retry button
   if (searchedUsersQuery.isError) {
     return (
-      <div className="py-16 text-center">
-        <p className="text-base font-semibold text-foreground">
-          Couldn't load search results
-        </p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => searchedUsersQuery.refetch()}
-        >
-          <RotateCcw className="size-4" /> Try Again
-        </Button>
-      </div>
+      <ErrorState
+        className="py-16"
+        message="Couldn't load search results"
+        onRetry={() => searchedUsersQuery.refetch()}
+      />
     );
   }
 
