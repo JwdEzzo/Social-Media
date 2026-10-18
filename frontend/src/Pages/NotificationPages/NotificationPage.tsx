@@ -19,14 +19,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/auth/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/utils/errors";
 import { NotificationType } from "@/types/enums";
 import type { NotificationResponse } from "@/types/response-types";
 import NavigateBack from "@/components/custom/navigate-back";
 
 function NotificationPage() {
-  const { username: loggedInUsername } = useAuth();
+  const { isMe } = useCurrentUser();
   const navigate = useNavigate();
 
   const [markAllAsRead, { isLoading: isMarkingAll }] =
@@ -154,7 +154,7 @@ function NotificationPage() {
 
     // Navigate to appropriate profile page
     const senderUsername = notification.sender.username;
-    if (senderUsername === loggedInUsername) {
+    if (isMe(senderUsername)) {
       navigate(`/userprofile/${senderUsername}`);
     } else {
       navigate(`/searcheduserprofile/${senderUsername}`);

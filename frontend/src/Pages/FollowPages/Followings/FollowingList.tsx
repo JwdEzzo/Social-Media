@@ -4,28 +4,26 @@ import {
 } from "@/api/users/userApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FollowingCard from "@/Pages/FollowPages/Followings/FollowingCard";
 import { useGetFollowingCountQuery } from "@/api/followers/followApi";
 import NavigateBack from "@/components/custom/navigate-back";
 import CancellingRequestsCard from "@/components/custom/cancelling-requests-card";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface FollowingListProps {
   profileUsername: string;
 }
 
 function FollowingList({ profileUsername }: FollowingListProps) {
-  const { username: loggedInUsername } = useAuth();
-  // Get logged in user
   const {
-    data: loggedInUser,
+    loggedInUser,
+    loggedInUsername,
+    isMe,
     isLoading: isLoggedInUserLoading,
     isError: isLoggedInUserError,
-  } = useGetUserByUsernameQuery(loggedInUsername!, {
-    skip: !loggedInUsername,
-  });
+  } = useCurrentUser();
 
   // Get profile user
   const {
@@ -111,14 +109,14 @@ function FollowingList({ profileUsername }: FollowingListProps) {
         <CardHeader>
           <div className="flex items-center justify-center">
             <CardTitle className="text-center text-base font-semibold">
-              {loggedInUsername === profileUsername
+              {isMe(profileUsername)
                 ? "Your Following"
                 : `${profileUsername}'s Followings`}
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          {followingCount === 0 && profileUsername === loggedInUsername ? (
+          {followingCount === 0 && isMe(profileUsername) ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               You are not following anyone.
             </div>

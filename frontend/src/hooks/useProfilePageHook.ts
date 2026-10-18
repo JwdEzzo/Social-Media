@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "@/auth/useAuth";
 import { logout } from "@/auth/authSlice";
 import { closePostModal, openPostModal } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
@@ -23,6 +22,7 @@ import {
   useToggleAccountStatusMutation,
 } from "@/api/users/userApi";
 import { usePagedList } from "@/hooks/usePagedList";
+import { useCurrentUser } from "./useCurrentUser";
 
 // In both ProfilePage and HomePage, we have the ViewPostModal.tsx as a child component.
 // We call the state from Redux store in both components
@@ -32,7 +32,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { username: loggedInUsername } = useAuth();
+  const { loggedInUsername, loggedInUser } = useCurrentUser();
   const { searchedUsername } = useParams<{ searchedUsername: string }>();
 
   const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
@@ -52,11 +52,6 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
     isLoading: isUserLoading,
     isError: isUserError,
   } = useGetUserByUsernameQuery(profileUsername!, { skip: !profileUsername });
-
-  const { data: loggedInUserData } = useGetUserByUsernameQuery(
-    loggedInUsername!,
-    { skip: !loggedInUsername },
-  );
 
   const isPrivateAccount = profileUser?.accountStatus === "PRIVATE";
   const isOtherPrivateProfile = !isOwnProfile && isPrivateAccount;
@@ -148,7 +143,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   return {
     state: {
       profileUser,
-      loggedInUserData,
+      loggedInUser,
       viewMode,
       showCreatePostModal,
       isViewModalOpen,

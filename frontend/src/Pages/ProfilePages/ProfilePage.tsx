@@ -10,7 +10,7 @@ import {
   LogOut,
   Unlock,
 } from "lucide-react";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ interface ProfilePageProps {
 
 function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const { state, actions } = useProfileLogic(isOwnProfile);
-  const { profileUser, loggedInUserData, viewMode } = state;
+  const { profileUser, loggedInUser, viewMode } = state;
 
   // Posts section: which list the active tab shows, and which state it's in
   const isPostsTab = viewMode === "posts";
@@ -460,7 +460,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
         isOpen={state.isViewModalOpen}
         handleCloseViewModal={actions.handleCloseViewModal}
         selectedPostId={state.selectedPostId}
-        loggedInUser={loggedInUserData}
+        loggedInUser={loggedInUser}
       />
     </div>
   );

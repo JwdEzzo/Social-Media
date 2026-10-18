@@ -2,7 +2,11 @@ import type {
   SignUpRequest,
   UpdateCredentialsRequest,
 } from "@/types/request-types";
-import type { GetUserResponse, SignUpResponse } from "@/types/response-types";
+import type {
+  GetUserResponse,
+  SearchUserResponse,
+  SignUpResponse,
+} from "@/types/response-types";
 import { api } from "@/api/api";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -12,6 +16,8 @@ import {
 } from "@/api/pagination";
 
 type UsersPage = PagedModel<GetUserResponse>;
+// The likers endpoint returns the slimmer SearchUserResponse
+type LikersPage = PagedModel<SearchUserResponse>;
 
 // Stable order so pages don't shift between requests: ?page=N&size=10&sort=id,asc
 const userPageParams = (pageParam: number) => pageParams(pageParam, "id,asc");
@@ -91,15 +97,19 @@ export const userApi = api.injectEndpoints({
         providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
     }),
 
-    getUsersWhoLikedPost: builder.infiniteQuery<UsersPage, number, number>({
+    getUsersWhoLikedPost: builder.infiniteQuery<LikersPage, number, number>({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: postId, pageParam }) => ({
         url: `/users/liked-post/${postId}`,
         method: "GET",
         params: userPageParams(pageParam),
       }),
-      providesTags: (result) =>
-        providePagedTags(result, "User", [{ type: "User", id: "LIST" }]),
+      // PostLike/postId: togglePostLike invalidates it, so a like or unlike refreshes the list
+      providesTags: (result, _error, postId) =>
+        providePagedTags(result, "User", [
+          { type: "User", id: "LIST" },
+          { type: "PostLike", id: postId },
+        ]),
     }),
 
     updateUserCredentials: builder.mutation<
@@ -162,6 +172,7 @@ export const {
   useGetUserByUsernameQuery,
   useGetFollowersByUserIdInfiniteQuery,
   useGetFollowingsByUserIdInfiniteQuery,
+  useGetUsersWhoLikedPostInfiniteQuery,
   useGetUsersExcludingCurrentUserInfiniteQuery,
   useUpdateUserCredentialsMutation,
   useUpdateUserProfileWithUploadMutation,

@@ -2,8 +2,6 @@ import {
   useGetFollowingPostsByUserIdInfiniteQuery,
   useGetPostsExcludingCurrentUserInfiniteQuery,
 } from "@/api/posts/postApi";
-import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
 import { RotateCcw } from "lucide-react";
 import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
 import { Button } from "@/components/ui/button";
@@ -14,12 +12,13 @@ import {
   saveHomePageScrollPosition,
 } from "@/slices/viewPostSlice";
 import type { RootState } from "@/store/store";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { CardTitle } from "@/components/ui/card";
 import { useCallback, useEffect, useRef, useState } from "react";
 import RenderedPosts from "./react-virtuoso/RenderedPosts";
 import NotificationDropdown from "@/components/custom/notification-dropdown";
 import { usePagedList } from "@/hooks/usePagedList";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 function HomePage() {
   //
@@ -33,13 +32,7 @@ function HomePage() {
     homePageScrollPosition,
   } = useSelector((state: RootState) => state.viewPostModal);
 
-  // Get logged-in username (string)
-  const { username: loggedInUsername } = useAuth();
-
-  // Get logged-in USER object
-  const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || "",
-  );
+  const { loggedInUser } = useCurrentUser();
 
   // Infinite queries: data.pages holds one PagedModel per page fetched so far
   const forYouQuery = useGetPostsExcludingCurrentUserInfiniteQuery();

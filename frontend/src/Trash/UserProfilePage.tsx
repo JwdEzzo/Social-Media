@@ -13,7 +13,7 @@ import { Camera, Grid3X3, Heart, MoveLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import { useState } from "react";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 function UserProfilePage() {
   const navigate = useNavigate();

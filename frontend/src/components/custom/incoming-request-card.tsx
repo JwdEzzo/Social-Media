@@ -7,17 +7,12 @@ import {
 } from "@/api/followers/followApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/auth/useAuth";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 function IncomingRequestsCard() {
-  const { username: loggedInUsername } = useAuth();
-  const { data: loggedInUser } = useGetUserByUsernameQuery(loggedInUsername!, {
-    skip: !loggedInUsername,
-  });
-
   const navigate = useNavigate();
+  const { loggedInUser } = useCurrentUser();
 
   const {
     items: followRequests,

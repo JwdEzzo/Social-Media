@@ -24,14 +24,13 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "@/auth/authSlice";
-import { useAuth } from "@/auth/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
 import { useState } from "react";
 import UserAvatar from "@/components/custom/user-avatar";
 
@@ -45,15 +44,12 @@ function AppSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { username } = useAuth();
+  const { loggedInUser, loggedInUsername: username } = useCurrentUser();
   const { setOpen } = useSidebar();
   // Sidebar expands while hovered, and stays expanded while the "More" menu is open
   // (its content renders in a portal outside the sidebar, which fires mouseleave)
   const [isHovered, setIsHovered] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const { data: loggedInUser } = useGetUserByUsernameQuery(username!, {
-    skip: !username,
-  });
 
   function handleMouseEnter() {
     setIsHovered(true);

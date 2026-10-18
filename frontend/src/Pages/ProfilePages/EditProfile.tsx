@@ -1,4 +1,3 @@
-import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,13 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Undo, X, ImageIcon, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import {
-  useGetUserByUsernameQuery,
-  useUpdateUserProfileWithUploadMutation,
-} from "@/api/users/userApi";
+import { useUpdateUserProfileWithUploadMutation } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import UserAvatar from "@/components/custom/user-avatar";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const updateProfileSchema = z.object({
   bioText: z.string().nullable().optional(),
@@ -29,14 +26,12 @@ const updateProfileSchema = z.object({
 type UpdateProfileSchema = z.infer<typeof updateProfileSchema>;
 
 function EditProfile() {
-  const { username } = useAuth();
+  const { loggedInUsername: username, loggedInUser: user } = useCurrentUser();
   const [
     updateUserProfileWithUpload,
     { isLoading: isSubmitting, isError, isSuccess },
   ] = useUpdateUserProfileWithUploadMutation();
-  const { data: user } = useGetUserByUsernameQuery(username!, {
-    skip: !username,
-  });
+
   const navigate = useNavigate();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

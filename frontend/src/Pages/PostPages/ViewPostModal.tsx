@@ -32,7 +32,8 @@ import {
   type FormEvent,
 } from "react";
 import CommentCard from "@/Pages/CommentPages/CommentCard";
-import "@/components/scrollbar.css";
+import ViewPostLikesModal from "@/Pages/PostPages/ViewPostLikesModal";
+import "@/components/css/scrollbar.css";
 import type { GetUserResponse } from "@/types/response-types";
 import {
   useGetPostLikeCountQuery,
@@ -61,7 +62,7 @@ import {
   useGetPostSaveCountQuery,
   useIsPostSavedQuery,
 } from "@/api/posts/postSavesApi";
-import { useAuth } from "@/auth/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { RootState } from "@/store/store";
 import { enterReplyMode, resetReplyMode } from "@/slices/replyModeSlice";
 import {
@@ -94,6 +95,7 @@ function ViewPostModal({
 
   const [newComment, setNewComment] = useState<string>("");
   const focusRef = useRef<HTMLInputElement>(null);
+  const [isLikesOpen, setIsLikesOpen] = useState<boolean>(false);
 
   const {
     isEditing,
@@ -117,7 +119,7 @@ function ViewPostModal({
   // Redux actions
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { username: loggedInUsername } = useAuth();
+  const { isMe } = useCurrentUser();
   const scrollPositionRef = useRef<number>(0);
 
   const [toggleCommentLike, { isLoading: isTogglingCommentLike }] =
@@ -192,7 +194,7 @@ function ViewPostModal({
       dispatch(saveModalScrollPosition(scrollContainerRef.current.scrollTop));
     }
 
-    if (loggedInUsername === username) {
+    if (isMe(username)) {
       navigate(`/userprofile/${username}`, {
         state: { fromModal: true, previousPostId: selectedPostId },
       });
@@ -587,7 +589,10 @@ function ViewPostModal({
                   }`}
                   onClick={() => handleTogglePostLike(post?.id ?? 0)}
                 />
-                <span className="pr-2 text-sm font-semibold text-foreground">
+                <span
+                  className="cursor-pointer pr-2 text-sm font-semibold text-foreground hover:opacity-60"
+                  onClick={() => setIsLikesOpen(true)}
+                >
                   {postLikeCount}
                 </span>
                 <MessageCircle
@@ -704,6 +709,15 @@ function ViewPostModal({
             )}
           </div>
         </div>
+
+        {/* Inside the Card so its stopPropagation keeps clicks in the likes list from
+            reaching the overlay and closing this modal */}
+        <ViewPostLikesModal
+          isOpen={isLikesOpen}
+          onClose={() => setIsLikesOpen(false)}
+          postId={post?.id ?? 0}
+          navigateToSelectedUserProfile={navigateToSelectedUserProfile}
+        />
       </Card>
     </div>
   );

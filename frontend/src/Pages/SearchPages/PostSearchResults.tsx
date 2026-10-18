@@ -1,10 +1,9 @@
 import { useGetPostsExcludingCurrentUserInfiniteQuery } from "@/api/posts/postApi";
 import { useGetPostsByDescriptionInfiniteQuery } from "@/api/search/searchApi";
-import { useGetUserByUsernameQuery } from "@/api/users/userApi";
-import { useAuth } from "@/auth/useAuth";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import LoadingPostTiles from "@/components/custom/loading-post-tiles";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { usePagedList } from "@/hooks/usePagedList";
 import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
@@ -21,12 +20,7 @@ interface PostSearchResultsProps {
 // the posts whose description matches. Clicking a tile opens the ViewPostModal.
 function PostSearchResults({ query }: PostSearchResultsProps) {
   const dispatch = useDispatch();
-
-  const { username: loggedInUsername } = useAuth();
-  const { data: loggedInUser } = useGetUserByUsernameQuery(
-    loggedInUsername || "",
-    { skip: !loggedInUsername },
-  );
+  const { loggedInUser } = useCurrentUser();
 
   const { isOpen: isViewModalOpen, selectedPostId } = useSelector(
     (state: RootState) => state.viewPostModal,

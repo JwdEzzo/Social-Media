@@ -4,7 +4,7 @@ import {
 } from "@/api/users/userApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import { useAuth } from "@/auth/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FollowerCard from "@/Pages/FollowPages/Followers/FollowerCard";
@@ -17,15 +17,13 @@ interface FollowerListProps {
 }
 
 function FollowerList({ profileUsername }: FollowerListProps) {
-  const { username: loggedInUsername } = useAuth();
-
   const {
-    data: loggedInUser,
+    loggedInUser,
+    loggedInUsername,
+    isMe,
     isLoading: isLoggedInUserLoading,
     isError: isLoggedInUserError,
-  } = useGetUserByUsernameQuery(loggedInUsername!, {
-    skip: !loggedInUsername,
-  });
+  } = useCurrentUser();
 
   const {
     data: profileUser,
@@ -105,14 +103,14 @@ function FollowerList({ profileUsername }: FollowerListProps) {
         <CardHeader>
           <div className="flex items-center justify-center">
             <CardTitle className="text-center text-base font-semibold">
-              {loggedInUsername === profileUsername
+              {isMe(profileUsername)
                 ? "Your Followers"
                 : `${profileUsername}'s Followers`}
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          {followerCount === 0 && profileUsername === loggedInUsername ? (
+          {followerCount === 0 && isMe(profileUsername) ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               You have no followers yet.
             </div>

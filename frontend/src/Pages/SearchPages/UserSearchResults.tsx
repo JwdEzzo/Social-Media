@@ -2,7 +2,7 @@ import {
   useCreateRecentSearchMutation,
   useSearchUsersByUsernameInfiniteQuery,
 } from "@/api/search/searchApi";
-import { useAuth } from "@/auth/useAuth";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +20,7 @@ interface UserSearchResultsProps {
 // empty. Clicking a row opens that profile.
 function UserSearchResults({ query }: UserSearchResultsProps) {
   const navigate = useNavigate();
-  const { username: loggedInUsername } = useAuth();
+  const { isMe } = useCurrentUser();
 
   const searchedUsersQuery = useSearchUsersByUsernameInfiniteQuery(query, {
     skip: !query,
@@ -35,7 +35,7 @@ function UserSearchResults({ query }: UserSearchResultsProps) {
     // save never blocks navigation.
     createRecentSearch({ searchTerm: username });
 
-    if (username === loggedInUsername) {
+    if (isMe(username)) {
       navigate(`/userprofile/${username}`);
     } else {
       navigate(`/searcheduserprofile/${username}`);

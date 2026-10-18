@@ -1,5 +1,5 @@
 import { useAuth } from "@/auth/useAuth";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Bookmark,

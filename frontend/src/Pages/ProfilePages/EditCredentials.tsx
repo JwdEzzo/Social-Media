@@ -1,4 +1,3 @@
-import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,11 +15,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner"; // or use your preferred toast library
 import { z } from "zod";
 import type { UpdateCredentialsRequest } from "@/types/request-types";
-import {
-  useGetUserByUsernameQuery,
-  useUpdateUserCredentialsMutation,
-} from "@/api/users/userApi";
+import { useUpdateUserCredentialsMutation } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const updateCredentialsSchema = z.object({
   email: z.string().email().nullable().optional(),
@@ -47,13 +44,12 @@ const updateCredentialsSchema = z.object({
 type UpdateCredentialsSchema = z.infer<typeof updateCredentialsSchema>;
 
 function EditCredentials() {
-  const { username } = useAuth();
+  const navigate = useNavigate();
+  const { loggedInUsername: username, loggedInUser: user } = useCurrentUser();
+
   const [updateUserCredentials, { isLoading, isError, isSuccess }] =
     useUpdateUserCredentialsMutation();
-  const { data: user } = useGetUserByUsernameQuery(username!, {
-    skip: !username,
-  });
-  const navigate = useNavigate();
+
   const form = useForm<UpdateCredentialsSchema>({
     resolver: zodResolver(updateCredentialsSchema),
     defaultValues: {
