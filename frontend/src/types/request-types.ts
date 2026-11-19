@@ -18,11 +18,12 @@ export interface LoginRequest {
 }
 
 // =============== UPDATE USER =================
+// Omit a field (undefined) to leave that credential unchanged; oldPassword is always required
 export interface UpdateCredentialsRequest {
-  email: string;
-  username: string;
+  email?: string;
+  username?: string;
   oldPassword: string;
-  newPassword: string;
+  newPassword?: string;
 }
 
 // =============== COMMENTS =================
@@ -31,10 +32,18 @@ export interface WriteCommentRequest {
   postId: number;
 }
 
+export interface EditCommentRequest {
+  content: string;
+}
+
 // =============== REPLIES =================
 export interface WriteReplyRequest {
   content: string;
   commentId: number;
+}
+
+export interface EditReplyRequest {
+  content: string;
 }
 
 // =============== SEARCH =================

@@ -11,7 +11,13 @@ public interface CommentReplyRepository extends JpaRepository<CommentReply, Long
 
 	Page<CommentReply> findByCommentId(Long commentId, Pageable pageable);
 
-	// Count the number of replies to a comment
-	@Query("SELECT COUNT(cr) FROM CommentReply cr WHERE cr.comment.id = :commentId")
+	/**
+	 * Count the number of replies to a comment
+	 */
+	@Query("""
+			SELECT COUNT(cr)
+			FROM CommentReply cr
+			WHERE cr.comment.id = :commentId
+			""")
 	long countByCommentId(@Param("commentId") Long commentId);
 }

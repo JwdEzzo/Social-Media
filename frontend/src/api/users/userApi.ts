@@ -3,7 +3,9 @@ import type {
   UpdateCredentialsRequest,
 } from "@/types/request-types";
 import type {
+  GetCurrentUserResponse,
   GetUserResponse,
+  LoginResponse,
   SearchUserResponse,
   SignUpResponse,
 } from "@/types/response-types";
@@ -14,6 +16,7 @@ import {
   pageParams,
   providePagedTags,
 } from "@/api/pagination";
+import type { AccountStatus } from "@/types/enums";
 
 type UsersPage = PagedModel<GetUserResponse>;
 // The likers endpoint returns the slimmer SearchUserResponse
@@ -32,6 +35,7 @@ export const userApi = api.injectEndpoints({
       }),
       invalidatesTags: [{ type: "UserList", id: "ALL" }],
     }),
+
     // Infinite queries: one cache entry holds every page fetched so far.
     // <ResultPerPage, QueryArg, PageParam> - PageParam is Spring's zero-based page index.
     getUsers: builder.infiniteQuery<UsersPage, void, number>({
@@ -44,6 +48,25 @@ export const userApi = api.injectEndpoints({
       providesTags: (result) =>
         providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
     }),
+    // The logged-in user's own account (includes email). The server reads who "me" is
+    // from the token; the username arg isn't sent, it only keys the cache so a
+    // different user logging in on the same tab never gets the previous user's entry.
+    getCurrentUser: builder.query<GetCurrentUserResponse, string>({
+      query: () => ({
+        url: "/users/me",
+        method: "GET",
+      }),
+      // Same tags as getUserByUsername, so the profile/credentials/status mutations
+      // that invalidate { User, username } refresh this too
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "User", id: result.id },
+              { type: "User", id: result.username },
+            ]
+          : [],
+    }),
+
     getUserByUsername: builder.query<GetUserResponse, string>({
       query: (username) => ({
         url: `/users/username/${username}`,
@@ -57,6 +80,7 @@ export const userApi = api.injectEndpoints({
             ]
           : [],
     }),
+
     getUsersExcludingCurrentUser: builder.infiniteQuery<
       UsersPage,
       void,
@@ -73,6 +97,7 @@ export const userApi = api.injectEndpoints({
           { type: "UserList", id: "EXCLUDED" },
         ]),
     }),
+
     getFollowersByUserId: builder.infiniteQuery<UsersPage, number, number>({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: userId, pageParam }) => ({
@@ -86,6 +111,7 @@ export const userApi = api.injectEndpoints({
           { type: "User", id: "LIST" },
         ]),
     }),
+
     getFollowingsByUserId: builder.infiniteQuery<UsersPage, number, number>({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: userId, pageParam }) => ({
@@ -113,46 +139,57 @@ export const userApi = api.injectEndpoints({
     }),
 
     updateUserCredentials: builder.mutation<
-      void,
+      LoginResponse,
       { currentUsername: string } & UpdateCredentialsRequest
     >({
       query: ({ currentUsername, ...newCredentials }) => ({
-        url: `/users/${currentUsername}/update-credentials`,
+        url: `/users/username/${currentUsername}/update-credentials`,
         method: "PUT",
         body: newCredentials,
       }),
-      invalidatesTags: (_result, _error, { currentUsername }) => [
-        { type: "User", id: currentUsername },
+      invalidatesTags: (result, _error, { currentUsername }) => {
+        // Renamed: refetching anything now would still send the old (dead) token,
+        // because setCredentials runs only after this. The new username starts
+        // fresh cache entries anyway, so there's nothing to invalidate.
+        if (result && result.username !== currentUsername) return [];
+
+        return [
+          { type: "User", id: currentUsername },
+          { type: "UserList", id: "ALL" },
+          { type: "UserList", id: "EXCLUDED" },
+        ];
+      },
+    }),
+
+    toggleAccountStatus: builder.mutation<AccountStatus, { username: string }>({
+      // username is only used for cache tags; the server reads the caller from the token
+      query: () => ({
+        url: `/users/toggle-account-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _error, { username }) => [
+        { type: "User", id: username },
         { type: "UserList", id: "ALL" },
         { type: "UserList", id: "EXCLUDED" },
       ],
     }),
 
-    toggleAccountStatus: builder.mutation<void, { targetUserId: number }>({
-      query: ({ targetUserId }) => ({
-        url: `/users/toggle-account-status/${targetUserId}`,
-        method: "POST",
-      }),
-      invalidatesTags: (_result, _error, { targetUserId }) => [
-        { type: "User", id: targetUserId },
-      ],
-    }),
-
-    // Profile update; omit profileImage to keep the current picture
+    // Profile update; omit profileImage to keep the current picture.
+    // Omit bioText to keep the bio; "" clears it.
     updateUserProfileWithUpload: builder.mutation<
       void,
       { username: string; bioText?: string; profileImage?: File }
     >({
       query: ({ username, bioText, profileImage }) => {
         const formData = new FormData();
-        if (bioText) {
+        if (bioText !== undefined) {
           formData.append("bioText", bioText);
         }
         if (profileImage) {
           formData.append("profileImage", profileImage);
         }
         return {
-          url: `/users/${username}/update-profile-upload`,
+          url: `/users/username/${username}/update-profile-upload`,
           method: "PUT",
           body: formData,
         };
@@ -169,6 +206,7 @@ export const userApi = api.injectEndpoints({
 export const {
   useSignUpMutation,
   useGetUsersInfiniteQuery,
+  useGetCurrentUserQuery,
   useGetUserByUsernameQuery,
   useGetFollowersByUserIdInfiniteQuery,
   useGetFollowingsByUserIdInfiniteQuery,

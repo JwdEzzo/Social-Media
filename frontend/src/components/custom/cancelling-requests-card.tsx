@@ -41,7 +41,7 @@ function CancellingRequestsCard() {
               onClick={() =>
                 cancelFollowRequest({
                   requestId: request.requestId,
-                  requesterUsername: request.requesterUsername,
+                  targetUsername: request.targetUsername,
                 })
               }
             >

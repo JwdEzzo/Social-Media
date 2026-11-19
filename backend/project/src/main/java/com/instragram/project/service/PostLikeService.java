@@ -9,6 +9,7 @@ import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.PostLikeRepository;
 import com.instragram.project.repository.PostRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,23 +17,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PostLikeService {
 
 	private final PostLikeRepository postLikeRepository;
-
 	private final AppUserRepository appUserRepository;
-
 	private final PostRepository postRepository;
-
 	private final NotificationService notificationService;
-
-	public PostLikeService(PostLikeRepository postLikeRepository, AppUserRepository appUserRepository,
-			PostRepository postRepository, NotificationService notificationService) {
-		this.postLikeRepository = postLikeRepository;
-		this.appUserRepository = appUserRepository;
-		this.postRepository = postRepository;
-		this.notificationService = notificationService;
-	}
 
 	// Toggle PostLike
 	@Transactional

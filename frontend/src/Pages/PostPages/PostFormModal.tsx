@@ -13,13 +13,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { applyServerErrors } from "@/utils/errors";
 
 import { useState, useRef, useEffect } from "react";
 
 interface PostFormModalProps {
   isOpen: boolean;
   isSubmitting: boolean;
-  handleSubmit: (data: PostFormData) => void;
+  // Must reject on failure (e.g. a mutation's .unwrap()): the modal only closes on success
+  handleSubmit: (data: PostFormData) => Promise<void>;
   handleClose: () => void;
   initialValues?: {
     description?: string;
@@ -67,22 +69,28 @@ function PostFormModal({
     previewUrl ?? (mode === "edit" ? initialValues?.imageUrl : undefined);
 
   async function handleFormSubmit(data: PostSchema) {
-    try {
-      if (mode === "create" && !selectedFile) {
-        form.setError("root", { message: "Please upload an image" });
-        return;
-      }
+    if (mode === "create" && !selectedFile) {
+      form.setError("root", { message: "Please upload an image" });
+      return;
+    }
 
-      handleSubmit({
+    try {
+      // Awaited, so the modal stays open (and shows the error) if the request fails
+      await handleSubmit({
         description: data.description,
         file: selectedFile || undefined,
       });
-
-      handleClose();
     } catch (error) {
-      console.error("Failed to submit post:", error);
+      applyServerErrors(error, form, Object.keys(postSchema.shape));
+      return;
     }
+    handleClose();
   }
+
+  // The client-side "Please upload an image" or the server's message
+  const rootError =
+    form.formState.errors.root?.server?.message ??
+    form.formState.errors.root?.message;
 
   function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -171,7 +179,8 @@ function PostFormModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/65 p-4"
-      onClick={handleClose}
+      // Not while submitting: the success path closes it too (EditPost would go back twice)
+      onClick={isSubmitting ? undefined : handleClose}
     >
       <Card
         className="my-auto w-full max-w-md gap-5 rounded-xl border-border shadow-2xl"
@@ -289,9 +298,7 @@ function PostFormModal({
               )}
 
               {/* Error message for form-level errors */}
-              {form.formState.errors.root && (
-                <FormMessage>{form.formState.errors.root.message}</FormMessage>
-              )}
+              {rootError && <FormMessage>{rootError}</FormMessage>}
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button

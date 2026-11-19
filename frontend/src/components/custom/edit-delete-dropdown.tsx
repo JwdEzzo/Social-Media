@@ -8,26 +8,25 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
+// The two permissions differ on the backend: only the author can edit, while the
+// post owner (and, for replies, the comment owner) can also delete.
 interface EditDeleteDropdownProps {
-  isAuthenticated: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   entityId: number;
   handleEntityEdit: (entityId: number) => void;
   handleEntityDelete: () => void;
 }
-// Is Authenticated
-// onEditComment
-// handleDeleteComment
-// onEditReply
-// handleDeleteReply
 
 function EditDeleteDropdown({
   entityId,
-  isAuthenticated,
+  canEdit,
+  canDelete,
   handleEntityDelete,
   handleEntityEdit,
 }: EditDeleteDropdownProps) {
   // Don't render at all if the user can't do either action
-  if (!isAuthenticated) return null;
+  if (!canEdit && !canDelete) return null;
 
   return (
     <DropdownMenu>
@@ -37,7 +36,7 @@ function EditDeleteDropdown({
       <DropdownMenuContent className="min-w-36 rounded-lg" align="center">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuGroup>
-          {isAuthenticated && (
+          {canEdit && (
             <div className="flex cursor-pointer items-center justify-between gap-3 pr-2">
               <DropdownMenuItem
                 className="flex-1 cursor-pointer font-medium"
@@ -48,7 +47,7 @@ function EditDeleteDropdown({
               <Edit className="size-4 text-muted-foreground" />
             </div>
           )}
-          {isAuthenticated && (
+          {canDelete && (
             <div
               className="flex cursor-pointer items-center justify-between gap-3 pr-2"
               onClick={handleEntityDelete}

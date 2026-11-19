@@ -67,7 +67,7 @@ export const postApi = api.injectEndpoints({
     }),
     getPostsCount: builder.query<number, string>({
       query: (username) => ({
-        url: `/posts/${username}/count`,
+        url: `/posts/user/${username}/count`,
         method: 'GET',
       }),
       providesTags: (_result, _error, username) => [
@@ -85,7 +85,7 @@ export const postApi = api.injectEndpoints({
     getPostsByUsername: builder.infiniteQuery<PostsPage, string, number>({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: username, pageParam }) => ({
-        url: `/posts/${username}`,
+        url: `/posts/user/${username}`,
         method: 'GET',
         params: postPageParams(pageParam),
       }),
@@ -154,14 +154,16 @@ export const postApi = api.injectEndpoints({
       ],
     }),
 
-    deletePostByPostId: builder.mutation<void, number>({
-      query: (postId) => ({
+    // username is the post's owner, so their profile's post count refreshes too
+    deletePostByPostId: builder.mutation<void, { postId: number; username: string }>({
+      query: ({ postId }) => ({
         url: `/posts/delete/${postId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, postId) => [
+      invalidatesTags: (_result, _error, { postId, username }) => [
         { type: 'Post', id: postId },
         { type: 'Post', id: 'LIST' },
+        { type: 'Post', id: `COUNT_${username}` },
       ],
     }),
   }),

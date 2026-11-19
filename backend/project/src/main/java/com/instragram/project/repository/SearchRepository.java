@@ -12,15 +12,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface SearchRepository extends JpaRepository<RecentSearch, Long> {
 
-	// Find a user's search by its term
+	/**
+	 * Find a user's search by its term
+	 */
 	Optional<RecentSearch> findByAppUserAndSearchTerm(AppUser appUser, String searchTerm);
 
-	// Insert a search, or bump created_at when the user already searched this term,
-	// so it moves back to the top.
-	// Safe under concurrent requests: the second one updates the row the first
-	// inserted instead of failing.
-	// Native because JPQL has no ON CONFLICT; @PrePersist does not run here, so
-	// created_at is set in SQL.
+	/**
+	 * Insert a search, or bump created_at when the user already searched this term,
+	 * so it moves back to the top. <br>
+	 * Safe under concurrent requests: the second one updates the row the first
+	 * inserted instead of failing. <br>
+	 * Native because JPQL has no ON CONFLICT; @PrePersist does not run here, so
+	 * created_at is set in SQL.
+	 */
 	@Modifying
 	@Query(value = """
 			INSERT INTO recent_searches (app_user_id, search_term, created_at)
@@ -32,8 +36,8 @@ public interface SearchRepository extends JpaRepository<RecentSearch, Long> {
 	@Modifying
 	@Query(value = """
 			DELETE FROM recent_searches
-			WHERE app_user_id =:appUserId
-			AND id NOT IN  (
+			WHERE app_user_id = :appUserId
+			AND id NOT IN (
 			                  SELECT id
 			                  FROM recent_searches
 			                  WHERE app_user_id = :appUserId
@@ -45,16 +49,26 @@ public interface SearchRepository extends JpaRepository<RecentSearch, Long> {
 
 	Page<RecentSearch> findByAppUser(AppUser appUser, Pageable pageable);
 
-	// Scoped to the owner: a search id belonging to another user matches 0 rows.
-	// Returns the number of rows deleted (0 or 1).
-	// Explicit query: a derived deleteBy with a primitive long return makes Spring
-	// Data return the deleted entity instead of a count (ClassCastException).
+	/**
+	 * Scoped to the owner: a search id belonging to another user matches 0 rows.
+	 * <br>
+	 * Returns the number of rows deleted (0 or 1). <br>
+	 * Explicit query: a derived deleteBy with a primitive long return makes Spring
+	 * Data return the deleted entity instead of a count (ClassCastException).
+	 */
 	@Modifying
-	@Query("DELETE FROM RecentSearch r WHERE r.id = :id AND r.appUser = :appUser")
+	@Query("""
+			DELETE FROM RecentSearch r
+			WHERE r.id = :id
+			AND r.appUser = :appUser
+			""")
 	int deleteByIdAndAppUser(@Param("id") Long id, @Param("appUser") AppUser appUser);
 
 	@Modifying
-	@Query("DELETE FROM RecentSearch r WHERE r.appUser = :appUser")
+	@Query("""
+			DELETE FROM RecentSearch r
+			WHERE r.appUser = :appUser
+			""")
 	void deleteAllByAppUser(@Param("appUser") AppUser appUser);
 
 }

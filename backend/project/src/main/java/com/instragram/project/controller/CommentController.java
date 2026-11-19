@@ -1,10 +1,13 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.dto.comment.request.EditCommentRequest;
 import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.dto.comment.response.GetCommentResponse;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.repository.PostRepository;
 import com.instragram.project.service.CommentService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,25 +32,17 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/comments")
 @Slf4j
+@RequiredArgsConstructor
 public class CommentController {
 
 	private final CommentService commentService;
-
 	private final PostRepository postRepository;
-
 	private final MappingMethods mappingMethods;
-
-	public CommentController(CommentService commentService, PostRepository postRepository,
-			MappingMethods mappingMethods) {
-		this.commentService = commentService;
-		this.postRepository = postRepository;
-		this.mappingMethods = mappingMethods;
-	}
 
 	// Create Comment
 	@PostMapping("/create-comment")
 	@PreAuthorize("isAuthenticated()")
-	public ResponseEntity<Void> createComment(@RequestBody WriteCommentRequest requestDto,
+	public ResponseEntity<Void> createComment(@Valid @RequestBody WriteCommentRequest requestDto,
 			Authentication authentication) {
 		String username = authentication.getName();
 		commentService.createComment(requestDto, username);
@@ -66,7 +61,7 @@ public class CommentController {
 	}
 
 	// Get Comments By PostId, paginated — ?page=0&size=20&sort=createdAt,desc
-	@GetMapping("/{postId:\\d+}")
+	@GetMapping("/post/{postId}")
 	public ResponseEntity<PagedModel<GetCommentResponse>> getCommentsByPostId(@PathVariable Long postId,
 			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 		Page<GetCommentResponse> commentResponseDtos = commentService.findByPostId(postId, pageable)
@@ -75,15 +70,17 @@ public class CommentController {
 	}
 
 	// Update Comment
-	@PutMapping("/edit-comment/{commentId:\\d+}")
-	public ResponseEntity<Void> editComment(@PathVariable Long commentId, @RequestBody String content,
+	@PutMapping("/edit-comment/{commentId}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<Void> editComment(@PathVariable Long commentId,
+			@Valid @RequestBody EditCommentRequest request,
 			Authentication authentication) {
 		String username = authentication.getName();
-		commentService.editComment(commentId, content, username);
+		commentService.editComment(commentId, request, username);
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 
-	@DeleteMapping("/{commentId}")
+	@DeleteMapping("/delete-comment/{commentId}")
 	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Authentication authentication) {
 

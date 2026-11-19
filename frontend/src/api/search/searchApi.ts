@@ -25,10 +25,12 @@ export const searchApi = api.injectEndpoints({
     >({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: username, pageParam }) => ({
-        url: `/searches/search/${username}`,
+        // The term goes in ?q=, which `params` encodes. In the path, #, ? and / would
+        // break the URL, and Spring's firewall rejects an encoded / or %.
+        url: "/searches/search",
         method: "GET",
         // Stable order so pages don't shift between requests
-        params: pageParams(pageParam, "id,asc"),
+        params: { q: username, ...pageParams(pageParam, "id,asc") },
       }),
       providesTags: (result) =>
         providePagedTags(result, "User", [{ type: "UserList", id: "ALL" }]),
@@ -61,10 +63,11 @@ export const searchApi = api.injectEndpoints({
     >({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: description, pageParam }) => ({
-        url: `/searches/search-posts/containing/${description}`,
+        // ?q= for the same reason as searchUsersByUsername
+        url: "/searches/search-posts/containing",
         method: "GET",
         // Newest first
-        params: pageParams(pageParam, "createdAt,desc"),
+        params: { q: description, ...pageParams(pageParam, "createdAt,desc") },
       }),
       providesTags: (result) =>
         providePagedTags(result, "Post", [{ type: "Post", id: "LIST" }]),
@@ -86,9 +89,9 @@ export const searchApi = api.injectEndpoints({
       invalidatesTags: [{ type: "RecentSearch", id: "LIST" }],
     }),
 
-    // Remove one term from the logged-in user's recents. Only the term is sent:
-    // the backend reads the user from the token, so this can't touch anyone
-    // else's searches. Sent as a query param so terms with "/" or spaces are safe.
+    // Remove one entry from the logged-in user's recents. Only the search id is
+    // sent: the backend reads the user from the token, so this can't touch anyone
+    // else's searches.
     deleteSearchForUser: builder.mutation<void, number>({
       query: (searchId) => ({
         url: `/searches/recent/${searchId}`,
@@ -99,7 +102,7 @@ export const searchApi = api.injectEndpoints({
 
     deleteAllSearchesForUser: builder.mutation<void, void>({
       query: () => ({
-        url: "/searches/recent/all",
+        url: "/searches/recent",
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "RecentSearch", id: "LIST" }],

@@ -31,13 +31,17 @@ public class SearchService {
 	 * Search for users by their username and return a page of SearchUserResponse.
 	 */
 	public Page<SearchUserResponse> searchUsers(String username, Pageable pageable) {
-		return appUserRepository.findByUsernameContaining(username, pageable)
+		return appUserRepository
+				.findByUsernameContaining(username, pageable)
 				.map(mappingMethods::convertAppUserEntityToSearchUserResponse);
 	}
 
-	// Search post by description (not case sensitive), one page at a time
-	public Page<GetPostResponse> getPostsByDescription(String description, Pageable pageable) {
-		return postRepository.findByDescriptionContaining(description, pageable)
+	/**
+	 * Search post by description (not case sensitive), one page at a time
+	 */
+	public Page<GetPostResponse> getPostsByDescription(String description, String viewerUsername, Pageable pageable) {
+		return postRepository
+				.findByDescriptionContaining(description, viewerUsername, pageable)
 				.map(mappingMethods::convertPostEntityToGetPostResponse);
 	}
 

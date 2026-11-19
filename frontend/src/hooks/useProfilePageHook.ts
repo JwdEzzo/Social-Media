@@ -31,28 +31,53 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   const { loggedInUsername } = useCurrentUser();
   const { username: routeUsername } = useParams<{ username: string }>();
 
-  const [viewMode, setViewMode] = useState<"posts" | "liked" | "saved">(
-    "posts",
-  );
+  const [selectedViewMode, setViewMode] = useState<
+    "posts" | "liked" | "saved"
+  >("posts");
+
+  // Liked and Saved are the logged-in user's own lists (/liked-by-me, /saved-by-me),
+  // so they only exist on your own profile. Forcing "posts" elsewhere means a
+  // leftover selection can never show your lists under someone else's name.
+  const viewMode = isOwnProfile ? selectedViewMode : "posts";
   const [showCreatePostModal, setShowCreatePostModal] =
     useState<boolean>(false);
 
   const profileUsername = isOwnProfile ? loggedInUsername : routeUsername;
 
-  // --- API QUERIES ---
+  // ================ API QUERIES ==================
+  // currentData, not data: going from /users/a to /users/b, data still holds A until
+  // B arrives (and isLoading stays false after the first fetch), so A would flash
+  // under B's URL. currentData only holds the current username's result.
   const {
-    data: profileUser,
-    isLoading: isUserLoading,
+    currentData: profileUser,
+    isFetching: isUserFetching,
     isError: isUserError,
+    error: userError,
   } = useGetUserByUsernameQuery(profileUsername!, { skip: !profileUsername });
+
+  // A background refetch of the same profile keeps currentData, so it doesn't count
+  const isUserLoading = isUserFetching && !profileUser;
+
+  // prettier-ignore
+  // SerializedError has no status, so check for the key first
+  const isUserNotFound =
+    !!userError 
+    && "status" in userError
+    && userError.status === 404;
 
   const isPrivateAccount = profileUser?.accountStatus === "PRIVATE";
   const isOtherPrivateProfile = !isOwnProfile && isPrivateAccount;
 
-  const { data: isFollowed, isLoading: isFollowStatusLoading } =
+  // currentData for the same reason: a stale "true" from the last private profile
+  // would request this one's follower-only posts and get a 403.
+  // Skipped when logged out (/users/:username is public): nobody to follow with,
+  // so isFollowed stays undefined and the private profile's posts stay hidden.
+  const { currentData: isFollowed, isFetching: isFollowStatusFetching } =
     useIsFollowedQuery(profileUsername!, {
-      skip: !profileUsername || !isOtherPrivateProfile,
+      skip: !profileUsername || !isOtherPrivateProfile || !loggedInUsername,
     });
+  const isFollowStatusLoading =
+    isFollowStatusFetching && isFollowed === undefined;
 
   const useStandardPostsByUsername =
     !!profileUsername &&
@@ -61,15 +86,15 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
   const usePrivateFollowerPosts =
     !!profileUsername && isOtherPrivateProfile && isFollowed === true;
 
-  // Infinite queries: each tab loads 10 posts at a time, newest first (sorted by the server)
+  // ===================== Infinite queries =========================
+  // Each tab loads 10 posts at a time, newest first (sorted by the server)
   const postsByUsernameQuery = useGetPostsByUsernameInfiniteQuery(
     profileUsername!,
     { skip: !profileUsername || !useStandardPostsByUsername },
   );
-  const {
-    isLoading: isPostsByUsernameLoading,
-    isError: isPostsByUsernameError,
-  } = postsByUsernameQuery;
+
+  const { isError: isPostsByUsernameError } = postsByUsernameQuery;
+
   const postsByUsername = usePagedList(postsByUsernameQuery);
 
   const postsAsPrivateFollowerQuery =
@@ -77,34 +102,46 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
       { privateAccountUsername: profileUsername! },
       { skip: !profileUsername || !usePrivateFollowerPosts },
     );
-  const {
-    isLoading: isPostsPrivateFollowerLoading,
-    isError: isPostsPrivateFollowerError,
-  } = postsAsPrivateFollowerQuery;
+
+  const { isError: isPostsPrivateFollowerError } = postsAsPrivateFollowerQuery;
+
   const postsAsPrivateFollower = usePagedList(postsAsPrivateFollowerQuery);
 
-  // --- DERIVED DATA ---
+  // ================== DERIVED DATA ====================
   const posts = usePrivateFollowerPosts
     ? postsAsPrivateFollower
     : postsByUsername;
+
+  // isLoadingFirstPage is also true when the username changes, unlike isLoading
   const isPostsLoading =
-    (useStandardPostsByUsername && isPostsByUsernameLoading) ||
-    (usePrivateFollowerPosts && isPostsPrivateFollowerLoading);
+    (useStandardPostsByUsername && postsByUsername.isLoadingFirstPage) ||
+    (usePrivateFollowerPosts && postsAsPrivateFollower.isLoadingFirstPage);
+
   const isPostsError =
     (useStandardPostsByUsername && isPostsByUsernameError) ||
     (usePrivateFollowerPosts && isPostsPrivateFollowerError);
 
-  const { data: followerCount } = useGetFollowerCountQuery(profileUsername!, {
+  const { currentData: followerCount } = useGetFollowerCountQuery(profileUsername!, {
     skip: !profileUsername,
   });
-  const { data: followingCount } = useGetFollowingCountQuery(profileUsername!, {
+  const { currentData: followingCount } = useGetFollowingCountQuery(profileUsername!, {
     skip: !profileUsername,
   });
-  const { data: postCount } = useGetPostsCountQuery(profileUsername!, {
+  const { currentData: postCount } = useGetPostsCountQuery(profileUsername!, {
     skip: !profileUsername,
   });
-  const likedPosts = usePagedList(useGetPostsLikedByCurrentUserInfiniteQuery());
-  const savedPosts = usePagedList(useGetPostsSavedByCurrentUserInfiniteQuery());
+  // Own profile only: on someone else's profile these would be the wrong lists,
+  // and a logged-out visitor's request would be a 401
+  const likedPosts = usePagedList(
+    useGetPostsLikedByCurrentUserInfiniteQuery(undefined, {
+      skip: !isOwnProfile,
+    }),
+  );
+  const savedPosts = usePagedList(
+    useGetPostsSavedByCurrentUserInfiniteQuery(undefined, {
+      skip: !isOwnProfile,
+    }),
+  );
 
   // Pagination for whichever tab is showing, so the page has a single "load more" to wire up
   const activeList =
@@ -116,7 +153,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
 
   const [toggleAccountStatus] = useToggleAccountStatusMutation();
 
-  // --- HANDLERS ---
+  // ======================= HANDLERS ========================
   // Like / save live in usePostActions, called by ViewPostModal itself
   useEffect(() => {
     if (location.state?.fromModal && location.state?.previousPostId) {
@@ -139,6 +176,7 @@ export const useProfileLogic = (isOwnProfile: boolean) => {
       isOtherPrivateProfile,
       isFollowStatusLoading,
       isFollowed,
+      isUserNotFound,
       // Already sorted newest first by the server; re-sorting on the client would
       // reshuffle posts across page boundaries as more pages load
       sortedPosts: posts.items,

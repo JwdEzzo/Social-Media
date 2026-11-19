@@ -7,6 +7,7 @@ import com.instragram.project.dto.user.request.DeleteAccountRequest;
 import com.instragram.project.dto.user.request.SearchUserResponse;
 import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
 import com.instragram.project.dto.user.request.UpdateProfileRequest;
+import com.instragram.project.dto.user.response.GetCurrentUserResponse;
 import com.instragram.project.dto.user.response.GetUserResponse;
 import com.instragram.project.dto.user.response.SignUpResponse;
 import com.instragram.project.enums.AccountStatus;
@@ -38,14 +39,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * Successful responses carry their payload directly - no envelope. The status
- * line already reports success, so wrapping it adds a nesting level the client
- * has to unwrap for nothing. Failures are the exception:
- * {@code GlobalExceptionHandler} renders every one of them as an
- * {@code ApiResponse}, which is where the per-field {@code errors} map earns
- * its place.
- */
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/api/instagram/users")
@@ -87,6 +80,15 @@ public class AppUserController {
 			@PageableDefault(size = 10, sort = "id") Pageable pageable) {
 		Page<GetUserResponse> page = appUserService.getAllUsers(pageable);
 		return ResponseEntity.ok(new PagedModel<>(page));
+	}
+
+	// GET: The caller's own account (includes email). The token decides who "me" is,
+	// so there's no username in the path for someone to swap out.
+	@GetMapping("/me")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<GetCurrentUserResponse> getCurrentUser(Authentication authentication) {
+		GetCurrentUserResponse response = appUserService.getCurrentUser(authentication.getName());
+		return ResponseEntity.ok(response);
 	}
 
 	// GET: User by username
@@ -143,7 +145,7 @@ public class AppUserController {
 	}
 
 	// GET: serve image bytes for a post
-	@GetMapping(value = "/{id}/profile-image/preview")
+	@GetMapping(value = "/id/{id}/profile-image/preview")
 	public ResponseEntity<Resource> getProfileImage(@PathVariable Long id) {
 		byte[] bytes = appUserService.getProfileImageBytes(id);
 		String contentType = appUserService.getProfileImageContentType(id);
@@ -154,22 +156,22 @@ public class AppUserController {
 				.body(resource);
 	}
 
-	// PUT: Update credentials (email, username, password)
-	@PutMapping("/{username}/update-credentials")
+	// PUT: Update credentials (email, username, password); returns a new token
+	@PutMapping("/username/{username}/update-credentials")
 	@PreAuthorize("isAuthenticated()")
-	public ResponseEntity<Void> updateUserCredentials(@PathVariable String username,
-			@RequestBody UpdateCredentialsRequest request, Authentication authentication) {
+	public ResponseEntity<LoginResponse> updateUserCredentials(@PathVariable String username,
+			@Valid @RequestBody UpdateCredentialsRequest request, Authentication authentication) {
 
 		if (!authentication.getName().equals(username)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
-		appUserService.updateUserCredentials(username, request);
-		return ResponseEntity.noContent().build();
+		LoginResponse response = appUserService.updateUserCredentials(username, request);
+		return ResponseEntity.ok(response);
 	}
 
 	// PUT: Update profile with image upload
-	@PutMapping(value = "/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PutMapping(value = "/username/{username}/update-profile-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<Void> updateUserProfileWithUpload(@PathVariable String username,
 			@RequestParam(value = "bioText", required = false) String bioText,
@@ -180,17 +182,16 @@ public class AppUserController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
+		// Passed through as-is: null (not sent) keeps the bio, blank clears it
 		UpdateProfileRequest update = new UpdateProfileRequest();
-		if (bioText != null && !bioText.trim().isEmpty()) {
-			update.setBioText(bioText);
-		}
+		update.setBioText(bioText);
 
 		appUserService.updateUserProfileWithUpload(username, update, image);
 		return ResponseEntity.noContent().build();
 	}
 
 	// DELETE: Delete own account
-	@DeleteMapping("/{username}")
+	@DeleteMapping("/username/{username}")
 	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<Void> deleteUser(@PathVariable String username,
 			@Valid @RequestBody DeleteAccountRequest request, Authentication authentication) {

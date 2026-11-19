@@ -8,6 +8,7 @@ import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.PostRepository;
 import com.instragram.project.repository.PostSaveRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,21 +16,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PostSaveService {
 
-	// Same as postlike
 	private final PostSaveRepository postSaveRepository;
-
 	private final AppUserRepository appUserRepository;
-
 	private final PostRepository postRepository;
-
-	public PostSaveService(PostSaveRepository postSaveRepository, AppUserRepository appUserRepository,
-			PostRepository postRepository) {
-		this.postSaveRepository = postSaveRepository;
-		this.appUserRepository = appUserRepository;
-		this.postRepository = postRepository;
-	}
 
 	// Toggle PostSave
 	@Transactional

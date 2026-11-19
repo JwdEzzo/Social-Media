@@ -6,9 +6,9 @@ import com.instragram.project.dto.security.response.LoginResponse;
 import com.instragram.project.dto.user.request.SearchUserResponse;
 import com.instragram.project.dto.user.request.UpdateCredentialsRequest;
 import com.instragram.project.dto.user.request.UpdateProfileRequest;
+import com.instragram.project.dto.user.response.GetCurrentUserResponse;
 import com.instragram.project.dto.user.response.GetUserResponse;
 import com.instragram.project.dto.user.response.SignUpResponse;
-import com.instragram.project.dto.user.response.UpdateUserProfileResponse;
 import com.instragram.project.enums.AccountStatus;
 import com.instragram.project.exception.AlreadyExistsException;
 import com.instragram.project.exception.BadRequestException;
@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,6 +58,7 @@ public class AppUserService {
 	private final MappingMethods mappingMethods;
 	private final ProfilePictureRepository profilePictureRepository;
 	private final PostLikeRepository postLikeRepository;
+	private final FollowService followService;
 
 	/**
 	 * Sign up a new user with the {@link SignUpRequest} <br>
@@ -81,6 +81,12 @@ public class AppUserService {
 			}
 			throw new AlreadyExistsException("That username or email is already taken.", e);
 		}
+	}
+
+	// The caller's own account, including private fields; username comes from the token
+	public GetCurrentUserResponse getCurrentUser(String username) {
+		AppUser user = getUserByUsernameOrThrow(username);
+		return mappingMethods.convertAppUserEntityToGetCurrentUserResponse(user);
 	}
 
 	public GetUserResponse getUserByUsername(String username) {
@@ -109,11 +115,11 @@ public class AppUserService {
 	}
 
 	/**
-	 * Toggle the account status of the caller between PUBLIC and PRIVATE.
-	 *
-	 * @param username
-	 *            the caller's own username, resolved from the SecurityContext.
+	 * Toggle the account status of the caller between PUBLIC and PRIVATE.<br>
+	 * Going PUBLIC accepts every pending follow request, since a public account has
+	 * no one left to approve; going PRIVATE keeps existing followers.
 	 */
+	@Transactional
 	public AccountStatus toggleAccountStatus(String username) {
 		// Step 1: Retrieve the caller.
 		AppUser user = getUserByUsernameOrThrow(username);
@@ -122,8 +128,10 @@ public class AppUserService {
 			user.setAccountStatus(AccountStatus.PRIVATE);
 		} else {
 			user.setAccountStatus(AccountStatus.PUBLIC);
+			// Step 3: Nobody needs approval any more, so accept the pending requests.
+			followService.acceptAllPendingRequests(user);
 		}
-		// Step 3: Save the change and return the new status.
+		// Step 4: Save the change and return the new status.
 		appUserRepository.save(user);
 		return user.getAccountStatus();
 	}
@@ -171,11 +179,10 @@ public class AppUserService {
 	 * {@code 400} instead of succeeding. <br>
 	 * A field that collides with <b>another</b> account still answers {@code 409}.
 	 *
-	 * @param username
-	 *            the caller's own username, resolved from the SecurityContext.
-	 *            Never accept this from the request.
+	 * @param username the caller's own username, resolved from the SecurityContext.
+	 * Never accept this from the request.
 	 */
-	public UpdateUserProfileResponse updateUserCredentials(String username, UpdateCredentialsRequest newUser) {
+	public LoginResponse updateUserCredentials(String username, UpdateCredentialsRequest newUser) {
 
 		// Step 1: Get the caller by username or throw NotFoundException if not found
 		AppUser user = getUserByUsernameOrThrow(username);
@@ -183,12 +190,12 @@ public class AppUserService {
 		// Step 2: The old password proves the caller owns the account; every change
 		// below depends on it.
 		if (!encoder.matches(newUser.getOldPassword(), user.getPassword())) {
-			throw new BadRequestException("The old password provided does not match the current password.");
+			throw new BadRequestException("oldPassword", "The old password is incorrect.");
 		}
 		// Step 3: Check if request fields are provided
 		if (StringUtils.hasText(newUser.getEmail())) {
 			if (newUser.getEmail().equalsIgnoreCase(user.getEmail())) {
-				throw new BadRequestException("The new email must be different from the current email.");
+				throw new BadRequestException("email", "The new email must be different from the current email.");
 			}
 			checkUserExistsByEmailOrThrow(newUser.getEmail());
 			user.setEmail(newUser.getEmail());
@@ -196,7 +203,7 @@ public class AppUserService {
 
 		if (StringUtils.hasText(newUser.getUsername())) {
 			if (newUser.getUsername().equals(user.getUsername())) {
-				throw new BadRequestException("The new username must be different from the current username.");
+				throw new BadRequestException("username", "The new username must be different from the current username.");
 			}
 			checkUserExistsByUsernameOrThrow(newUser.getUsername());
 			user.setUsername(newUser.getUsername());
@@ -204,7 +211,8 @@ public class AppUserService {
 
 		if (StringUtils.hasText(newUser.getNewPassword())) {
 			if (encoder.matches(newUser.getNewPassword(), user.getPassword())) {
-				throw new BadRequestException("The new password must be different from the current password.");
+				throw new BadRequestException("newPassword",
+						"The new password must be different from the current password.");
 			}
 			user.setPassword(encoder.encode(newUser.getNewPassword()));
 		}
@@ -218,15 +226,17 @@ public class AppUserService {
 			}
 			throw new AlreadyExistsException("That username or email was just taken by another account.", e);
 		}
-		return new UpdateUserProfileResponse(user.getBioText(), mappingMethods.buildProfilePictureUrl(user));
+		// Step 5: Issue a new token. The old one names the old username, which no
+		// longer exists after a rename, so it would fail on the very next request.
+		String token = jwtService.generateToken(user.getUsername());
+		return new LoginResponse(token, user.getUsername());
 	}
 
 	/**
 	 * Update the caller's profile, including bio and profile picture upload. If a
 	 * new image is provided, it replaces any previously uploaded profile picture.
 	 *
-	 * @param username
-	 *            the caller's own username, resolved from the SecurityContext.
+	 * @param username the caller's own username, resolved from the SecurityContext.
 	 */
 	@Transactional
 	public void updateUserProfileWithUpload(String username, UpdateProfileRequest updateDto, MultipartFile image) {
@@ -234,11 +244,15 @@ public class AppUserService {
 		// Step 1: Get the caller
 		AppUser user = getUserByUsernameOrThrow(username);
 
-		// Step 2: If no image is provided, only update bio
+		// Bio: null means it wasn't sent, so keep it. Otherwise it replaces the bio,
+		// and blank text clears it (stored as null, so "No bio available" shows).
+		String bioText = updateDto.getBioText();
+		if (bioText != null) {
+			user.setBioText(StringUtils.hasText(bioText) ? bioText : null);
+		}
+
+		// Step 2: If no image is provided, only the bio changes
 		if (image == null || image.isEmpty()) {
-			if (StringUtils.hasText(updateDto.getBioText())) {
-				user.setBioText(updateDto.getBioText());
-			}
 			user.setUpdatedAt(LocalDateTime.now());
 			appUserRepository.save(user);
 			return;
@@ -248,12 +262,7 @@ public class AppUserService {
 			throw new BadRequestException("The uploaded profile picture must be an image.");
 		}
 		try {
-			// Step 3: Update bio if provided
-			if (StringUtils.hasText(updateDto.getBioText())) {
-				user.setBioText(updateDto.getBioText());
-			}
-
-			// Step 4: Update the timestamp, flag the profile picture, and save the user
+			// Step 3: Update the timestamp, flag the profile picture, and save the user
 			user.setUpdatedAt(LocalDateTime.now());
 			user.setHasProfilePicture(true);
 			appUserRepository.save(user);
@@ -334,11 +343,6 @@ public class AppUserService {
 	}
 
 	// ===================== PRIVATE HELPERS =====================
-	//
-	//
-	//
-	//
-
 	/**
 	 * Get user by username or throw NotFoundException if not found.
 	 */

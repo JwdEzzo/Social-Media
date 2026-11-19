@@ -1,6 +1,7 @@
 package com.instragram.project.dto.comment.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,9 @@ public class WriteCommentRequest {
 	@NotBlank(message = "Content is required")
 	private String content;
 
-	@NotBlank(message = "Post ID is required")
+	// @NotNull, not @NotBlank: @NotBlank only works on text and would crash on a
+	// Long
+	@NotNull(message = "Post ID is required")
 	private Long postId;
 
 	// VERY IMPORTANT !!!!!!!!!!!

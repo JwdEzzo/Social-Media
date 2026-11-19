@@ -18,76 +18,124 @@ import type { UpdateCredentialsRequest } from "@/types/request-types";
 import { useUpdateUserCredentialsMutation } from "@/api/users/userApi";
 import { useNavigate } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { applyServerErrors } from "@/utils/errors";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/auth/authSlice";
 
-const updateCredentialsSchema = z.object({
-  email: z.string().email().nullable().optional(),
+// undefined, null and "" (what a cleared input gives) all mean "not filled in"
+const isFilled = (value: string | null | undefined) => !!value?.trim();
+
+// Field-by-field rules only. Kept as its own variable because .superRefine()
+// wraps it in a ZodEffects, which has no .shape (applyServerErrors needs it).
+// Every field starts as "" and "" means "leave unchanged", so each optional field
+// accepts "" via .or(z.literal("")) and otherwise must pass the same rules as sign-up.
+const baseCredentialsSchema = z.object({
+  email: z
+    .string()
+    .email("Email is not valid.")
+    .max(254, "Email must be at most 254 characters.")
+    .or(z.literal("")),
   username: z
     .string()
-    .min(3, "Username must be at least 3 characters")
-    .nullable()
-    .optional(),
+    .min(8, "Username must be between 8 and 20 characters.")
+    .max(20, "Username must be between 8 and 20 characters.")
+    .regex(
+      /^[a-zA-Z0-9._]+$/,
+      "Username can only contain letters, numbers, dots, and underscores.",
+    )
+    .or(z.literal("")),
   newPassword: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .nullable()
-    .optional()
-    .or(z.literal("")) // Allow empty string
-    .or(z.null()), // Explicitly allow null
-  confirmPassword: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal("")) // Allow empty string
-    .or(z.null()), // Explicitly allow null
-  oldPassword: z.string().min(8, "Current password is required"),
+    .min(8, "Password must be between 8 and 20 characters.")
+    .max(20, "Password must be between 8 and 20 characters.")
+    .or(z.literal("")),
+  confirmPassword: z.string(),
+  // Only checked for presence: whether it's correct is the server's call
+  oldPassword: z.string().min(1, "Current password is required"),
 });
-type UpdateCredentialsSchema = z.infer<typeof updateCredentialsSchema>;
+
+// Rules that look at several fields together
+const updateCredentialsSchema = baseCredentialsSchema.superRefine(
+  (data, ctx) => {
+    // At least one change, or the request would do nothing
+    if (
+      !isFilled(data.email) &&
+      !isFilled(data.username) &&
+      !isFilled(data.newPassword)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        // Not a field: "root.*" becomes a form-level error (errors.root.noChanges)
+        path: ["root", "noChanges"],
+        message: "Change at least one: email, username, or password.",
+      });
+    }
+
+    // A new password needs a matching confirmation
+    if (isFilled(data.newPassword)) {
+      if (!isFilled(data.confirmPassword)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["confirmPassword"],
+          message: "Please confirm your new password.",
+        });
+      } else if (data.newPassword !== data.confirmPassword) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["confirmPassword"],
+          message: "Passwords do not match.",
+        });
+      }
+    }
+  },
+);
+
+type UpdateCredentialsSchema = z.infer<typeof baseCredentialsSchema>;
 
 function EditCredentials() {
   const navigate = useNavigate();
   const { loggedInUsername: username, loggedInUser: user } = useCurrentUser();
 
-  const [updateUserCredentials, { isLoading, isError, isSuccess }] =
+  const [updateUserCredentials, { isLoading, isSuccess }] =
     useUpdateUserCredentialsMutation();
+  const dispatch = useDispatch();
 
   const form = useForm<UpdateCredentialsSchema>({
     resolver: zodResolver(updateCredentialsSchema),
+    mode: "onTouched",
+    // Empty on purpose: an empty field means "leave unchanged". The current values
+    // show as placeholders instead, so they're never re-sent as a "change".
     defaultValues: {
-      email: user?.email,
-      username: user?.username,
+      email: "",
+      username: "",
       newPassword: "",
       confirmPassword: "",
       oldPassword: "",
     },
   });
 
+  const serverError = form.formState.errors.root?.server;
+  const noChangesError = form.formState.errors.root?.noChanges;
+
   async function handleUpdateCredentials(data: UpdateCredentialsSchema) {
     try {
-      // Validate password match if both are provided
-      if (
-        data.newPassword &&
-        data.confirmPassword &&
-        data.newPassword !== data.confirmPassword
-      ) {
-        form.setError("confirmPassword", {
-          type: "manual",
-          message: "Passwords do not match",
-        });
-        return;
-      }
-
-      // The mutation expects username in the object for URL construction
+      // Only send what the user filled in; undefined keys are left out of the JSON,
+      // so the backend sees null and leaves that credential unchanged
       const updateRequest: {
         currentUsername: string;
       } & UpdateCredentialsRequest = {
         currentUsername: username!, // Current username for URL
-        email: data.email ?? "",
-        username: data.username ?? "", // New username
-        newPassword: data.newPassword ?? "",
+        email: isFilled(data.email) ? data.email : undefined,
+        username: isFilled(data.username) ? data.username : undefined,
+        newPassword: isFilled(data.newPassword) ? data.newPassword : undefined,
         oldPassword: data.oldPassword,
       };
 
-      await updateUserCredentials(updateRequest).unwrap();
+      const session = await updateUserCredentials(updateRequest).unwrap();
+
+      // Swap in the new token and username (Redux and localStorage) before
+      // navigating, so every request after this one is sent as the new user
+      dispatch(setCredentials(session));
 
       toast.success("Credentials updated successfully!");
 
@@ -101,20 +149,10 @@ function EditCredentials() {
       });
 
       navigate("/me");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error("Update credentials error:", error);
-      let errorMessage = "Failed to update credentials";
-
-      if (error.data?.message) {
-        errorMessage = error.data.message;
-      } else if (error.status === 401) {
-        errorMessage = "Current password is incorrect";
-      } else if (error.status === 409) {
-        errorMessage = "Username or email already exists";
-      }
-
-      toast.error(errorMessage);
+      // Field errors go under their inputs; anything else goes to the banner
+      applyServerErrors(error, form, Object.keys(baseCredentialsSchema.shape));
     }
   }
 
@@ -137,6 +175,10 @@ function EditCredentials() {
                 </Button>
               </div>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Change your email, username, password, or any combination. Your
+              current password is always required.
+            </p>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -150,10 +192,14 @@ function EditCredentials() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email (optional)</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter new email"
+                          placeholder={
+                            user?.email
+                              ? `Current: ${user.email}`
+                              : "Enter new email"
+                          }
                           {...field}
                           disabled={isLoading}
                           type="email"
@@ -171,10 +217,14 @@ function EditCredentials() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username (optional)</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter new username"
+                          placeholder={
+                            user?.username
+                              ? `Current: ${user.username}`
+                              : "Enter new username"
+                          }
                           {...field}
                           value={field.value ?? ""}
                           disabled={isLoading}
@@ -191,7 +241,7 @@ function EditCredentials() {
                   name="newPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New Password (optional)</FormLabel>
+                      <FormLabel>New Password</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter new password"
@@ -248,6 +298,13 @@ function EditCredentials() {
                   )}
                 />
 
+                {/* Form-level error: nothing to change */}
+                {noChangesError && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+                    {noChangesError.message}
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <Button
                   type="submit"
@@ -264,9 +321,9 @@ function EditCredentials() {
                   )}
                 </Button>
 
-                {isError && (
+                {serverError && (
                   <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
-                    Failed to update credentials. Please try again.
+                    {serverError.message}
                   </div>
                 )}
 

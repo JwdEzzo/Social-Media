@@ -33,14 +33,14 @@ public class FollowController {
 	}
 
 	// GET : followers count
-	@GetMapping("/{username}/follower-count")
+	@GetMapping("/user/{username}/follower-count")
 	public ResponseEntity<Long> getFollowersCount(@PathVariable String username) {
 		long count = followService.getFollowersCount(username);
 		return ResponseEntity.ok(count);
 	}
 
 	// GET : following count
-	@GetMapping("/{username}/following-count")
+	@GetMapping("/user/{username}/following-count")
 	public ResponseEntity<Long> getFollowingCount(@PathVariable String username) {
 		long count = followService.getFollowingCount(username);
 		return ResponseEntity.ok(count);
@@ -48,6 +48,7 @@ public class FollowController {
 
 	// GET : If a user already follows another
 	@GetMapping("/already-follows/{followingUsername}")
+	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<Boolean> isFollowed(@PathVariable String followingUsername, Authentication authentication) {
 		String followerUsername = authentication.getName();
 		boolean status = followService.isFollowed(followerUsername, followingUsername);

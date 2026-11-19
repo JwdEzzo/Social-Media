@@ -1,8 +1,10 @@
 package com.instragram.project.controller;
 
+import com.instragram.project.dto.reply.request.EditReplyRequest;
 import com.instragram.project.dto.reply.request.WriteReplyRequest;
 import com.instragram.project.dto.reply.response.GetReplyResponse;
 import com.instragram.project.service.CommentReplyService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +40,7 @@ public class CommentReplyController {
 	// Create Comment Reply
 	@PostMapping("/create-reply")
 	@PreAuthorize("isAuthenticated()")
-	public ResponseEntity<Void> createCommentReply(@RequestBody WriteReplyRequest requestDto,
+	public ResponseEntity<Void> createCommentReply(@Valid @RequestBody WriteReplyRequest requestDto,
 			Authentication authentication) {
 		String username = authentication.getName();
 		commentReplyService.createCommentReply(requestDto, username);
@@ -69,16 +71,17 @@ public class CommentReplyController {
 	}
 
 	// Update Comment
-	@PutMapping("/edit-reply/{commentReplyId:\\d+}")
+	@PutMapping("/edit-reply/{commentReplyId}")
 	@PreAuthorize("isAuthenticated()")
-	public ResponseEntity<Void> editCommentReply(@PathVariable Long commentReplyId, @RequestBody String content,
+	public ResponseEntity<Void> editCommentReply(@PathVariable Long commentReplyId,
+			@Valid @RequestBody EditReplyRequest request,
 			Authentication authentication) {
 		String username = authentication.getName();
-		commentReplyService.editCommentReply(commentReplyId, content, username);
+		commentReplyService.editCommentReply(commentReplyId, request, username);
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 
-	@DeleteMapping("/delete-reply/{commentReplyId:\\d+}")
+	@DeleteMapping("/delete-reply/{commentReplyId}")
 	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<Void> deleteCommentReply(@PathVariable Long commentReplyId, Authentication authentication) {
 		log.info("Started deleting process for comment reply ID: {}", commentReplyId);

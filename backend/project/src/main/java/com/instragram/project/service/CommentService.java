@@ -1,5 +1,6 @@
 package com.instragram.project.service;
 
+import com.instragram.project.dto.comment.request.EditCommentRequest;
 import com.instragram.project.dto.comment.request.WriteCommentRequest;
 import com.instragram.project.enums.NotificationType;
 import com.instragram.project.exception.ForbiddenException;
@@ -10,6 +11,7 @@ import com.instragram.project.model.Comment;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,23 +19,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CommentService {
 
 	private final CommentRepository commentRepository;
-
 	private final AppUserRepository appUserRepository;
-
 	private final MappingMethods mappingMethods;
-
 	private final NotificationService notificationService;
-
-	public CommentService(CommentRepository commentRepository, AppUserRepository appUserRepository,
-			MappingMethods mappingMethods, NotificationService notificationService) {
-		this.commentRepository = commentRepository;
-		this.appUserRepository = appUserRepository;
-		this.mappingMethods = mappingMethods;
-		this.notificationService = notificationService;
-	}
 
 	// Create Comment
 	@Transactional
@@ -60,12 +52,12 @@ public class CommentService {
 
 	// Update a comment
 	@Transactional
-	public void editComment(Long commentId, String content, String username) {
+	public void editComment(Long commentId, EditCommentRequest requestDto, String username) {
 		Comment comment = getCommentOrThrow(commentId);
 		if (!comment.getAppUser().getUsername().equals(username)) {
 			throw new ForbiddenException("You do not have permission to edit this comment.");
 		}
-		comment.setContent(content);
+		comment.setContent(requestDto.getContent());
 		commentRepository.save(comment);
 	}
 

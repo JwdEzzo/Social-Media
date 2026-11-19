@@ -1,5 +1,8 @@
 import { api } from "@/api/api";
-import { type WriteReplyRequest } from "@/types/request-types";
+import {
+  type EditReplyRequest,
+  type WriteReplyRequest,
+} from "@/types/request-types";
 import { type GetReplyResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -55,26 +58,29 @@ export const commentRepliesApi = api.injectEndpoints({
     editReply: builder.mutation<void, { replyId: number; content: string }>({
       query: ({ replyId, content }) => ({
         url: `/comment-replies/edit-reply/${replyId}`,
-        body: { content },
+        body: { content } satisfies EditReplyRequest,
         method: "PUT",
       }),
-      invalidatesTags: (result, error, { replyId }) => [
-        { type: "CommentReply", id: `COMMENT_${replyId}` },
-        { type: "CommentReply", id: `COUNT_${replyId}` },
+      // providePagedTags tags every loaded reply by its id, so invalidating the
+      // reply's own tag refetches whichever comment's list contains it.
+      // The count doesn't change on edit.
+      invalidatesTags: (_result, _error, { replyId }) => [
+        { type: "CommentReply", id: replyId },
       ],
     }),
-    deleteReply: builder.mutation<void, number>({
-      query: (replyId) => ({
-        url: `/comment-replies/delete-reply/${replyId}`,
-        method: "DELETE",
-      }),
-      // FIXED: Only invalidate the specific comment's reply count and list
-      // Don't invalidate the generic "CommentReply" tag
-      invalidatesTags: (result, error, replyId) => [
-        { type: "CommentReply", id: `COMMENT_${replyId}` },
-        { type: "CommentReply", id: `COUNT_${replyId}` },
-      ],
-    }),
+    deleteReply: builder.mutation<void, { replyId: number; commentId: number }>(
+      {
+        query: ({ replyId }) => ({
+          url: `/comment-replies/delete-reply/${replyId}`,
+          method: "DELETE",
+        }),
+        // Tags are keyed by the parent comment, so the caller passes commentId
+        invalidatesTags: (_result, _error, { commentId }) => [
+          { type: "CommentReply", id: `COMMENT_${commentId}` },
+          { type: "CommentReply", id: `COUNT_${commentId}` },
+        ],
+      },
+    ),
   }),
 });
 

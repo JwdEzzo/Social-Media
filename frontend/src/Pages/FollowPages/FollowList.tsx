@@ -122,7 +122,9 @@ function FollowList({ profileUsername, listType }: FollowListProps) {
   return (
     <div className="min-h-svh w-full bg-background px-4 pt-16 pb-10">
       <NavigateBack />
-      {isFollowers ? <IncomingRequestsCard /> : <CancellingRequestsCard />}
+      {/* The request cards list *my* requests, so they only belong on my own lists */}
+      {isOwnList &&
+        (isFollowers ? <IncomingRequestsCard /> : <CancellingRequestsCard />)}
       <Card className="mx-auto w-full max-w-lg gap-4 rounded-xl border-border shadow-none">
         <CardHeader>
           <div className="flex items-center justify-center">

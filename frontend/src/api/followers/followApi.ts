@@ -26,7 +26,7 @@ export const followApi = api.injectEndpoints({
     }),
     getFollowerCount: builder.query<number, string>({
       query: (followingUsername) => ({
-        url: `/follows/${followingUsername}/follower-count`,
+        url: `/follows/user/${followingUsername}/follower-count`,
         method: "GET",
       }),
       providesTags: (_result, _error, followingUsername) => [
@@ -36,7 +36,7 @@ export const followApi = api.injectEndpoints({
     }),
     getFollowingCount: builder.query<number, string>({
       query: (username) => ({
-        url: `/follows/${username}/following-count`,
+        url: `/follows/user/${username}/following-count`,
         method: "GET",
       }),
       providesTags: (_result, _error, username) => [
@@ -74,7 +74,7 @@ export const followApi = api.injectEndpoints({
       { requestId: number; requesterUsername: string }
     >({
       query: ({ requestId }) => ({
-        url: `/follow-requests/${requestId}/accept`,
+        url: `/follow-requests/accept/${requestId}`,
         method: "PUT",
       }),
       invalidatesTags: (_result, _error, { requesterUsername }) => [
@@ -90,7 +90,7 @@ export const followApi = api.injectEndpoints({
       { requestId: number; requesterUsername: string }
     >({
       query: ({ requestId }) => ({
-        url: `/follow-requests/${requestId}/decline`,
+        url: `/follow-requests/decline/${requestId}`,
         method: "PUT",
       }),
       invalidatesTags: (_result, _error, { requesterUsername }) => [
@@ -99,17 +99,18 @@ export const followApi = api.injectEndpoints({
       ],
     }),
 
+    // I cancel my own request, so the stale Pending button is on the target's profile
     cancelFollowRequest: builder.mutation<
       void,
-      { requestId: number; requesterUsername: string }
+      { requestId: number; targetUsername: string }
     >({
       query: ({ requestId }) => ({
-        url: `/follow-requests/${requestId}/cancel`,
+        url: `/follow-requests/cancel/${requestId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_result, _error, { requesterUsername }) => [
+      invalidatesTags: (_result, _error, { targetUsername }) => [
         { type: "Follow", id: "REQUESTS" },
-        { type: "Follow", id: `PENDING-${requesterUsername}` }, // this knows which tag to bust
+        { type: "Follow", id: `PENDING-${targetUsername}` },
       ],
     }),
 

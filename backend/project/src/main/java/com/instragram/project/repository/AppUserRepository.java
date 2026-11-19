@@ -14,14 +14,26 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
 	Optional<AppUser> findByEmail(String email);
 
-	// Existence checks for sign-up: cheaper than findBy*, and they state intent.
+	/**
+	 * Existence checks for sign-up: cheaper than findBy*, and they state intent.
+	 */
 	boolean existsByUsername(String username);
 
 	boolean existsByEmail(String email);
 
-	// Find users excluding the current user, one page at a time
+	/**
+	 * Find users excluding the current user, one page at a time
+	 */
 	Page<AppUser> findByUsernameNot(String username, Pageable pageable);
 
-	@Query(value = "SELECT au FROM AppUser au WHERE LOWER(au.username) LIKE LOWER(CONCAT('%', :username, '%'))", countQuery = "SELECT COUNT(au) FROM AppUser au WHERE LOWER(au.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+	@Query(value = """
+			SELECT au
+			FROM AppUser au
+			WHERE LOWER(au.username) LIKE LOWER(CONCAT('%', :username, '%'))
+			""", countQuery = """
+			SELECT COUNT(au)
+			FROM AppUser au
+			WHERE LOWER(au.username) LIKE LOWER(CONCAT('%', :username, '%'))
+			""")
 	Page<AppUser> findByUsernameContaining(@Param("username") String username, Pageable pageable);
 }

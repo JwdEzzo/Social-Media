@@ -9,6 +9,8 @@ import com.instragram.project.model.AppUser;
 import com.instragram.project.model.Notification;
 import com.instragram.project.repository.NotificationRepository;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,15 +18,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class NotificationService {
 
 	private final NotificationRepository notificationRepository;
 	private final MappingMethods mappingMethods;
-
-	public NotificationService(NotificationRepository notificationRepository, MappingMethods mappingMethods) {
-		this.notificationRepository = notificationRepository;
-		this.mappingMethods = mappingMethods;
-	}
 
 	// Create notification by recepient, sender, type and entityId
 	// Internal — called in follow service , comment service , comment reply service

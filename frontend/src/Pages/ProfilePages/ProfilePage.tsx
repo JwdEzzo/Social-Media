@@ -22,16 +22,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
 import ViewPostModal from "@/Pages/PostPages/ViewPostModal";
-import ProfilePagePostCard from "@/Pages/PostPages/ProfilePagePostCard";
 import FollowButton from "@/components/custom/follow-button";
 import { useProfileLogic } from "@/hooks/useProfilePageHook";
-import LoadMoreTrigger from "@/components/custom/load-more-trigger";
-import LoadingPostTiles from "@/components/custom/loading-post-tiles";
 import UserAvatar from "@/components/custom/user-avatar";
+import ProfileTab from "@/components/custom/profile-tab";
 import {
   FullPageLoading,
   FullPageStatus,
 } from "@/components/custom/status-card";
+import ProfilePostsSection from "@/components/custom/profile-posts-section";
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -44,12 +43,13 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   // Posts section: which list the active tab shows, and which state it's in
   const isPostsTab = viewMode === "posts";
 
-  const activePosts =
-    viewMode === "posts"
-      ? state.sortedPosts
-      : viewMode === "liked"
-        ? state.sortedLikedPosts
-        : state.sortedSavedPosts;
+  const postsByTab = {
+    posts: state.sortedPosts,
+    liked: state.sortedLikedPosts,
+    saved: state.sortedSavedPosts,
+  };
+
+  const activePosts = postsByTab[viewMode];
 
   // Someone else's private account: wait for follow status, then hide posts unless followed
   const isCheckingFollowStatus =
@@ -69,11 +69,21 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
   const isEmptyLikedOrSaved = !isPostsTab && activePosts.length === 0;
 
   // Loading state
-  if (!state.profileUser || state.isUserLoading) {
+  if (state.isUserLoading) {
     return <FullPageLoading label="Loading profile..." />;
   }
 
-  // Error states
+  // User not found (404)
+  if (state.isUserNotFound) {
+    return (
+      <FullPageStatus
+        title="User Not Found"
+        message="The requested user does not exist"
+      />
+    );
+  }
+
+  // Error states (network, 500, etc.)
   if (state.isUserError || state.isPostsError) {
     return (
       <FullPageStatus
@@ -85,7 +95,7 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
     );
   }
 
-  // User not found
+  // No user and no request made (query skipped because there's no username)
   if (!profileUser) {
     return (
       <FullPageStatus
@@ -127,12 +137,12 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
             <div className="w-full min-w-0 flex-1 text-center md:text-left">
               <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  {/* Username + Follow Button (other profiles only) */}
+                  {/* Username + Follow Button (other profiles, logged in only) */}
                   <div className="mb-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
                     <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
                       {profileUser.username}
                     </h1>
-                    {!isOwnProfile ? (
+                    {!isOwnProfile && state.loggedInUsername ? (
                       <FollowButton username={profileUser.username} />
                     ) : null}
                   </div>
@@ -205,9 +215,9 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
                             <DropdownMenuItem
                               className="cursor-pointer"
                               onClick={() => {
-                                if (profileUser?.id) {
+                                if (profileUser?.username) {
                                   actions.toggleAccountStatus({
-                                    targetUserId: profileUser.id,
+                                    username: profileUser.username,
                                   });
                                 }
                               }}
@@ -304,129 +314,44 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 
       {/* View Mode Tabs + Posts Section */}
       <div className="mx-auto max-w-4xl pb-10 sm:px-4">
-        {/* View Mode Tabs: Posts / Likes / Saved (Saved on own profile only) */}
+        {/* View Mode Tabs: Posts / Likes / Saved. Likes and Saved are your own
+            lists, so they only show on your own profile */}
         <div className="flex border-t border-border">
-          {/* Posts Tab */}
-          <div
-            onClick={() => actions.setViewMode("posts")}
-            className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-sm font-semibold transition-colors
-        ${
-          viewMode === "posts"
-            ? "border-foreground text-foreground"
-            : "border-transparent text-muted-foreground hover:text-foreground"
-        }`}
-          >
-            <button className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-              <div className="flex cursor-pointer items-center gap-1.5">
-                <Grid3X3 className="size-3.5 sm:size-4" />
-                <span>Posts</span>
-              </div>
-            </button>
-          </div>
-
-          {isOwnProfile ? (
+          <ProfileTab
+            label="Posts"
+            icon={Grid3X3}
+            isActive={viewMode === "posts"}
+            onSelect={() => actions.setViewMode("posts")}
+          />
+          {isOwnProfile && (
             <>
-              {/* Likes Tab */}
-              <div
-                onClick={() => actions.setViewMode("liked")}
-                className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-sm font-semibold transition-colors
-            ${
-              viewMode === "liked"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-              >
-                <button className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                  <div className="flex cursor-pointer items-center gap-1.5">
-                    <Heart className="size-3.5 sm:size-4" />
-                    <span>Likes</span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Saved Tab */}
-              <div
-                onClick={() => actions.setViewMode("saved")}
-                className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-sm font-semibold transition-colors
-            ${
-              viewMode === "saved"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-              >
-                <button className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                  <div className="flex cursor-pointer items-center gap-1.5">
-                    <Bookmark className="size-3.5 sm:size-4" />
-                    <span>Saved</span>
-                  </div>
-                </button>
-              </div>
+              <ProfileTab
+                label="Likes"
+                icon={Heart}
+                isActive={viewMode === "liked"}
+                onSelect={() => actions.setViewMode("liked")}
+              />
+              <ProfileTab
+                label="Saved"
+                icon={Bookmark}
+                isActive={viewMode === "saved"}
+                onSelect={() => actions.setViewMode("saved")}
+              />
             </>
-          ) : (
-            // Likes Tab (other profiles)
-            <div
-              onClick={() => actions.setViewMode("liked")}
-              className={`-mt-px flex flex-1 cursor-pointer items-center justify-center gap-2 border-t py-3 text-sm font-semibold transition-colors
-            ${
-              viewMode === "liked"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-            >
-              <button className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                <div className="flex cursor-pointer items-center gap-1.5">
-                  <Heart className="size-3.5 sm:size-4" />
-                  <span>Likes</span>
-                </div>
-              </button>
-            </div>
           )}
         </div>
 
         {/* Posts Section: content for the active tab */}
-        {isLoadingPosts ? (
-          // Loading State: placeholder tiles
-          <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-            <LoadingPostTiles />
-          </div>
-        ) : isPrivateAndNotFollowed ? (
-          // Private Account Placeholder: shown until you follow them
-          <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-            <div className="mb-4 rounded-full border-2 border-foreground p-4">
-              <Lock className="size-10 text-foreground" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">
-              This account is private
-            </h2>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              Follow this account to see their photos and videos.
-            </p>
-          </div>
-        ) : isEmptyLikedOrSaved ? (
-          // Empty State: Liked / Saved tabs with nothing in them
-          <div className="col-span-full py-16 text-center text-sm text-muted-foreground">
-            {viewMode === "liked" ? "No liked posts yet" : "No saved posts yet"}
-          </div>
-        ) : (
-          // Loaded State: posts grid plus infinite-scroll trigger
-          <>
-            {/* Posts Grid */}
-            <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-              {activePosts.map((post) => (
-                <div key={post.id} className="group relative aspect-square">
-                  <ProfilePagePostCard post={post} />
-                </div>
-              ))}
-            </div>
-
-            {/* Load More Trigger: loads the active tab's next page when scrolled into view */}
-            <LoadMoreTrigger
-              hasNextPage={state.pagination.hasNextPage}
-              isFetchingNextPage={state.pagination.isFetchingNextPage}
-              onLoadMore={state.pagination.loadMore}
-            />
-          </>
-        )}
+        <ProfilePostsSection
+          posts={activePosts}
+          isLoading={isLoadingPosts}
+          isPrivate={isPrivateAndNotFollowed}
+          isEmpty={isEmptyLikedOrSaved}
+          emptyMessage={
+            viewMode === "liked" ? "No liked posts yet" : "No saved posts yet"
+          }
+          pagination={state.pagination}
+        />
       </div>
 
       {/* Create Post Modal: own profile only */}
@@ -444,3 +369,10 @@ function ProfilePage({ isOwnProfile }: ProfilePageProps) {
 }
 
 export default ProfilePage;
+
+// const activePosts =
+//   viewMode === "posts"            // Question 1: is the Posts tab active?
+//     ? state.sortedPosts           //   yes → use the user's own posts
+//     : viewMode === "liked"        //   no  → Question 2: is the Liked tab active?
+//       ? state.sortedLikedPosts    //           yes → use liked posts
+//       : state.sortedSavedPosts;   //           no  → only "saved" is left

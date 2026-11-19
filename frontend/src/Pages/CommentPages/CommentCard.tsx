@@ -22,8 +22,9 @@ interface CommentCardProps {
   navigateToSelectedUserProfile: (username: string) => void;
   postUsername: string;
   focusRef: React.RefObject<HTMLInputElement | null>;
-  onEditComment: (commentId: number) => void;
-  onEditReply: (replyId: number) => void;
+  // content is the current text, to pre-fill the edit input
+  onEditComment: (commentId: number, content: string) => void;
+  onEditReply: (replyId: number, content: string) => void;
 }
 
 const CommentCard = memo(
@@ -81,9 +82,9 @@ const CommentCard = memo(
       isFetchingNextPage: isFetchingMoreReplies,
     } = usePagedList(repliesQuery);
 
-    // Comment and post owners can edit/delete the comment
-    const isAuthenticated =
-      isMe(comment.appUser.username) || isMe(postUsername);
+    // Matches the backend: only the author edits; the post owner can also delete
+    const canEdit = isMe(comment.appUser.username);
+    const canDelete = canEdit || isMe(postUsername);
 
     return (
       <div className={`py-2.5`}>
@@ -117,10 +118,13 @@ const CommentCard = memo(
                 </span>
               </div>
               <EditDeleteDropdown
-                isAuthenticated={isAuthenticated}
+                canEdit={canEdit}
+                canDelete={canDelete}
                 entityId={comment.id}
                 handleEntityDelete={handleDeleteComment}
-                handleEntityEdit={onEditComment}
+                handleEntityEdit={() =>
+                  onEditComment(comment.id, comment.content)
+                }
               />
             </div>
 
@@ -216,8 +220,11 @@ const CommentCard = memo(
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if the comment ID or callbacks changed
-    const commentUnchanged = prevProps.comment.id === nextProps.comment.id;
+    // Only re-render if the comment (id or edited content) changed. The edit/reply
+    // callbacks from ViewPostModal are stable (useCallback with [dispatch] only).
+    const commentUnchanged =
+      prevProps.comment.id === nextProps.comment.id &&
+      prevProps.comment.content === nextProps.comment.content;
     const callbacksUnchanged = prevProps.onReply === nextProps.onReply;
 
     return commentUnchanged && callbacksUnchanged;

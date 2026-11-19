@@ -3,33 +3,39 @@ import {
   useGetPostByIdQuery,
 } from "@/api/posts/postApi";
 import type { EditPostWithUploadRequest } from "@/types/request-types";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import PostFormModal, { type PostFormData } from "./PostFormModal";
 
 function EditPost() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { postId } = useParams<{ postId: string }>();
+
+  // Go back to wherever Edit was opened from. location.key is "default" when this
+  // is the first page of the visit (link opened directly or page reloaded); going
+  // back then would leave the app, so go to the profile instead.
+  function handleClose() {
+    if (location.key !== "default") navigate(-1);
+    else navigate("/me");
+  }
   const { data: post } = useGetPostByIdQuery(Number(postId), { skip: !postId });
 
   const [editPostWithUpload, { isLoading: isSubmitting }] =
     useEditPostWithUploadMutation();
 
+  // No navigate and no catch here: PostFormModal calls handleClose once this
+  // resolves, and shows the error itself if it rejects
   async function handleFormSubmit(data: PostFormData) {
-    try {
-      // No new file keeps the post's current image
-      const editRequest: EditPostWithUploadRequest = {
-        description: data.description,
-        image: data.file,
-      };
+    // No new file keeps the post's current image
+    const editRequest: EditPostWithUploadRequest = {
+      description: data.description,
+      image: data.file,
+    };
 
-      await editPostWithUpload({
-        ...editRequest,
-        postId: parseInt(postId!),
-      }).unwrap();
-      navigate("/me");
-    } catch (error) {
-      console.error("Failed to edit post:", error);
-    }
+    await editPostWithUpload({
+      ...editRequest,
+      postId: parseInt(postId!),
+    }).unwrap();
   }
 
   return (
@@ -43,7 +49,7 @@ function EditPost() {
         description: post?.description,
         imageUrl: post?.imageUrl,
       }}
-      handleClose={function (): void {}}
+      handleClose={handleClose}
     />
   );
 }

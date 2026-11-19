@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -66,6 +67,14 @@ public class JwtFilter extends OncePerRequestFilter {
 			logger.warn("Rejected JWT on " + request.getRequestURI() + ": " + ex.getMessage());
 			handlerExceptionResolver.resolveException(request, response, null,
 					new UnauthorizedException("The provided token is invalid. Please log in again."));
+			return;
+
+		} catch (UsernameNotFoundException ex) {
+			// A correctly signed token whose user no longer exists (the account was deleted).
+			// A 401 makes the frontend log out instead of retrying with a dead token.
+			logger.warn("JWT for a missing user on " + request.getRequestURI() + ": " + ex.getMessage());
+			handlerExceptionResolver.resolveException(request, response, null,
+					new UnauthorizedException("Your account no longer exists. Please log in again."));
 			return;
 		}
 

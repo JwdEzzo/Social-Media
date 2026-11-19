@@ -59,7 +59,11 @@ const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
   if (result.error) {
-    if (result.error.status === 401) api.dispatch(logout());
+    // Only a 401 on a request that carried a token means the session died. A
+    // logged-out visitor's 401 must not dispatch logout: that resets the API cache
+    // (store.ts), the page refetches, gets another 401, and loops.
+    const hadToken = !!(api.getState() as RootState).auth.token;
+    if (result.error.status === 401 && hadToken) api.dispatch(logout());
     return { ...result, error: toApiError(result.error) };
   }
   return result;

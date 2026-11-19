@@ -9,8 +9,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ * A user as anyone may see them: profiles, comment and reply authors,
+ * notification senders. Keep private fields (email) out of here; the
+ * logged-in user's own account uses {@link GetCurrentUserResponse}. <br>
+ * <br>
  * {@code Long} id <br>
- * {@code String} email <br>
  * {@code String} username <br>
  * {@code String} bioText <br>
  * {@code String} profilePictureUrl <br>
@@ -25,7 +28,6 @@ import lombok.NoArgsConstructor;
 public class GetUserResponse {
 
 	private Long id;
-	private String email;
 	private String username;
 	private String bioText;
 	private String profilePictureUrl;

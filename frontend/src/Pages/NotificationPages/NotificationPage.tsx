@@ -1,7 +1,6 @@
 import {
   useGetAllNotificationsInfiniteQuery,
   useMarkAllAsReadMutation,
-  useMarkOneAsReadMutation,
 } from "@/api/notifications/notificationApi";
 import { usePagedList } from "@/hooks/usePagedList";
 import LoadMoreTrigger from "@/components/custom/load-more-trigger";
@@ -9,20 +8,18 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/custom/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BellOff, CheckCheck, ArrowRight } from "lucide-react";
-import { useNavigateToProfile } from "@/hooks/useNavigateToProfile";
+import { useOpenNotification } from "@/hooks/useOpenNotification";
 import { cn } from "@/utils/errors";
 import { formatTimeAgo } from "@/utils/helpers";
 import { getNotificationDetails } from "@/utils/notification-details";
-import type { NotificationResponse } from "@/types/response-types";
 import NavigateBack from "@/components/custom/navigate-back";
 import { StatusCard } from "@/components/custom/status-card";
 
 function NotificationPage() {
-  const navigateToProfile = useNavigateToProfile();
+  const handleNotificationClick = useOpenNotification();
 
   const [markAllAsRead, { isLoading: isMarkingAll }] =
     useMarkAllAsReadMutation();
-  const [markOneAsRead] = useMarkOneAsReadMutation();
 
   const notificationsQuery = useGetAllNotificationsInfiniteQuery(undefined, {
     refetchOnFocus: true,
@@ -41,22 +38,6 @@ function NotificationPage() {
 
   // Only checks the pages loaded so far; newest-first ordering puts unread ones on top
   const hasUnread = notifications.some((n) => !n.isRead);
-
-  const handleNotificationClick = async (
-    notification: NotificationResponse,
-  ) => {
-    // Mark as read if unread
-    if (!notification.isRead) {
-      try {
-        await markOneAsRead(notification.id).unwrap();
-      } catch (error) {
-        console.error("Failed to mark notification as read:", error);
-      }
-    }
-
-    // Navigate to appropriate profile page
-    navigateToProfile(notification.sender.username);
-  };
 
   // Loading state
   if (isNotificationsLoading) {

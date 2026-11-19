@@ -9,28 +9,20 @@ import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentLikeRepository;
 import com.instragram.project.repository.CommentRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CommentLikeService {
 
 	private final AppUserRepository appUserRepository;
-
 	private final CommentRepository commentRepository;
-
 	private final CommentLikeRepository commentLikeRepository;
-
 	private final NotificationService notificationService;
-
-	public CommentLikeService(AppUserRepository appUserRepository, CommentRepository commentRepository,
-			CommentLikeRepository commentLikeRepository, NotificationService notificationService) {
-		this.appUserRepository = appUserRepository;
-		this.commentRepository = commentRepository;
-		this.commentLikeRepository = commentLikeRepository;
-		this.notificationService = notificationService;
-	}
 
 	@Transactional
 	public void toggleLike(String username, Long commentId) {

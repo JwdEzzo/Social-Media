@@ -10,6 +10,7 @@ import com.instragram.project.dto.reply.response.GetReplyResponse;
 import com.instragram.project.dto.search.response.GetSearchResponse;
 import com.instragram.project.dto.security.request.SignUpRequest;
 import com.instragram.project.dto.user.request.SearchUserResponse;
+import com.instragram.project.dto.user.response.GetCurrentUserResponse;
 import com.instragram.project.dto.user.response.GetUserResponse;
 import com.instragram.project.dto.user.response.SignUpResponse;
 import com.instragram.project.exception.NotFoundException;
@@ -78,7 +79,7 @@ public class MappingMethods {
 	// Absolute URL of the endpoint that serves a post's image, based on the current
 	// request's host
 	private String buildPostImageUrl(Long postId) {
-		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/instagram/posts/{postId}/image")
+		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/instagram/posts/image/{postId}")
 				.buildAndExpand(postId).toUriString();
 	}
 
@@ -89,7 +90,7 @@ public class MappingMethods {
 			return null;
 		}
 		return ServletUriComponentsBuilder.fromCurrentContextPath()
-				.path("/api/instagram/users/{userId}/profile-image/preview").buildAndExpand(appUser.getId())
+				.path("/api/instagram/users/id/{userId}/profile-image/preview").buildAndExpand(appUser.getId())
 				.toUriString();
 	}
 
@@ -109,6 +110,20 @@ public class MappingMethods {
 		response.setUpdatedAt(appUser.getUpdatedAt());
 		response.setAccountStatus(appUser.getAccountStatus());
 		response.setPosts(convertListPostEntityToListGetPostResponse(appUser.getPosts()));
+		return response;
+	}
+
+	// Convert AppUser to GetCurrentUserResponse (the caller's own account, includes email)
+	public GetCurrentUserResponse convertAppUserEntityToGetCurrentUserResponse(AppUser appUser) {
+		GetCurrentUserResponse response = new GetCurrentUserResponse();
+		response.setId(appUser.getId());
+		response.setEmail(appUser.getEmail());
+		response.setUsername(appUser.getUsername());
+		response.setBioText(appUser.getBioText());
+		response.setProfilePictureUrl(buildProfilePictureUrl(appUser));
+		response.setAccountStatus(appUser.getAccountStatus());
+		response.setCreatedAt(appUser.getCreatedAt());
+		response.setUpdatedAt(appUser.getUpdatedAt());
 		return response;
 	}
 

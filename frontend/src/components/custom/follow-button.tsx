@@ -29,7 +29,7 @@ function FollowButton({ username }: FollowButtonProps) {
     if (isPending && pendingRequestId) {
       cancelRequest({
         requestId: pendingRequestId,
-        requesterUsername: username,
+        targetUsername: username,
       });
       return;
     }

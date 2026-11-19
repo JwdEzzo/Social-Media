@@ -7,7 +7,21 @@ export interface LoginResponse {
 }
 
 // =============== USER =================
+// A user as anyone may see them. No private fields: the email is only on
+// GetCurrentUserResponse.
 export interface GetUserResponse {
+  id: number;
+  username: string;
+  bioText: string;
+  profilePictureUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  accountStatus: AccountStatus;
+  posts: GetPostResponse[];
+}
+
+// The logged-in user's own account, from GET /users/me
+export interface GetCurrentUserResponse {
   id: number;
   email: string;
   username: string;
@@ -16,7 +30,6 @@ export interface GetUserResponse {
   createdAt: string;
   updatedAt: string;
   accountStatus: AccountStatus;
-  posts: GetPostResponse[];
 }
 
 export interface SearchUserResponse {

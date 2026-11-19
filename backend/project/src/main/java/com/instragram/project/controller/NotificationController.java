@@ -64,7 +64,7 @@ public class NotificationController {
 	}
 
 	// PUT: Mark a single notification as read
-	@PutMapping("/{notificationId}/read")
+	@PutMapping("/mark-as-read/{notificationId}")
 	public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId, Authentication authentication) {
 
 		Long userId = getAuthenticatedUserId(authentication);

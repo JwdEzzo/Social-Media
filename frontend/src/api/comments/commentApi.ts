@@ -1,5 +1,8 @@
 import { api } from "@/api/api";
-import { type WriteCommentRequest } from "@/types/request-types";
+import {
+  type EditCommentRequest,
+  type WriteCommentRequest,
+} from "@/types/request-types";
 import { type GetCommentResponse } from "@/types/response-types";
 import type { PagedModel } from "@/types/api-response";
 import {
@@ -30,7 +33,7 @@ export const commentApi = api.injectEndpoints({
     >({
       infiniteQueryOptions: pagedInfiniteQueryOptions,
       query: ({ queryArg: { postId }, pageParam }) => ({
-        url: `/comments/${postId}`,
+        url: `/comments/post/${postId}`,
         method: "GET",
         params: pageParams(pageParam, "createdAt,asc"),
       }),
@@ -56,7 +59,7 @@ export const commentApi = api.injectEndpoints({
         query: ({ commentId, content }) => ({
           url: `/comments/edit-comment/${commentId}`,
           method: "PUT",
-          body: content,
+          body: { content } satisfies EditCommentRequest,
         }),
         invalidatesTags: (result, error, { commentId }) => [
           { type: "Comment", id: commentId },
@@ -67,7 +70,7 @@ export const commentApi = api.injectEndpoints({
 
     deleteComment: builder.mutation<void, number>({
       query: (commentId) => ({
-        url: `/comments/${commentId}`,
+        url: `/comments/delete-comment/${commentId}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Comment", id: "LIST" }, "Comment"],

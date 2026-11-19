@@ -16,7 +16,7 @@ interface ReplyCardProps {
   navigateToSelectedUserProfile: (username: string) => void;
   comment: GetCommentResponse;
   postUsername: string;
-  onEditReply: (replyId: number) => void;
+  onEditReply: (replyId: number, content: string) => void;
 }
 
 const ReplyCard = memo(
@@ -41,17 +41,16 @@ const ReplyCard = memo(
 
     const handleDeleteReply = useCallback(async () => {
       try {
-        await deleteReply(reply.id).unwrap();
+        await deleteReply({ replyId: reply.id, commentId: comment.id }).unwrap();
       } catch (error) {
         console.error("Failed to delete reply", error);
       }
-    }, [deleteReply, reply.id]);
+    }, [deleteReply, reply.id, comment.id]);
 
-    // Post/Comment/Reply owners have the authority to delete the reply
-    const isAuthenticated =
-      isMe(comment.appUser.username) ||
-      isMe(postUsername) ||
-      isMe(reply.appUser.username);
+    // Matches the backend: only the author edits; post and comment owners can also delete
+    const canEdit = isMe(reply.appUser.username);
+    const canDelete =
+      canEdit || isMe(comment.appUser.username) || isMe(postUsername);
 
     return (
       <div className="pt-3">
@@ -80,14 +79,13 @@ const ReplyCard = memo(
                 {reply.appUser.username}
               </span>
               <div>
-                {isAuthenticated && (
-                  <EditDeleteDropdown
-                    isAuthenticated={isAuthenticated}
-                    entityId={reply.id}
-                    handleEntityDelete={handleDeleteReply}
-                    handleEntityEdit={onEditReply}
-                  />
-                )}
+                <EditDeleteDropdown
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  entityId={reply.id}
+                  handleEntityDelete={handleDeleteReply}
+                  handleEntityEdit={() => onEditReply(reply.id, reply.content)}
+                />
               </div>
             </div>
 
@@ -115,8 +113,10 @@ const ReplyCard = memo(
       </div>
     );
   },
+  // Compare content too, or an edited reply keeps showing its old text
   (prevProps: ReplyCardProps, nextProps: ReplyCardProps): boolean =>
-    prevProps.reply.id === nextProps.reply.id,
+    prevProps.reply.id === nextProps.reply.id &&
+    prevProps.reply.content === nextProps.reply.content,
 );
 
 ReplyCard.displayName = "ReplyCard";

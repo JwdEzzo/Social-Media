@@ -73,7 +73,8 @@ function SetOrEditProfile({ title, isEditingProfile }: SetOrEditProfileProps) {
       // No file keeps the current profile picture
       await updateUserProfileWithUpload({
         username: username!,
-        bioText: data.bioText || undefined,
+        // Always sent, so an emptied field clears the bio
+        bioText: data.bioText ?? "",
         profileImage: selectedFile ?? undefined,
       }).unwrap();
 

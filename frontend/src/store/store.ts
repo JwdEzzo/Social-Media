@@ -2,7 +2,11 @@
 import { api } from "@/api/api";
 import { authApi } from "@/api/auth/authApi";
 import authSlice, { logout } from "@/auth/authSlice";
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  combineReducers,
+  type Middleware,
+} from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import viewPostModalReducer from "@/slices/viewPostSlice";
 import { replyModeSlice } from "@/slices/replyModeSlice";
@@ -28,10 +32,27 @@ const rootReducer = (state: any, action: any) => {
   return appReducer(state, action);
 };
 
+// The root reducer empties the cache slices, but each API's middleware keeps its own
+// subscriptions, polling timers and cache lifecycles. resetApiState clears those too,
+// so nothing from the previous user survives. Runs on every logout, including the
+// automatic one on a 401 (baseApi.ts).
+const resetApisOnLogout: Middleware = (storeApi) => (next) => (action) => {
+  const result = next(action);
+  if (logout.match(action)) {
+    storeApi.dispatch(api.util.resetApiState());
+    storeApi.dispatch(authApi.util.resetApiState());
+  }
+  return result;
+};
+
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat([api.middleware, authApi.middleware]),
+    getDefaultMiddleware().concat([
+      api.middleware,
+      authApi.middleware,
+      resetApisOnLogout,
+    ]),
 });
 
 setupListeners(store.dispatch);

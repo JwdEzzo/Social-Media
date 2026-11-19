@@ -67,7 +67,7 @@ public class FollowRequestController {
 	}
 
 	// PUT: Accept a follow request
-	@PutMapping("/{requestId}/accept")
+	@PutMapping("/accept/{requestId}")
 	public ResponseEntity<Void> acceptFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
 		followService.respondToFollowRequest(requestId, authentication.getName(), true);
@@ -75,7 +75,7 @@ public class FollowRequestController {
 	}
 
 	// PUT: Decline a follow request
-	@PutMapping("/{requestId}/decline")
+	@PutMapping("/decline/{requestId}")
 	public ResponseEntity<Void> declineFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
 		followService.respondToFollowRequest(requestId, authentication.getName(), false);
@@ -83,7 +83,7 @@ public class FollowRequestController {
 	}
 
 	// DELETE: Cancel an outgoing follow request (requester withdraws it)
-	@DeleteMapping("/{requestId}/cancel")
+	@DeleteMapping("/cancel/{requestId}")
 	public ResponseEntity<Void> cancelFollowRequest(@PathVariable Long requestId, Authentication authentication) {
 
 		followService.cancelFollowRequest(requestId, authentication.getName());

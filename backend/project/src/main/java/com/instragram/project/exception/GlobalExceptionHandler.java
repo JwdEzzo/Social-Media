@@ -89,6 +89,10 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
 		String msg = ex.getMessage();
+		if (ex.getField() != null) {
+			Map<String, List<String>> errors = Map.of(ex.getField(), List.of(msg));
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.withErrors(400, msg, errors));
+		}
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, msg));
 	}
 

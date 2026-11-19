@@ -75,24 +75,31 @@ public class PostController {
 
 	// GET : Get post by id
 	@GetMapping("/get-by-id/{postId}")
-	public ResponseEntity<GetPostResponse> getPostById(@PathVariable Long postId) {
-		GetPostResponse responseDto = postService.getPostById(postId);
+	public ResponseEntity<GetPostResponse> getPostById(@PathVariable Long postId, Authentication authentication) {
+		String viewerUsername = getViewerUsername(authentication);
+		GetPostResponse responseDto = postService.getPostById(postId, viewerUsername);
 		return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 	}
 
-	// GET : Get all posts, paginated — ?page=0&size=20&sort=createdAt,desc
+	// GET : Get all posts the caller may see, paginated —
+	// ?page=0&size=20&sort=createdAt,desc
 	@GetMapping
 	public ResponseEntity<PagedModel<GetPostResponse>> getAllPosts(
-			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-		Page<GetPostResponse> posts = postService.getAllPosts(pageable);
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+			Authentication authentication) {
+		String viewerUsername = getViewerUsername(authentication);
+		Page<GetPostResponse> posts = postService.getAllPosts(viewerUsername, pageable);
 		return ResponseEntity.ok(new PagedModel<>(posts));
 	}
 
-	// GET : Get posts by username, paginated — ?page=0&size=20&sort=createdAt,desc
-	@GetMapping("/{username}")
+	// GET : Get a user's posts if the caller may see them, paginated —
+	// ?page=0&size=20&sort=createdAt,desc
+	@GetMapping("/user/{username}")
 	public ResponseEntity<PagedModel<GetPostResponse>> getPostsByUsername(@PathVariable String username,
-			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-		Page<GetPostResponse> responseDtos = postService.getPostsByUsername(username, pageable);
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+			Authentication authentication) {
+		String viewerUsername = getViewerUsername(authentication);
+		Page<GetPostResponse> responseDtos = postService.getPostsByUsername(username, viewerUsername, pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(new PagedModel<>(responseDtos));
 	}
 
@@ -150,14 +157,14 @@ public class PostController {
 	}
 
 	// GET : Get post count of a user
-	@GetMapping("{username}/count")
+	@GetMapping("/user/{username}/count")
 	public ResponseEntity<Long> getPostCount(@PathVariable String username) {
 		long count = postService.getPostCount(username);
 		return ResponseEntity.ok(count);
 	}
 
 	// GET : serve image bytes for a post
-	@GetMapping(value = "/{postId}/image")
+	@GetMapping(value = "/image/{postId}")
 	public ResponseEntity<Resource> getPostImage(@PathVariable Long postId) {
 		PostImage postImage = postService.getPostImage(postId);
 		byte[] bytes = postImage.getImageData();
@@ -187,6 +194,13 @@ public class PostController {
 		String username = authentication.getName();
 		postService.deletePostByUser(username, postId);
 		return ResponseEntity.noContent().build();
+	}
+
+	private String getViewerUsername(Authentication authentication) {
+		if (authentication == null) {
+			return null;
+		}
+		return authentication.getName();
 	}
 
 }

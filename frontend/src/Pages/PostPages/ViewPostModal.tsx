@@ -109,14 +109,24 @@ function ViewPostModal() {
   const navigateToProfile = useNavigateToProfile();
   const scrollPositionRef = useRef<number>(0);
 
-  const [
-    createComment,
-    { isLoading: isCreateLoading, isError: isCreateError },
-  ] = useCreateCommentMutation();
+  const [createComment, { isLoading: isCreateLoading }] =
+    useCreateCommentMutation();
+  const [createReply, { isLoading: isReplyLoading }] = useCreateReplyMutation();
+  const [editComment, { isLoading: isEditCommentLoading }] =
+    useEditCommentMutation();
+  const [editReply, { isLoading: isEditReplyLoading }] = useEditReplyMutation();
 
-  const [createReply] = useCreateReplyMutation();
-  const [editComment] = useEditCommentMutation();
-  const [editReply] = useEditReplyMutation();
+  // True while any of the four comment-box requests is in flight
+  const isSubmitting =
+    isCreateLoading ||
+    isReplyLoading ||
+    isEditCommentLoading ||
+    isEditReplyLoading;
+
+  // Set when a comment/reply/edit fails; cleared on the next submit or mode change.
+  // Kept in local state (not the mutations' isError) because the mode callbacks
+  // below can only use stable functions, and setState is stable.
+  const [isSubmitError, setIsSubmitError] = useState<boolean>(false);
 
   // Fetch comments for the current post, a page at a time
   const commentsQuery = useGetCommentsByPostIdInfiniteQuery(
@@ -158,6 +168,7 @@ function ViewPostModal() {
     useDeletePostByPostIdMutation();
 
   function handleCloseViewModal(): void {
+    setIsSubmitError(false);
     dispatch(closePostModal());
   }
 
@@ -206,19 +217,12 @@ function ViewPostModal() {
         scrollPositionRef.current = scrollContainerRef.current.scrollTop;
       }
 
+      setIsSubmitError(false);
+
+      // Edit is checked before reply, in the same order as the button label and
+      // placeholder, so the action always matches what the button says
       try {
-        if (isReplying && replyCommentId) {
-          await createReply({
-            content: newComment,
-            commentId: replyCommentId,
-          }).unwrap();
-          dispatch(resetReplyMode());
-        } else if (!isReplying && !isEditing && selectedPostId) {
-          await createComment({
-            content: newComment,
-            postId: selectedPostId,
-          }).unwrap();
-        } else if (isEditing && editType === "comment" && editCommentId) {
+        if (isEditing && editType === "comment" && editCommentId) {
           await editComment({
             content: newComment,
             commentId: editCommentId,
@@ -230,11 +234,23 @@ function ViewPostModal() {
             replyId: editReplyId,
           }).unwrap();
           dispatch(closeEditMode());
+        } else if (isReplying && replyCommentId) {
+          await createReply({
+            content: newComment,
+            commentId: replyCommentId,
+          }).unwrap();
+          dispatch(resetReplyMode());
+        } else if (!isReplying && !isEditing) {
+          await createComment({
+            content: newComment,
+            postId: selectedPostId,
+          }).unwrap();
         }
 
         setNewComment("");
       } catch (error) {
         console.error("Failed to add comment/reply:", error);
+        setIsSubmitError(true);
       }
     },
     [
@@ -254,72 +270,82 @@ function ViewPostModal() {
     ],
   );
 
+  // The three callbacks below are passed to memoized CommentCard/ReplyCard, whose
+  // comparators ignore them. So they must never change (deps: [dispatch] only), or
+  // the cards would keep calling a stale copy. That's why they reset the other mode
+  // unconditionally instead of reading isEditing/isReplying: both resets do
+  // nothing when that mode isn't on.
+
   // Callback to enter reply mode for a specific comment
   const handleReplyToComment = useCallback(
     (commentId: number, username: string) => {
       // Always clear edit mode when entering reply mode
-      if (isEditing) {
-        dispatch(closeEditMode());
-      }
+      dispatch(closeEditMode());
 
       // Enter reply mode for the specified comment
       dispatch(enterReplyMode({ commentId, username }));
 
-      // Clear the comment text field
+      // Clear the comment text field and any error from a previous attempt
       setNewComment("");
+      setIsSubmitError(false);
     },
-    [dispatch, isEditing],
+    [dispatch],
   );
 
   // Callback to enter edit mode for a specific comment
   const handleEditComment = useCallback(
-    (commentId: number) => {
+    (commentId: number, content: string) => {
       // clear reply mode when entering edit mode
-      if (isReplying) {
-        dispatch(resetReplyMode());
-      }
+      dispatch(resetReplyMode());
 
       // Enter edit mode for the specified comment
       dispatch(enterEditCommentMode(commentId));
 
-      // clear the comment text field
-      setNewComment("");
+      // Start from the comment's current text
+      setNewComment(content);
+      setIsSubmitError(false);
     },
-    [dispatch, isReplying],
+    [dispatch],
   );
 
   const handleEditReply = useCallback(
-    (replyId: number) => {
-      if (isReplying) dispatch(resetReplyMode());
+    (replyId: number, content: string) => {
+      dispatch(resetReplyMode());
       dispatch(enterEditReplyMode(replyId));
-      setNewComment("");
+      setNewComment(content);
+      setIsSubmitError(false);
     },
-    [dispatch, isReplying],
+    [dispatch],
   );
 
   // Callback to cancel reply mode
   const cancelReplyMode = useCallback(() => {
     dispatch(resetReplyMode());
     setNewComment("");
+    setIsSubmitError(false);
   }, [dispatch]);
 
   // callback to cancel edit mode
   const cancelEditMode = useCallback(() => {
     dispatch(closeEditMode());
     setNewComment("");
+    setIsSubmitError(false);
   }, [dispatch]);
 
   // Callback to handle post deletion
   const handleDeletePost = useCallback(async () => {
-    if (post?.id) {
+    if (post) {
       try {
-        await deletePostById(post.id).unwrap();
+        await deletePostById({
+          postId: post.id,
+          username: post.username,
+        }).unwrap();
         dispatch(closePostModal());
       } catch (error) {
         console.error("Failed to delete post:", error);
       }
     }
-  }, [post?.id, deletePostById, dispatch]);
+  }, [post, deletePostById, dispatch]);
 
   if (!isOpen) return null;
 
@@ -610,11 +636,11 @@ function ViewPostModal() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={isCreateLoading}
+                disabled={isSubmitting}
                 size="sm"
                 className="rounded-full bg-transparent px-3 font-semibold text-sky-500 shadow-none hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-400"
               >
-                {isCreateLoading
+                {isSubmitting
                   ? isEditing
                     ? "Saving..."
                     : isReplying
@@ -627,9 +653,9 @@ function ViewPostModal() {
                       : "Post"}
               </Button>
             </form>
-            {isCreateError && (
+            {isSubmitError && (
               <p className="mt-2 text-xs text-destructive">
-                Error posting comment
+                Something went wrong. Please try again.
               </p>
             )}
           </div>

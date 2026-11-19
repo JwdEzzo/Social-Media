@@ -3,6 +3,7 @@ package com.instragram.project.service;
 import com.instragram.project.dto.post.request.EditPostWithUploadRequest;
 import com.instragram.project.dto.post.response.GetPostResponse;
 import com.instragram.project.exception.BadRequestException;
+import com.instragram.project.exception.ForbiddenException;
 import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
@@ -13,6 +14,7 @@ import com.instragram.project.repository.PostImageRepository;
 import com.instragram.project.repository.PostRepository;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,23 +24,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PostService {
 
 	private final PostRepository postRepository;
-
 	private final PostImageRepository postImageRepository;
-
 	private final AppUserRepository appUserRepository;
-
 	private final MappingMethods mappingMethods;
-
-	public PostService(PostRepository postRepository, PostImageRepository postImageRepository,
-			AppUserRepository appUserRepository, MappingMethods mappingMethods) {
-		this.postRepository = postRepository;
-		this.postImageRepository = postImageRepository;
-		this.appUserRepository = appUserRepository;
-		this.mappingMethods = mappingMethods;
-	}
+	private final FollowService followService;
 
 	// Create Post with uploaded image
 	@Transactional
@@ -79,9 +72,16 @@ public class PostService {
 				.map(mappingMethods::convertPostEntityToGetPostResponse);
 	}
 
-	// Get Post By Id
-	public GetPostResponse getPostById(Long id) {
+	/**
+	 * Get a post by id, only if the viewer may see its owner's posts (see
+	 * {@link FollowService#canView}). A null viewer only sees posts from public
+	 * accounts.
+	 */
+	public GetPostResponse getPostById(Long id, String viewerUsername) {
 		Post post = getPostOrThrow(id);
+		if (!followService.canView(viewerUsername, post.getAppUser())) {
+			throw new ForbiddenException("This account is private.");
+		}
 		return mappingMethods.convertPostEntityToGetPostResponse(post);
 	}
 
@@ -93,14 +93,15 @@ public class PostService {
 	 * extra filter is a no-op here — and filtering after the page is fetched would
 	 * make the page contents disagree with the count.
 	 */
-	public Page<GetPostResponse> getPostsByUsername(String username, Pageable pageable) {
-		return postRepository.findByAppUserUsername(username, pageable)
+	public Page<GetPostResponse> getPostsByUsername(String ownerUsername, String viewerUsername, Pageable pageable) {
+		return postRepository.findVisibleByOwnerUsername(ownerUsername, viewerUsername, pageable)
 				.map(mappingMethods::convertPostEntityToGetPostResponse);
 	}
 
 	// Get a page of all posts
-	public Page<GetPostResponse> getAllPosts(Pageable pageable) {
-		return postRepository.findAll(pageable).map(mappingMethods::convertPostEntityToGetPostResponse);
+	public Page<GetPostResponse> getAllPosts(String viewerUsername, Pageable pageable) {
+		return postRepository.findAllVisibleTo(viewerUsername, pageable)
+				.map(mappingMethods::convertPostEntityToGetPostResponse);
 	}
 
 	// Get a page of all posts excluding the given user's own

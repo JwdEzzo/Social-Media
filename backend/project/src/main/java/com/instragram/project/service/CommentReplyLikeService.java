@@ -9,28 +9,20 @@ import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.CommentReplyLikeRepository;
 import com.instragram.project.repository.CommentReplyRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CommentReplyLikeService {
 
 	private final AppUserRepository appUserRepository;
-
 	private final CommentReplyRepository commentReplyRepository;
-
 	private final CommentReplyLikeRepository commentReplyLikeRepository;
-
 	private final NotificationService notificationService;
-
-	public CommentReplyLikeService(AppUserRepository appUserRepository, CommentReplyRepository commentReplyRepository,
-			CommentReplyLikeRepository commentReplyLikeRepository, NotificationService notificationService) {
-		this.appUserRepository = appUserRepository;
-		this.commentReplyRepository = commentReplyRepository;
-		this.commentReplyLikeRepository = commentReplyLikeRepository;
-		this.notificationService = notificationService;
-	}
 
 	@Transactional
 	public void toggleLike(String username, Long commentReplyId) {
@@ -53,7 +45,7 @@ public class CommentReplyLikeService {
 		// and only the request that actually inserted sends the notification.
 		if (commentReplyLikeRepository.insertIfAbsent(user.getId(), commentReplyId) > 0) {
 			notificationService.createNotification(commentReply.getComment().getAppUser(), // recipient - the comment
-																							// owner
+					// owner
 					user, // sender - the person liking
 					NotificationType.REPLY_LIKE, commentReplyId);
 		}

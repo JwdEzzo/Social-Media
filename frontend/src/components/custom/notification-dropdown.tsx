@@ -19,6 +19,7 @@ import { cn } from "@/utils/errors";
 import { Button } from "../ui/button";
 import { formatTimeAgo } from "@/utils/helpers";
 import { getNotificationDetails } from "@/utils/notification-details";
+import { useOpenNotification } from "@/hooks/useOpenNotification";
 
 function NotificationDropdown() {
   const { data: latest3Notifications, isLoading } =
@@ -27,6 +28,7 @@ function NotificationDropdown() {
     });
   const navigate = useNavigate();
   const [markAllAsRead] = useMarkAllAsReadMutation();
+  const openNotification = useOpenNotification();
 
   return (
     <DropdownMenu>
@@ -88,8 +90,10 @@ function NotificationDropdown() {
                 notification.notificationType,
               );
               return (
+                // onSelect also covers keyboard selection, and closes the menu
                 <DropdownMenuItem
                   key={notification.id}
+                  onSelect={() => openNotification(notification)}
                   className={cn(
                     "flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors focus:bg-accent",
                     !notification.isRead && "bg-sky-500/5 dark:bg-sky-500/10",

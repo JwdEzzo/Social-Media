@@ -10,12 +10,15 @@ import com.instragram.project.exception.ForbiddenException;
 import com.instragram.project.exception.NotFoundException;
 import com.instragram.project.mapper.MappingMethods;
 import com.instragram.project.model.AppUser;
-import com.instragram.project.model.Follow;
 import com.instragram.project.model.FollowRequest;
 import com.instragram.project.repository.AppUserRepository;
 import com.instragram.project.repository.FollowRepository;
 import com.instragram.project.repository.FollowRequestRepository;
 import jakarta.transaction.Transactional;
+import java.util.List;
+import java.util.Optional;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,27 +26,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FollowService {
 
 	private final FollowRepository followRepository;
-
 	private final AppUserRepository appUserRepository;
-
 	private final FollowRequestRepository followRequestRepository;
-
 	private final MappingMethods mappingMethods;
-
 	private final NotificationService notificationService;
-
-	public FollowService(NotificationService notificationService, FollowRepository followRepository,
-			AppUserRepository appUserRepository, FollowRequestRepository followRequestRepository,
-			MappingMethods mappingMethods) {
-		this.followRepository = followRepository;
-		this.appUserRepository = appUserRepository;
-		this.followRequestRepository = followRequestRepository;
-		this.mappingMethods = mappingMethods;
-		this.notificationService = notificationService;
-	}
 
 	// Toggle follow
 	@Transactional
@@ -112,30 +102,18 @@ public class FollowService {
 		}
 
 		if (followRequest.getStatus() != FollowRequestStatus.PENDING) {
-			throw new RuntimeException("This request has already been responded to");
+			throw new BadRequestException("This request has already been responded to.");
 		}
 
 		if (accepted) {
-			followRequest.setStatus(FollowRequestStatus.ACCEPTED);
-			Follow follow = new Follow();
-			follow.setFollower(followRequest.getRequester());
-			follow.setFollowing(followRequest.getTarget());
-			followRepository.save(follow);
-			log.info("{} accepted follow request from {}", targetUsername, followRequest.getRequester().getUsername());
-
-			// Notify the requester that their request was accepted
-			notificationService.createNotification(followRequest.getRequester(), // recipient — the person who sent the
-																					// request
-					followRequest.getTarget(), // sender — the person who accepted
-					NotificationType.FOLLOW_REQUEST_ACCEPTED, null);
-
-		} else {
-			followRequest.setStatus(FollowRequestStatus.DECLINED);
-			log.info("{} declined follow request from {}", targetUsername, followRequest.getRequester().getUsername());
-			// No notification on decline — don't tell someone they were rejected
+			acceptRequest(followRequest);
+			return;
 		}
 
+		followRequest.setStatus(FollowRequestStatus.DECLINED);
 		followRequestRepository.save(followRequest);
+		log.info("{} declined follow request from {}", targetUsername, followRequest.getRequester().getUsername());
+		// No notification on decline, don't tell someone they were rejected
 	}
 
 	// Cancel an outgoing follow request (requester cancels)
@@ -151,7 +129,7 @@ public class FollowService {
 		}
 		// Delete the follow request notification from the target's inbox
 		notificationService.deleteFollowNotification(followRequest.getTarget().getId(), // recipient — the private
-																						// account owner
+				// account owner
 				followRequest.getRequester().getId(), // sender — the person who requested
 				NotificationType.FOLLOW_REQUEST_SENT);
 
@@ -184,12 +162,17 @@ public class FollowService {
 		return count;
 	}
 
-	// Auto-accept all pending requests when a user switches PRIVATE -> PUBLIC
+	/**
+	 * Auto-accept all pending requests when a user switches PRIVATE -> PUBLIC
+	 */
 	@Transactional
-	public void acceptAllPendingRequests(String targetUsername) {
-		AppUser target = getUserOrThrow(targetUsername);
-		followRequestRepository.findAllByTargetIdAndStatus(target.getId(), FollowRequestStatus.PENDING)
-				.forEach(req -> respondToFollowRequest(req.getId(), targetUsername, true));
+	public void acceptAllPendingRequests(AppUser target) {
+		List<FollowRequest> pendingRequests = followRequestRepository.findAllByTargetIdAndStatus(target.getId(),
+				FollowRequestStatus.PENDING);
+
+		for (FollowRequest request : pendingRequests) {
+			acceptRequest(request);
+		}
 	}
 
 	// Get count of followers for a user
@@ -199,7 +182,9 @@ public class FollowService {
 		return count;
 	}
 
-	// Check if a user already follows the other
+	/**
+	 * Check if a user already follows the other
+	 */
 	public boolean isFollowed(String followerUsername, String followingUsername) {
 		AppUser follower = getUserOrThrow(followerUsername);
 		AppUser following = getUserOrThrow(followingUsername);
@@ -208,8 +193,35 @@ public class FollowService {
 		return isFollowed;
 	}
 
-	// ONLY LOOK FOR PENDING REQUESTS, maybe we declined a previous one, it shouldnt
-	// be the target of our response
+	/**
+	 * Whether {@code viewerUsername} may see {@code owner}'s posts and follow
+	 * lists: the account is public, the viewer is the owner, or the viewer follows
+	 * them. A null viewer (anonymous caller) only sees public accounts. The post
+	 * queries in {@code PostRepository} repeat this rule in JPQL; keep them in
+	 * sync.
+	 */
+	public boolean canView(String viewerUsername, AppUser owner) {
+		if (owner.getAccountStatus() == AccountStatus.PUBLIC || owner.getUsername().equals(viewerUsername)) {
+			return true;
+		}
+
+		if (viewerUsername == null) {
+			return false;
+		}
+
+		Optional<AppUser> viewer = appUserRepository.findByUsername(viewerUsername);
+		if (viewer.isEmpty()) {
+			return false;
+		}
+
+		boolean doesViewerFollowOwner = followRepository.existsByFollowerAndFollowing(viewer.get(), owner);
+		return doesViewerFollowOwner;
+	}
+
+	/**
+	 * ONLY LOOK FOR PENDING REQUESTS, maybe we declined a previous one, it shouldnt
+	 * be the target of our response
+	 */
 	public Long getPendingRequestId(String requesterUsername, String targetUsername) {
 		AppUser requester = getUserOrThrow(requesterUsername);
 		AppUser target = getUserOrThrow(targetUsername);
@@ -219,10 +231,11 @@ public class FollowService {
 				.map(FollowRequest::getId).orElse(null);
 	}
 
-	// Get count of follow requests for an account
+	/**
+	 * Get count of the requests that the user received
+	 */
 	public long getFollowRequestsCount(String targetUsername) {
 		AppUser user = getUserOrThrow(targetUsername);
-
 		long count = followRequestRepository.countByTargetIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
 		return count;
 	}
@@ -241,7 +254,9 @@ public class FollowService {
 				.map(mappingMethods::convertFollowRequestToResponse);
 	}
 
-	// Get count of the requests that the user sent
+	/**
+	 * Get count of the requests that the user sent
+	 */
 	public long getOutgoingRequestsCount(String requesterUsername) {
 		AppUser user = getUserOrThrow(requesterUsername);
 		long count = followRequestRepository.countByRequesterIdAndStatus(user.getId(), FollowRequestStatus.PENDING);
@@ -256,5 +271,26 @@ public class FollowService {
 	private FollowRequest getFollowRequestOrThrow(Long id) {
 		return followRequestRepository.findById(id)
 				.orElseThrow(() -> new NotFoundException("Follow request " + id + " was not found."));
+	}
+
+	/**
+	 * Accept one pending request: create the follow and notify the requester.
+	 * Callers have already checked that the request is PENDING and belongs to its
+	 * target.
+	 */
+	private void acceptRequest(FollowRequest followRequest) {
+		followRequest.setStatus(FollowRequestStatus.ACCEPTED);
+		// insertIfAbsent, not save: if they already follow, the unique constraint
+		// would fail the whole accept
+		followRepository.insertIfAbsent(followRequest.getRequester().getId(), followRequest.getTarget().getId());
+		followRequestRepository.save(followRequest);
+		log.info("{} accepted follow request from {}", followRequest.getTarget().getUsername(),
+				followRequest.getRequester().getUsername());
+
+		// Notify the requester that their request was accepted
+		notificationService.createNotification(followRequest.getRequester(), // recipient — the person who sent the
+				// request
+				followRequest.getTarget(), // sender — the person who accepted
+				NotificationType.FOLLOW_REQUEST_ACCEPTED, null);
 	}
 }

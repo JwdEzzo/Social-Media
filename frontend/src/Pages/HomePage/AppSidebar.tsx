@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import UserAvatar from "@/components/custom/user-avatar";
+import CreatePostModal from "@/Pages/PostPages/CreatePostModal";
 
 const navButtonClass =
   "h-10 cursor-pointer gap-3 px-1 font-medium transition-colors group-data-[collapsible=icon]:my-1 group-data-[collapsible=icon]:p-1!";
@@ -49,6 +50,7 @@ function AppSidebar() {
   // (its content renders in a portal outside the sidebar, which fires mouseleave)
   const [isHovered, setIsHovered] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   function handleMouseEnter() {
     setIsHovered(true);
@@ -82,141 +84,148 @@ function AppSidebar() {
   }
 
   return (
-    // z-20 + shadow: when expanded it overlays the page (incl. sticky z-10 headers)
-    <Sidebar
-      collapsible="icon"
-      className="z-20 group-data-[state=expanded]:shadow-xl"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Sidebar Header - Instagram Icon Button */}
-      <SidebarHeader className="flex items-start px-2 py-1">
-        <button
-          type="button"
-          aria-label="Home"
-          className={headerButtonClass}
-          onClick={getBackToHomeOrScrollToTop}
-        >
-          <Instagram className="size-6" />
-        </button>
-      </SidebarHeader>
-      {/* End of Header - Start of Content */}
-      <SidebarContent>
-        <SidebarGroup className="my-auto">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {/* Home Icon */}
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateBackToProfile}
+    <>
+      {/* z-20 + shadow: when expanded it overlays the page (incl. sticky z-10 headers) */}
+      <Sidebar
+        collapsible="icon"
+        className="z-20 group-data-[state=expanded]:shadow-xl"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Sidebar Header - Instagram Icon Button */}
+        <SidebarHeader className="flex items-start px-2 py-1">
+          <button
+            type="button"
+            aria-label="Home"
+            className={headerButtonClass}
+            onClick={getBackToHomeOrScrollToTop}
+          >
+            <Instagram className="size-6" />
+          </button>
+        </SidebarHeader>
+        {/* End of Header - Start of Content */}
+        <SidebarContent>
+          <SidebarGroup className="my-auto">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {/* Home Icon */}
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={getBackToHomeOrScrollToTop}
+                  >
+                    <div>
+                      <Home />
+                    </div>
+                    <span>Home</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* Search */}
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={navigateToSearchPage}
+                  >
+                    <div>
+                      <Search />
+                    </div>
+                    <span>Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* Reels */}
+                <SidebarMenuItem></SidebarMenuItem>
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={navigateBackToProfile}
+                  >
+                    <div>
+                      <Video />
+                    </div>
+                    <span>Reels</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* Messages */}
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={navigateBackToProfile}
+                  >
+                    <div>
+                      <Send />
+                    </div>
+                    <span>Messages</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* Create Post */}
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={() => setIsCreatePostOpen(true)}
+                  >
+                    <div>
+                      <Plus />
+                    </div>
+                    <span>Create</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* Profile */}
+                <SidebarMenuItem className="mt-1">
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    onClick={navigateBackToProfile}
+                  >
+                    <div className="shrink-0">
+                      <UserAvatar
+                        src={loggedInUser?.profilePictureUrl}
+                        alt=""
+                        className="size-6 rounded-full object-cover"
+                      />
+                    </div>
+                    <span>Profile</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {/* End of Sidebar icons */}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            {/* More Dropdown */}
+            <SidebarMenuItem>
+              <DropdownMenu modal={false} onOpenChange={handleMoreOpenChange}>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className={navButtonClass}>
+                    <div>
+                      <Menu />
+                    </div>
+                    <span className="truncate font-semibold">More</span>
+                    <ChevronUp className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  className="w-(--radix-popper-anchor-width) min-w-48 rounded-lg"
                 >
-                  <div>
-                    <Home />
-                  </div>
-                  <span>Home</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* Search */}
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateToSearchPage}
-                >
-                  <div>
-                    <Search />
-                  </div>
-                  <span>Search</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* Reels */}
-              <SidebarMenuItem></SidebarMenuItem>
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateBackToProfile}
-                >
-                  <div>
-                    <Video />
-                  </div>
-                  <span>Reels</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* Messages */}
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateBackToProfile}
-                >
-                  <div>
-                    <Send />
-                  </div>
-                  <span>Messages</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* Create Post */}
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateBackToProfile}
-                >
-                  <div>
-                    <Plus />
-                  </div>
-                  <span>Create</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* Profile */}
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className={navButtonClass}
-                  onClick={navigateBackToProfile}
-                >
-                  <div className="shrink-0">
-                    <UserAvatar
-                      src={loggedInUser?.profilePictureUrl}
-                      alt=""
-                      className="size-6 rounded-full object-cover"
-                    />
-                  </div>
-                  <span>Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {/* End of Sidebar icons */}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          {/* More Dropdown */}
-          <SidebarMenuItem>
-            <DropdownMenu modal={false} onOpenChange={handleMoreOpenChange}>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className={navButtonClass}>
-                  <div>
-                    <Menu />
-                  </div>
-                  <span className="truncate font-semibold">More</span>
-                  <ChevronUp className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-(--radix-popper-anchor-width) min-w-48 rounded-lg"
-              >
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={handleLogout}
-                >
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleLogout}
+                  >
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      {/* Outside <Sidebar>, so its hover expand/collapse never touches the modal */}
+      <CreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+      />
+    </>
   );
 }
 
